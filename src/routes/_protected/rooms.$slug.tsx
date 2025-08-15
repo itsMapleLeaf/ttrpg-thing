@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { api } from "../../../convex/_generated/api.js"
+import { AssetList } from "../../components/AssetList.js"
 import { PageHeader } from "../../components/PageHeader.js"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({
@@ -19,7 +20,7 @@ function RoomDetail() {
 			{room ? (
 				<div className="flex flex-1">
 					<nav className="w-64 border-r border-base-100 bg-base-200 px-4 py-3">
-						sidebar
+						<AssetList roomId={room._id} />
 					</nav>
 					<div className="flex-1 px-4 py-3">content</div>
 				</div>
