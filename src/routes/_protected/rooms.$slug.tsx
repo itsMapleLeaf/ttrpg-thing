@@ -14,11 +14,14 @@ function RoomDetail() {
 	const { data: room } = useSuspenseQuery(convexQuery(api.rooms.get, { slug }))
 
 	return (
-		<>
+		<div className="flex min-h-dvh flex-col">
 			<PageHeader heading={room?.name ?? "Room not found"} />
 			{room ? (
-				<div className="container">
-					<h2 className="text-3xl font-semibold">Welcome to {room.name}!</h2>
+				<div className="flex flex-1">
+					<nav className="w-64 border-r border-base-100 bg-base-200 px-4 py-3">
+						sidebar
+					</nav>
+					<div className="flex-1 px-4 py-3">content</div>
 				</div>
 			) : (
 				<div className="container flex flex-col items-center gap-6 py-16">
@@ -31,6 +34,6 @@ function RoomDetail() {
 					</Link>
 				</div>
 			)}
-		</>
+		</div>
 	)
 }
