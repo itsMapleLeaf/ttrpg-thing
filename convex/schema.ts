@@ -19,4 +19,16 @@ export default defineSchema({
 	})
 		.index("by_owner", ["ownerId"])
 		.index("by_slug", ["slug"]),
+
+	assets: defineTable({
+		name: v.string(),
+		fileId: v.id("_storage"),
+		roomId: v.id("rooms"),
+		ownerId: v.id("users"),
+	})
+		.index("by_room_and_name", ["roomId", "name"])
+		.searchIndex("search_by_name", {
+			searchField: "name",
+			filterFields: ["roomId"],
+		}),
 })
