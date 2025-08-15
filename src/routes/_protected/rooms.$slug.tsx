@@ -1,5 +1,6 @@
+import { convexQuery } from "@convex-dev/react-query"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api.js"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({
@@ -8,24 +9,13 @@ export const Route = createFileRoute("/_protected/rooms/$slug")({
 
 function RoomDetail() {
 	const { slug } = Route.useParams()
-	const room = useQuery(api.rooms.get, { slug })
+	const { data: room } = useSuspenseQuery(convexQuery(api.rooms.get, { slug }))
 
-	if (room === undefined) {
+	if (!room) {
 		return (
-			<div className="flex min-h-dvh items-center justify-center">
-				<div className="flex items-center gap-3" aria-live="polite">
-					<span className="loading loading-sm loading-spinner" />
-					<span className="text-sm opacity-70">Loading room...</span>
-				</div>
-			</div>
-		)
-	}
-
-	if (room === null) {
-		return (
-			<div className="flex min-h-dvh items-center justify-center">
+			<div className="flex items-center justify-center py-8">
 				<div className="text-center">
-					<h1 className="text-2xl font-bold">Room not found</h1>
+					<h2 className="text-2xl font-semibold">Room not found</h2>
 					<p className="mt-2 text-sm opacity-70">
 						This room doesn't exist or you don't have access to it.
 					</p>
@@ -36,7 +26,7 @@ function RoomDetail() {
 
 	return (
 		<div className="container mx-auto p-6">
-			<h1 className="text-3xl font-bold">Welcome to {room.name}!</h1>
+			<h2 className="text-3xl font-semibold">Welcome to {room.name}!</h2>
 		</div>
 	)
 }

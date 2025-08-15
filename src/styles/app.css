@@ -21,4 +21,29 @@
 	.modal {
 		scrollbar-gutter: stable;
 	}
+
+	:focus-visible {
+		@apply outline-2 outline-primary;
+	}
+}
+
+@utility btn-icon {
+	@apply -ml-1 size-5;
+}
+
+@utility btn {
+	@apply outline-2 outline-offset-0 outline-transparent!;
+
+	&:focus-visible {
+		@apply outline-offset-0 outline-primary!;
+	}
+}
+
+@utility input {
+	@apply border-black/25 bg-black/10 shadow-none outline-2 outline-offset-0 outline-transparent transition;
+
+	&:focus,
+	&:focus-within {
+		@apply bg-black/30 outline-offset-0 outline-primary;
+	}
 }

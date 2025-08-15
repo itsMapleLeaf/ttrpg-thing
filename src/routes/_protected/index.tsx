@@ -16,7 +16,7 @@ function Home() {
 	return (
 		<div className="container mx-auto p-6">
 			<header className="mb-8 flex items-center justify-between">
-				<h1 className="text-3xl font-semibold">Your rooms</h1>
+				<h2 className="text-3xl font-semibold">Your rooms</h2>
 				<CreateRoomButton />
 			</header>
 

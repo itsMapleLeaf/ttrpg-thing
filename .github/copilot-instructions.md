@@ -7,10 +7,14 @@
   - `<form action={...}>`
   - `useActionState`
   - `<SomeContext value={...}>` instead of `<SomeContext.Provider value={...}>`
+- Prefer `useState` for form state
+- Avoid nesting buttons or links inside of interactive elements from base-ui. Either add an `onClick` prop directly, or use the `render` prop, e.g. `render={<Link to="..." />}`
 
 ## Styling
 
 - Prefer `font-semibold` for headings over `font-bold`
+- Use `btn-icon` for icons in buttons
+- Do not add `cursor-pointer` if the element does not already have it
 
 ## Technologies
 

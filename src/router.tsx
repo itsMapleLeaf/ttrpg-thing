@@ -3,6 +3,8 @@ import { ConvexQueryClient } from "@convex-dev/react-query"
 import { QueryClient } from "@tanstack/react-query"
 import { createRouter as createTanStackRouter } from "@tanstack/react-router"
 import { routerWithQueryClient } from "@tanstack/react-router-with-query"
+import { Suspense } from "react"
+import { Loading } from "./components/Loading.tsx"
 import { routeTree } from "./routeTree.gen"
 
 export function createRouter() {
@@ -34,7 +36,7 @@ export function createRouter() {
 			defaultNotFoundComponent: () => <p>not found</p>,
 			Wrap: ({ children }) => (
 				<ConvexAuthProvider client={convexQueryClient.convexClient}>
-					{children}
+					<Suspense fallback={<Loading />}>{children}</Suspense>
 				</ConvexAuthProvider>
 			),
 		}),

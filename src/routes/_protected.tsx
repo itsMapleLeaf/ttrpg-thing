@@ -1,8 +1,11 @@
+import { Menu } from "@base-ui-components/react/menu"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { Icon } from "@iconify/react"
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
 import { useConvexAuth, useQuery } from "convex/react"
+import { Suspense } from "react"
 import { api } from "../../convex/_generated/api.js"
+import { Loading } from "../components/Loading.tsx"
 import { UserProvider, useUser } from "../user-context.tsx"
 
 export const Route = createFileRoute("/_protected")({
@@ -19,7 +22,9 @@ function Protected() {
 					<div className="flex min-h-dvh flex-col">
 						<SiteHeader />
 						<main className="flex-1 bg-base-200">
-							<Outlet />
+							<Suspense fallback={<Loading />}>
+								<Outlet />
+							</Suspense>
 						</main>
 					</div>
 				</UserProvider>
@@ -32,12 +37,7 @@ function Protected() {
 					</div>
 				</div>
 			) : (
-				<div className="flex min-h-dvh items-center justify-center">
-					<div className="flex items-center gap-3" aria-live="polite">
-						<span className="loading loading-sm loading-spinner" />
-						<span className="text-sm opacity-70">Loading...</span>
-					</div>
-				</div>
+				<Loading />
 			)}
 		</div>
 	)
@@ -45,7 +45,6 @@ function Protected() {
 
 function SiteHeader() {
 	const { signOut } = useAuthActions()
-	const user = useUser()
 
 	return (
 		<header className="border-b border-black/20 bg-base-300">
@@ -57,25 +56,72 @@ function SiteHeader() {
 					>
 						TTRPG Thing
 					</Link>
-					<div className="flex items-center gap-3">
-						<span className="hidden text-sm sm:inline">
-							<span className="opacity-70">signed in as</span>{" "}
-							<strong className="font-semibold">
-								{user.name || `user_${user._id}`}
-							</strong>
-						</span>
-						<button
-							type="button"
-							className="btn btn-ghost btn-sm"
-							onClick={() => signOut()}
-						>
-							<Icon icon="mingcute:exit-fill" className="h-4 w-4" />
-							<span className="hidden sm:inline">Sign out</span>
-						</button>
-					</div>
+					<UserMenu onSignOut={signOut} />
 				</nav>
 			</div>
 		</header>
+	)
+}
+
+function UserMenu({ onSignOut }: { onSignOut: () => void }) {
+	const user = useUser()
+	return (
+		<Menu.Root>
+			<Menu.Trigger className="btn relative btn-circle border border-black/20 btn-ghost btn-sm">
+				<Icon icon="mingcute:user-3-fill" className="size-5" />
+				{user.image && (
+					<img
+						src={user.image}
+						alt=""
+						className="absolute inset-0 size-full rounded-full object-cover opacity-0"
+						ref={(element) => {
+							if (!element) return
+
+							if (element.complete) {
+								element.classList.remove("opacity-0")
+								return
+							}
+
+							const controller = new AbortController()
+
+							element.addEventListener(
+								"load",
+								() => {
+									element.classList.add("transition-opacity")
+									element.classList.remove("opacity-0")
+								},
+								{ signal: controller.signal },
+							)
+
+							return () => {
+								controller.abort()
+							}
+						}}
+					/>
+				)}
+			</Menu.Trigger>
+			<Menu.Portal>
+				<Menu.Positioner>
+					<Menu.Popup className="z-50 min-w-48 rounded-lg border border-base-300 bg-base-100 py-1 shadow-lg">
+						<Menu.Item
+							className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-base-200"
+							render={<Link to="/account" />}
+						>
+							<Icon icon="mingcute:settings-2-fill" className="btn-icon" />
+							Account settings
+						</Menu.Item>
+						<Menu.Separator className="my-1 border-t border-base-300" />
+						<Menu.Item
+							className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-base-200"
+							onClick={onSignOut}
+						>
+							<Icon icon="mingcute:exit-fill" className="btn-icon" />
+							Sign out
+						</Menu.Item>
+					</Menu.Popup>
+				</Menu.Positioner>
+			</Menu.Portal>
+		</Menu.Root>
 	)
 }
 
