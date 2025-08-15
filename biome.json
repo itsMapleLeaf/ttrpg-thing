@@ -14,7 +14,8 @@
 	"linter": {
 		"rules": {
 			"suspicious": {
-				"noUnknownAtRules": "off"
+				"noUnknownAtRules": "off",
+				"noImplicitAnyLet": "off"
 			},
 			"style": {
 				"useConsistentObjectDefinitions": "warn"
