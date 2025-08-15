@@ -21,10 +21,6 @@
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedSideEffectImports": true,
 		"noUncheckedIndexedAccess": true,
-		"baseUrl": ".",
-		"paths": {
-			"~/*": ["./src/*"]
-		},
 		"esModuleInterop": true,
 		"isolatedModules": true,
 		"resolveJsonModule": true,

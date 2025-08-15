@@ -20,7 +20,5 @@
 		"module": "ESNext",
 		"isolatedModules": true,
 		"noEmit": true
-	},
-	"include": ["./**/*"],
-	"exclude": ["./_generated"]
+	}
 }
