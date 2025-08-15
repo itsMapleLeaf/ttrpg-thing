@@ -5,6 +5,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { api } from "../../../convex/_generated/api.js"
 import { AssetList } from "../../components/AssetList.js"
 import { PageHeader } from "../../components/PageHeader.js"
+import { Surface } from "../../components/Surface.js"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({
 	component: RoomDetail,
@@ -22,7 +23,9 @@ function RoomDetail() {
 					<nav className="w-64 overflow-y-auto border-r border-base-100 bg-base-200">
 						<AssetList roomId={room._id} />
 					</nav>
-					<div className="flex-1 px-4 py-3">content</div>
+					<div className="flex-1">
+						<Surface />
+					</div>
 				</div>
 			) : (
 				<div className="container flex flex-col items-center gap-6 py-16">
