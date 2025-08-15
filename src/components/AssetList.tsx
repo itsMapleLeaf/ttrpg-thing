@@ -56,62 +56,64 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 	}, [showSuccess])
 
 	return (
-		<div className="flex flex-col gap-4">
-			<div className="flex items-center justify-between">
-				<h2 className="font-semibold">Assets</h2>
-				<form action={uploadAction}>
-					<label
-						className={`btn btn-sm btn-primary ${isPending ? "loading" : ""}`}
-					>
-						{!isPending && (
-							<Icon icon="mingcute:upload-2-fill" className="btn-icon" />
-						)}
-						{isPending ? "Uploading..." : "Upload"}
+		<div className="flex h-full flex-col">
+			<div className="flex flex-col gap-3 border-b border-base-100 p-2">
+				<div className="flex gap-2">
+					<div className="relative flex-1">
 						<input
-							type="file"
-							name="file"
-							accept="image/*"
-							className="hidden"
-							disabled={isPending}
-							onChange={(event) => {
-								if (event.target.files?.[0]) {
-									event.target.form?.requestSubmit()
-								}
-							}}
+							type="text"
+							placeholder="Search assets..."
+							value={searchTerm}
+							onChange={(event) => setSearchTerm(event.target.value)}
+							className="input input-sm min-w-0 pl-8"
 						/>
-					</label>
-				</form>
+						<Icon
+							icon="mingcute:search-line"
+							className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50"
+						/>
+					</div>
+					<form action={uploadAction}>
+						<label
+							className={`btn btn-sm btn-primary ${isPending ? "loading" : ""}`}
+						>
+							{!isPending && (
+								<Icon icon="mingcute:upload-2-fill" className="btn-icon" />
+							)}
+							<span className="sr-only">
+								{isPending ? "Uploading..." : "Upload"}
+							</span>
+							<input
+								type="file"
+								name="file"
+								accept="image/*"
+								className="hidden"
+								disabled={isPending}
+								onChange={(event) => {
+									if (event.target.files?.[0]) {
+										event.target.form?.requestSubmit()
+									}
+								}}
+							/>
+						</label>
+					</form>
+				</div>
+
+				{uploadState?.error && (
+					<div className="alert-sm alert alert-error">
+						<Icon icon="mingcute:close-circle-fill" />
+						{uploadState.error}
+					</div>
+				)}
+
+				{showSuccess && (
+					<div className="alert-sm alert alert-success">
+						<Icon icon="mingcute:check-circle-fill" />
+						Asset uploaded successfully!
+					</div>
+				)}
 			</div>
 
-			<div className="relative">
-				<input
-					type="text"
-					placeholder="Search assets..."
-					value={searchTerm}
-					onChange={(event) => setSearchTerm(event.target.value)}
-					className="input input-sm w-full pl-8"
-				/>
-				<Icon
-					icon="mingcute:search-line"
-					className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50"
-				/>
-			</div>
-
-			{uploadState?.error && (
-				<div className="alert-sm alert alert-error">
-					<Icon icon="mingcute:close-circle-fill" />
-					{uploadState.error}
-				</div>
-			)}
-
-			{showSuccess && (
-				<div className="alert-sm alert alert-success">
-					<Icon icon="mingcute:check-circle-fill" />
-					Asset uploaded successfully!
-				</div>
-			)}
-
-			<div className="flex flex-col gap-2">
+			<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
 				{assets === undefined ? (
 					<p className="py-4 text-center text-sm opacity-70">Loading...</p>
 				) : assets.length === 0 ? (

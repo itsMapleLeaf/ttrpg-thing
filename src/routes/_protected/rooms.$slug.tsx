@@ -15,11 +15,11 @@ function RoomDetail() {
 	const { data: room } = useSuspenseQuery(convexQuery(api.rooms.get, { slug }))
 
 	return (
-		<div className="flex min-h-dvh flex-col">
+		<div className="flex h-dvh flex-col">
 			<PageHeader heading={room?.name ?? "Room not found"} />
 			{room ? (
-				<div className="flex flex-1">
-					<nav className="w-64 border-r border-base-100 bg-base-200 px-4 py-3">
+				<div className="flex min-h-0 flex-1">
+					<nav className="w-64 overflow-y-auto border-r border-base-100 bg-base-200">
 						<AssetList roomId={room._id} />
 					</nav>
 					<div className="flex-1 px-4 py-3">content</div>
