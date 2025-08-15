@@ -4,6 +4,7 @@ import { useMutation } from "convex/react"
 import { useActionState, useId, useMemo, useRef, useState } from "react"
 import { api } from "../../../convex/_generated/api.js"
 import { Label } from "../../components/Label.tsx"
+import { PageHeader } from "../../components/PageHeader.tsx"
 import { useUploadImage } from "../../hooks/useUploadImage.ts"
 import { useUser } from "../../user-context.tsx"
 
@@ -13,20 +14,14 @@ export const Route = createFileRoute("/_protected/account")({
 
 function Account() {
 	return (
-		<div className="container mx-auto max-w-2xl p-6">
-			<div className="space-y-6">
-				<header>
-					<h2 className="text-3xl font-semibold">Account settings</h2>
-					<p className="mt-1 text-sm opacity-70">
-						Manage your personal information and preferences
-					</p>
-				</header>
-
-				<div className="card card-body border border-base-300 bg-base-100">
+		<>
+			<PageHeader heading="Account Settings" />
+			<div className="container mx-auto max-w-2xl space-y-6 p-6">
+				<div className="card card-body border border-base-100 bg-base-200 shadow">
 					<UpdateProfileForm />
 				</div>
 			</div>
-		</div>
+		</>
 	)
 }
 

@@ -1,13 +1,15 @@
 import { Menu } from "@base-ui-components/react"
+import { useAuthActions } from "@convex-dev/auth/react"
 import { Icon } from "@iconify/react/dist/iconify.js"
 import { Link } from "@tanstack/react-router"
 import { useUser } from "../user-context.tsx"
 
-export function UserMenu({ onSignOut }: { onSignOut: () => void }) {
+export function UserMenu() {
 	const user = useUser()
+	const { signOut } = useAuthActions()
 	return (
 		<Menu.Root>
-			<Menu.Trigger className="relative flex items-center gap-2 rounded p-2 opacity-75 transition-opacity hover:opacity-100">
+			<Menu.Trigger className="relative -mx-2 flex items-center gap-2 rounded p-2 opacity-75 transition-opacity hover:opacity-100">
 				<span className="text-sm font-semibold">{user.name}</span>
 				<div className="relative size-8 rounded-full border border-black/20">
 					<Icon icon="mingcute:user-3-fill" className="size-5" />
@@ -56,7 +58,7 @@ export function UserMenu({ onSignOut }: { onSignOut: () => void }) {
 						<Menu.Separator className="my-1 border-t border-base-300" />
 						<Menu.Item
 							className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-base-200"
-							onClick={onSignOut}
+							onClick={signOut}
 						>
 							<Icon icon="mingcute:exit-fill" className="btn-icon" />
 							Sign out

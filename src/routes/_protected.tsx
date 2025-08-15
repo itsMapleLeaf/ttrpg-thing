@@ -4,7 +4,7 @@ import { useConvexAuth, useQuery } from "convex/react"
 import { Suspense } from "react"
 import { api } from "../../convex/_generated/api.js"
 import { Loading } from "../components/Loading.tsx"
-import { SiteHeader } from "../components/SiteHeader.tsx"
+import { PageHeader } from "../components/PageHeader.tsx"
 import { UserProvider } from "../user-context.tsx"
 
 export const Route = createFileRoute("/_protected")({
@@ -15,17 +15,19 @@ function Protected() {
 	const auth = useConvexAuth()
 	const user = useQuery(api.users.me)
 	return (
-		<div className="min-h-dvh">
+		<div className="min-h-dvh bg-base-300">
 			{user ? (
 				<UserProvider user={user}>
-					<div className="flex min-h-dvh flex-col">
-						<SiteHeader />
-						<main className="flex-1 bg-base-200">
-							<Suspense fallback={<Loading />}>
-								<Outlet />
-							</Suspense>
-						</main>
-					</div>
+					<Suspense
+						fallback={
+							<>
+								<PageHeader heading="Loading..." />
+								<Loading />
+							</>
+						}
+					>
+						<Outlet />
+					</Suspense>
 				</UserProvider>
 			) : !auth.isAuthenticated && !auth.isLoading ? (
 				<div className="flex min-h-dvh items-center justify-center px-4 py-8">

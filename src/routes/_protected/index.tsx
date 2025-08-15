@@ -5,6 +5,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router"
 import { formatDistanceToNow } from "date-fns"
 import { useActionState, useId, useRef, useState } from "react"
 import { api } from "../../../convex/_generated/api.js"
+import { PageHeader } from "../../components/PageHeader.js"
 
 export const Route = createFileRoute("/_protected/")({
 	component: Home,
@@ -14,50 +15,50 @@ function Home() {
 	const { data: rooms } = useSuspenseQuery(convexQuery(api.rooms.list, {}))
 
 	return (
-		<div className="container mx-auto p-6">
-			<header className="mb-8 flex items-center justify-between">
-				<h2 className="text-3xl font-semibold">Your rooms</h2>
-				<CreateRoomButton />
-			</header>
-
-			{rooms === undefined ? (
-				<div className="flex items-center gap-3" aria-live="polite">
-					<span className="loading loading-sm loading-spinner" />
-					<span className="text-sm opacity-70">Loading rooms...</span>
-				</div>
-			) : rooms.length === 0 ? (
-				<div className="py-12 text-center">
-					<div className="space-y-3">
-						<Icon
-							icon="mingcute:home-3-line"
-							className="mx-auto text-4xl opacity-50"
-						/>
-						<p className="text-xl font-semibold">No rooms yet</p>
+		<>
+			<PageHeader heading="Your rooms" actions={<CreateRoomButton />} />
+			<div className="container py-6">
+				{rooms === undefined ? (
+					<div className="flex items-center gap-3" aria-live="polite">
+						<span className="loading loading-sm loading-spinner" />
+						<span className="text-sm opacity-70">Loading rooms...</span>
 					</div>
-				</div>
-			) : (
-				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-					{rooms.map((room) => (
-						<Link
-							key={room._id}
-							to="/rooms/$slug"
-							params={{ slug: room.slug }}
-							className="hover:bg-base-50 card border border-base-300 bg-base-100 shadow transition-colors"
-						>
-							<div className="card-body">
-								<h3 className="card-title text-lg font-semibold">
-									{room.name}
-								</h3>
-								<p className="text-xs opacity-70">
-									Created{" "}
-									{formatDistanceToNow(room._creationTime, { addSuffix: true })}
-								</p>
-							</div>
-						</Link>
-					))}
-				</div>
-			)}
-		</div>
+				) : rooms.length === 0 ? (
+					<div className="py-12 text-center">
+						<div className="space-y-3">
+							<Icon
+								icon="mingcute:home-3-line"
+								className="mx-auto text-4xl opacity-50"
+							/>
+							<p className="text-xl font-semibold">No rooms yet</p>
+						</div>
+					</div>
+				) : (
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+						{rooms.map((room) => (
+							<Link
+								key={room._id}
+								to="/rooms/$slug"
+								params={{ slug: room.slug }}
+								className="card border border-base-100 bg-base-200 shadow transition hover:bg-base-100"
+							>
+								<div className="card-body">
+									<h3 className="card-title text-lg font-semibold">
+										{room.name}
+									</h3>
+									<p className="text-xs opacity-70">
+										Created{" "}
+										{formatDistanceToNow(room._creationTime, {
+											addSuffix: true,
+										})}
+									</p>
+								</div>
+							</Link>
+						))}
+					</div>
+				)}
+			</div>
+		</>
 	)
 }
 
@@ -96,7 +97,7 @@ function CreateRoomButton() {
 		<>
 			<button
 				type="button"
-				className="btn btn-primary"
+				className="btn btn-sm"
 				onClick={() => {
 					dialogRef.current?.showModal()
 				}}

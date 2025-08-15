@@ -27,8 +27,15 @@
 	}
 }
 
+@utility container {
+	@apply mx-auto px-4;
+}
+
 @utility btn-icon {
 	@apply -ml-1 size-5;
+	.btn-sm & {
+		@apply -mr-0.5 size-4;
+	}
 }
 
 @utility btn {
