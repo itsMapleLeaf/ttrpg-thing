@@ -131,7 +131,7 @@ function CreateRoomButton() {
 								name="name"
 								type="text"
 								className="input-bordered input w-full"
-								placeholder="My awesome campaign"
+								placeholder="My awesome room"
 								required
 								disabled={isPending}
 								value={name}
@@ -153,10 +153,11 @@ function CreateRoomButton() {
 								value={slug}
 								onChange={(event) => setSlug(event.target.value)}
 							/>
-							<div className="label">
-								<span className="label-text-alt opacity-70">
-									URL will be: /rooms/{slug || placeholderSlug}
-								</span>
+							<div
+								className="label-text-alt label mt-1 text-sm opacity-0 data-visible:opacity-70 data-visible:transition"
+								data-visible={slug || placeholderSlug || undefined}
+							>
+								URL will be: /rooms/{slug || placeholderSlug}
 							</div>
 						</div>
 					</form>
