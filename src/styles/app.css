@@ -2,12 +2,11 @@
 @plugin "daisyui";
 
 @layer base {
-	html,
-	body {
+	:root {
 	}
 
-	.using-mouse * {
-		outline: none !important;
+	strong {
+		@apply font-medium;
 	}
 }
 
