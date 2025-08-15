@@ -1,20 +1,60 @@
-## Code Style
+## Comments
 
-- Do not add any comments to the code.
-- For Convex functions: define `args` schemas, but do not define `returns` schemas.
+- Do not add any comments to the code, especially if they only say what the code does.
+
+  Example (**avoid this**):
+
+  ```tsx
+  // Generate upload URL
+  const uploadUrl = await generateAvatarUploadUrl()
+
+  // Update user with new avatar
+  await updateAvatar({ storageId })
+  ```
+
+## JavaScript/TypeScript
+
 - Do not use `e` as the argument for event handlers, use `event` instead.
-- Use modern React 19 features, such as:
-  - `<form action={...}>`
-  - `useActionState`
-  - `<SomeContext value={...}>` instead of `<SomeContext.Provider value={...}>`
-- Prefer `useState` for form state
+
+## React
+
+- Use `<form action={...}>` for form submissions instead of `<form onSubmit={...}>`
+
+- Instead of using the `formData` argument in form action callbacks, use `useState` for form state
+
+- Use `useActionState` for form submissions, as well as **any** asynchronous action
+
+- For React context, uuse `<SomeContext value={...}>` instead of `<SomeContext.Provider value={...}>`
+
 - Avoid nesting buttons or links inside of interactive elements from base-ui. Either add an `onClick` prop directly, or use the `render` prop, e.g. `render={<Link to="..." />}`
+
+## Convex (backend)
+
+- For Convex functions: define `args` schemas, but do not define `returns` schemas.
+
+## Convex (frontend)
+
+- Use `useSuspenseQuery` with `convexQuery` instead of `useQuery`
+
+  ```tsx
+  import { convexQuery } from "@convex-dev/react-query"
+  import { useSuspenseQuery } from "@tanstack/react-query"
+  import { api } from "../../../convex/_generated/api.js"
+
+  function SomeComponent() {
+  	const { data: thing } = useSuspenseQuery(
+  		convexQuery(api.thing.get, { id: "123" }),
+  	)
+  	return <div>{thing.name}</div>
+  }
+  ```
 
 ## Styling
 
 - Prefer `font-semibold` for headings over `font-bold`
 - Use `btn-icon` for icons in buttons
 - Do not add `cursor-pointer` if the element does not already have it
+- Use `size-*` for setting the same width and height of an element, e.g. `size-6` instead of `w-6 h-6`
 
 ## Technologies
 
