@@ -1,15 +1,23 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+@theme {
+}
+
 @layer base {
 	:root {
+		scrollbar-gutter: auto;
+	}
+
+	button {
+		@apply cursor-default!;
 	}
 
 	strong {
 		@apply font-medium;
 	}
-}
 
-@utility btn-icon {
-	@apply -ml-1 size-5;
+	.modal {
+		scrollbar-gutter: stable;
+	}
 }
