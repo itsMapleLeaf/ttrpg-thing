@@ -69,9 +69,9 @@ function UserMenu({ onSignOut }: { onSignOut: () => void }) {
 		<Menu.Root>
 			<Menu.Trigger className="btn relative btn-circle border border-black/20 btn-ghost btn-sm">
 				<Icon icon="mingcute:user-3-fill" className="size-5" />
-				{user.image && (
+				{user.imageUrl && (
 					<img
-						src={user.image}
+						src={user.imageUrl}
 						alt=""
 						className="absolute inset-0 size-full rounded-full object-cover opacity-0"
 						ref={(element) => {

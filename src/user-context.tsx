@@ -1,14 +1,14 @@
 import { createContext, useContext } from "react"
-import type { Doc } from "../convex/_generated/dataModel"
+import type { ClientUser } from "../convex/users.ts"
 
-const UserContext = createContext<Doc<"users">>()
+const UserContext = createContext<ClientUser>()
 
 export function UserProvider({
 	children,
 	user,
 }: {
 	children: React.ReactNode
-	user: Doc<"users">
+	user: ClientUser
 }) {
 	return <UserContext value={user}>{children}</UserContext>
 }

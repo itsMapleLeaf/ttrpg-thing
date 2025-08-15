@@ -1,10 +1,10 @@
 import { Icon } from "@iconify/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useMutation } from "convex/react"
-import { useActionState, useId, useState } from "react"
+import { useActionState, useId, useMemo, useRef, useState } from "react"
 import { api } from "../../../convex/_generated/api.js"
-import type { Doc } from "../../../convex/_generated/dataModel.js"
 import { Label } from "../../components/Label.tsx"
+import { useUploadImage } from "../../hooks/useUploadImage.ts"
 import { useUser } from "../../user-context.tsx"
 
 export const Route = createFileRoute("/_protected/account")({
@@ -12,8 +12,6 @@ export const Route = createFileRoute("/_protected/account")({
 })
 
 function Account() {
-	const user = useUser()
-
 	return (
 		<div className="container mx-auto max-w-2xl p-6">
 			<div className="space-y-6">
@@ -25,53 +23,52 @@ function Account() {
 				</header>
 
 				<div className="card card-body border border-base-300 bg-base-100">
-					<UpdateProfileForm user={user} />
+					<UpdateProfileForm />
 				</div>
 			</div>
 		</div>
 	)
 }
 
-function UpdateProfileForm({ user }: { user: Doc<"users"> }) {
+function UpdateProfileForm() {
+	const user = useUser()
 	const updateUser = useMutation(api.users.update)
-	const [name, setName] = useState(user.name || "")
-	const [email, setEmail] = useState(user.email || "")
+	const [name, setName] = useState(user.name)
+	const [email, setEmail] = useState(user.email)
+	const [image, setImage] = useState<File | null>(null)
 	const nameId = useId()
 	const emailId = useId()
-
-	const updateProfileAction = async (
-		_prevState: { error?: string; success?: string } | null,
-		formData: FormData,
-	) => {
-		const formName = formData.get("name") as string
-		const formEmail = formData.get("email") as string
-
-		if (!formName?.trim()) {
-			return { error: "Name is required" }
-		}
-
-		if (!formEmail?.trim()) {
-			return { error: "Email is required" }
-		}
-
-		try {
-			await updateUser({ name: formName.trim(), email: formEmail.trim() })
-			return { success: "Profile updated successfully" }
-		} catch (error) {
-			return {
-				error:
-					error instanceof Error ? error.message : "Failed to update profile",
-			}
-		}
-	}
+	const uploadImage = useUploadImage()
 
 	const [state, formAction, isPending] = useActionState(
-		updateProfileAction,
+		async (_prevState: { error?: string; success?: string } | null) => {
+			try {
+				let imageId
+				if (image) {
+					imageId = await uploadImage(image)
+				}
+
+				await updateUser({
+					name: name.trim(),
+					email: email.trim(),
+					...(imageId && { imageId }),
+				})
+
+				setImage(null)
+
+				return { success: "Profile updated successfully" }
+			} catch (error) {
+				return {
+					error:
+						error instanceof Error ? error.message : "Failed to update profile",
+				}
+			}
+		},
 		null,
 	)
 
 	return (
-		<form action={formAction} className="space-y-4">
+		<form action={formAction} className="space-y-6">
 			{state?.error && (
 				<div className="alert alert-error">
 					<Icon icon="mingcute:close-circle-fill" className="h-4 w-4" />
@@ -86,55 +83,140 @@ function UpdateProfileForm({ user }: { user: Doc<"users"> }) {
 				</div>
 			)}
 
-			<div>
-				<Label htmlFor={nameId} required>
-					Display name
-				</Label>
-				<input
-					id={nameId}
-					name="name"
-					type="text"
-					className="input-bordered input w-full"
-					placeholder="Your display name"
-					required
-					disabled={isPending}
-					value={name}
-					onChange={(event) => setName(event.target.value)}
-				/>
-			</div>
+			<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+				<div className="flex flex-col items-center space-y-4 text-center">
+					<div className="mb-2 block text-sm font-medium">Avatar image</div>
+					<AvatarUploader onFileSelect={setImage} selectedFile={image} />
+				</div>
 
-			<div>
-				<Label htmlFor={emailId} required>
-					Email address
-				</Label>
-				<input
-					id={emailId}
-					name="email"
-					type="email"
-					className="input-bordered input w-full"
-					placeholder="your.email@example.com"
-					required
-					disabled={isPending}
-					value={email}
-					onChange={(event) => setEmail(event.target.value)}
-				/>
-			</div>
+				<div className="space-y-4 lg:col-span-2">
+					<div>
+						<Label htmlFor={nameId} required>
+							Display name
+						</Label>
+						<input
+							id={nameId}
+							name="name"
+							type="text"
+							className="input-bordered input w-full"
+							placeholder="Your display name"
+							required
+							disabled={isPending}
+							value={name}
+							onChange={(event) => setName(event.target.value)}
+						/>
+					</div>
 
-			<div className="card-actions justify-end pt-4">
-				<button type="submit" className="btn btn-primary" disabled={isPending}>
-					{isPending ? (
-						<>
-							<span className="loading loading-sm loading-spinner" />
-							Updating...
-						</>
-					) : (
-						<>
-							<Icon icon="mingcute:check-fill" className="btn-icon" />
-							Save changes
-						</>
-					)}
-				</button>
+					<div>
+						<Label htmlFor={emailId} required>
+							Email address
+						</Label>
+						<input
+							id={emailId}
+							name="email"
+							type="email"
+							className="input-bordered input w-full"
+							placeholder="your.email@example.com"
+							required
+							disabled={isPending}
+							value={email}
+							onChange={(event) => setEmail(event.target.value)}
+						/>
+					</div>
+
+					<div className="card-actions justify-end pt-4">
+						<button
+							type="submit"
+							className="btn btn-primary"
+							disabled={isPending}
+						>
+							{isPending ? (
+								<>
+									<span className="loading loading-sm loading-spinner" />
+									Updating...
+								</>
+							) : (
+								<>
+									<Icon icon="mingcute:check-fill" className="btn-icon" />
+									Save changes
+								</>
+							)}
+						</button>
+					</div>
+				</div>
 			</div>
 		</form>
+	)
+}
+
+function AvatarUploader({
+	onFileSelect,
+	selectedFile,
+}: {
+	onFileSelect: (file: File | null) => void
+	selectedFile: File | null
+}) {
+	const user = useUser()
+	const fileInputRef = useRef<HTMLInputElement>(null)
+
+	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0]
+		if (file) {
+			onFileSelect(file)
+		}
+	}
+
+	const avatarSrc = useMemo(() => {
+		if (selectedFile) {
+			return URL.createObjectURL(selectedFile)
+		}
+		if (user.imageUrl) {
+			return user.imageUrl
+		}
+		return null
+	}, [selectedFile, user.imageUrl])
+
+	return (
+		<div className="space-y-4">
+			<button
+				type="button"
+				className="size-24 overflow-clip rounded-full border-2 border-black/25 transition hover:brightness-110"
+				aria-hidden
+				onClick={() => fileInputRef.current?.click()}
+			>
+				{avatarSrc ? (
+					<img src={avatarSrc} alt="" className="avatar" />
+				) : (
+					<div className="flex items-center justify-center bg-base-300">
+						<Icon icon="mingcute:user-fill" className="size-8 opacity-50" />
+					</div>
+				)}
+			</button>
+
+			<input
+				ref={fileInputRef}
+				type="file"
+				accept="image/*"
+				onChange={handleFileChange}
+				className="hidden"
+			/>
+
+			<div className="flex flex-col gap-2">
+				<button
+					type="button"
+					onClick={() => fileInputRef.current?.click()}
+					className="btn btn-ghost btn-sm"
+				>
+					<Icon icon="mingcute:upload-fill" className="btn-icon" />
+					{selectedFile ? "Change photo" : "Choose photo"}
+				</button>
+
+				{selectedFile && (
+					<p className="text-center text-xs opacity-70">
+						Your avatar will be updated when you save
+					</p>
+				)}
+			</div>
+		</div>
 	)
 }
