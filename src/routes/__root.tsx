@@ -1,3 +1,4 @@
+import fontCss from "@fontsource-variable/quicksand?url"
 import type { QueryClient } from "@tanstack/react-query"
 import {
 	createRootRouteWithContext,
@@ -26,6 +27,7 @@ export const Route = createRootRouteWithContext<{
 		],
 		links: [
 			{ rel: "stylesheet", href: appCss },
+			{ rel: "stylesheet", href: fontCss },
 			{
 				rel: "apple-touch-icon",
 				sizes: "180x180",

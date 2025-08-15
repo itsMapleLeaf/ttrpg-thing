@@ -16,7 +16,7 @@ function Home() {
 	return (
 		<div className="container mx-auto p-6">
 			<header className="mb-8 flex items-center justify-between">
-				<h1 className="text-3xl font-bold">Your rooms</h1>
+				<h1 className="text-3xl font-semibold">Your rooms</h1>
 				<CreateRoomButton />
 			</header>
 
@@ -45,7 +45,9 @@ function Home() {
 							className="hover:bg-base-50 card border border-base-300 bg-base-100 shadow transition-colors"
 						>
 							<div className="card-body">
-								<h3 className="card-title text-lg">{room.name}</h3>
+								<h3 className="card-title text-lg font-semibold">
+									{room.name}
+								</h3>
 								<p className="text-xs opacity-70">
 									Created{" "}
 									{formatDistanceToNow(room._creationTime, { addSuffix: true })}
@@ -108,7 +110,7 @@ function CreateRoomButton() {
 				ref={dialogRef}
 			>
 				<div className="modal-box transition-discrete duration-150">
-					<h3 className="mb-4 text-lg font-bold">Create new room</h3>
+					<h3 className="mb-4 text-lg font-semibold">Create new room</h3>
 
 					<form action={formAction} className="space-y-4" id={formId}>
 						{state?.error && (

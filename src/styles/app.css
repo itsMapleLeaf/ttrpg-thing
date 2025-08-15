@@ -2,6 +2,7 @@
 @plugin "daisyui";
 
 @theme {
+	--default-font-family: "Quicksand Variable", sans-serif;
 }
 
 @layer base {

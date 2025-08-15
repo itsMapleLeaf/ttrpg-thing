@@ -1,4 +1,4 @@
-# Guidelines
+## Code Style
 
 - Do not add any comments to the code.
 - For Convex functions: define `args` schemas, but do not define `returns` schemas.
@@ -8,7 +8,11 @@
   - `useActionState`
   - `<SomeContext value={...}>` instead of `<SomeContext.Provider value={...}>`
 
-# Technologies
+## Styling
+
+- Prefer `font-semibold` for headings over `font-bold`
+
+## Technologies
 
 - [Bun](https://bun.sh/)
 - [TanStack Start](https://tanstack.com/start/latest/docs/framework/react/overview)

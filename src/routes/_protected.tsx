@@ -53,14 +53,16 @@ function SiteHeader() {
 				<nav className="flex items-center justify-between">
 					<Link
 						to="/"
-						className="text-xl font-bold transition-opacity hover:opacity-80"
+						className="text-xl font-light transition-opacity hover:opacity-80"
 					>
 						TTRPG Thing
 					</Link>
 					<div className="flex items-center gap-3">
 						<span className="hidden text-sm sm:inline">
 							<span className="opacity-70">signed in as</span>{" "}
-							<strong>{user.name || "User"}</strong>
+							<strong className="font-semibold">
+								{user.name || `user_${user._id}`}
+							</strong>
 						</span>
 						<button
 							type="button"
