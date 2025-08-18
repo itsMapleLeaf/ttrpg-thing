@@ -49,36 +49,38 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 
 	const uploadImage = useUploadImage()
 	const createAsset = useMutation(api.assets.create)
-	const [uploadState, uploadAction, isPending] = useActionState(
-		async (_: unknown, formData: FormData) => {
-			const file = formData.get("file") as File
-			if (!file) return { error: "No file selected" }
 
-			try {
-				const fileId = await uploadImage(file)
-				await createAsset({
-					name: file.name,
-					fileId,
-					roomId,
-				})
-				setShowSuccess(true)
-				return { success: true }
-			} catch (error) {
-				return {
-					error: error instanceof Error ? error.message : "Upload failed",
-				}
+	const [uploadError, uploadAction, isPending] = useActionState<
+		string | undefined,
+		FormData
+	>(async (_state, formData) => {
+		const files = formData.getAll("file") as File[]
+		if (files.length === 0) return "No file selected"
+
+		try {
+			const results = await Promise.all(
+				files.map(async (file) => {
+					const { name } = file // files can get GC'd, so capture the name for output later
+					try {
+						const humanName = humanizeFileName(file.name)
+						const fileId = await uploadImage(file)
+						await createAsset({ name: humanName, fileId, roomId })
+						return { success: true } as const
+					} catch (error) {
+						console.error(error)
+						return { success: false, name } as const
+					}
+				}),
+			)
+
+			const failedResults = results.filter((it) => !it.success)
+			if (failedResults.length > 0) {
+				return `The following files failed to upload:\n${failedResults.map((it) => it.name).join("\n")}`
 			}
-		},
-		null,
-	)
-
-	const [showSuccess, setShowSuccess] = useState(false)
-	useEffect(() => {
-		if (showSuccess) {
-			const timer = setTimeout(() => setShowSuccess(false), 3000)
-			return () => clearTimeout(timer)
+		} catch (error) {
+			return error instanceof Error ? error.message : "Upload failed"
 		}
-	}, [showSuccess])
+	})
 
 	const [selection, setSelection] = useState<ReadonlySet<Id<"assets">>>(
 		new Set(),
@@ -159,15 +161,13 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 						className="button-clear button-square"
 						onClick={() => {
 							setSortOption((order) => {
-								const currentIndex = sortOptions.findIndex(
-									(option) => option.id === order.id,
-								)
+								const currentIndex = sortOptions.indexOf(order)
 								const nextIndex = (currentIndex + 1) % sortOptions.length
 								return sortOptions[nextIndex] as SortOption
 							})
 						}}
 					>
-						<Icon icon={sortOption.icon} />
+						<Icon icon={sortOption.icon} className="pointer-events-none" />
 						<span className="sr-only">
 							Toggle sorting (current: {sortOption.name})
 						</span>
@@ -176,13 +176,21 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 
 				<form action={uploadAction}>
 					<label className="button-solid">
-						<Icon icon="mingcute:upload-2-fill" className="button-icon" />
+						{isPending ? (
+							<Icon
+								icon="mingcute:loading-3-fill"
+								className="button-icon animate-spin"
+							/>
+						) : (
+							<Icon icon="mingcute:upload-2-fill" className="button-icon" />
+						)}
 						{isPending ? "Uploading..." : "Upload"}
 
 						<input
 							type="file"
 							name="file"
 							accept="image/*"
+							multiple
 							className="hidden"
 							disabled={isPending}
 							onChange={(event) => {
@@ -194,17 +202,10 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 					</label>
 				</form>
 
-				{uploadState?.error && (
+				{uploadError && (
 					<div className="alert-sm alert alert-error">
 						<Icon icon="mingcute:close-circle-fill" />
-						{uploadState.error}
-					</div>
-				)}
-
-				{showSuccess && (
-					<div className="alert-sm alert alert-success">
-						<Icon icon="mingcute:check-circle-fill" />
-						Asset uploaded successfully!
+						{uploadError}
 					</div>
 				)}
 			</div>
@@ -334,4 +335,25 @@ function getResizedImageUrl(url: string, width: number) {
 	imageUrl.searchParams.set("url", url)
 	imageUrl.searchParams.set("width", String(width))
 	return imageUrl
+}
+
+const articles = new Set(["the", "of", "and", "a", "in", "to", "is"])
+
+/**
+ * Convert a file name into a more human-readable format:
+ * - Removes the file extension
+ * - Turns all non-word characters (alphanumeric and period, e.g. for "Mr.") into spaces
+ * - Converts the file name to Title Case, special-casing articles like "the" and "of"
+ */
+function humanizeFileName(fileName: string) {
+	const nameWithoutExtension = fileName.replace(/\.[^/.]+$/, "")
+	const parts = nameWithoutExtension.matchAll(/[\w.]+/g)
+	return [...parts]
+		.map(([part]) => {
+			if (articles.has(part.toLowerCase())) {
+				return part.toLowerCase()
+			}
+			return part.slice(0, 1).toUpperCase() + part.slice(1).toLowerCase()
+		})
+		.join(" ")
 }
