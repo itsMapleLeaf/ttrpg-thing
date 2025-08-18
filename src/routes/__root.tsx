@@ -1,16 +1,16 @@
 import fontCss from "@fontsource-variable/quicksand?url"
-import type { QueryClient } from "@tanstack/react-query"
 import {
 	createRootRouteWithContext,
 	HeadContent,
 	Outlet,
 	Scripts,
 } from "@tanstack/react-router"
+import type { ConvexReactClient } from "convex/react"
 import type * as React from "react"
 import appCss from "../styles/app.css?url"
 
 export const Route = createRootRouteWithContext<{
-	queryClient: QueryClient
+	convexClient: ConvexReactClient
 }>()({
 	head: () => ({
 		meta: [

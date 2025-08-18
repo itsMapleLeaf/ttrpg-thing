@@ -1,7 +1,7 @@
-import { convexQuery, useConvexMutation } from "@convex-dev/react-query"
+import { useConvexMutation } from "@convex-dev/react-query"
 import { Icon } from "@iconify/react"
-import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router"
+import { useQuery } from "convex/react"
 import { formatDistanceToNow } from "date-fns"
 import { useActionState, useId, useRef, useState } from "react"
 import { api } from "../../../convex/_generated/api.js"
@@ -9,10 +9,14 @@ import { PageHeader } from "../../components/PageHeader.js"
 
 export const Route = createFileRoute("/_protected/")({
 	component: Home,
+	loader: ({ context }) => {
+		return context.convexClient.query(api.rooms.list)
+	},
 })
 
 function Home() {
-	const { data: rooms } = useSuspenseQuery(convexQuery(api.rooms.list, {}))
+	const loaderData = Route.useLoaderData()
+	const rooms = useQuery(api.rooms.list) ?? loaderData
 
 	return (
 		<>
