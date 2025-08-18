@@ -32,4 +32,26 @@ export default defineSchema({
 			searchField: "name",
 			filterFields: ["roomId"],
 		}),
+
+	scenes: defineTable({
+		name: v.string(),
+		roomId: v.id("rooms"),
+		ownerId: v.id("users"),
+		backgroundAssetId: v.optional(v.union(v.id("assets"), v.null())),
+	})
+		.index("by_room", ["roomId"])
+		.index("by_room_and_name", ["roomId", "name"])
+		.searchIndex("search_by_name", {
+			searchField: "name",
+			filterFields: ["roomId"],
+		}),
+
+	actors: defineTable({
+		sceneId: v.id("rooms"),
+		ownerId: v.id("users"),
+		assetId: v.id("assets"),
+		position: v.optional(v.object({ x: v.number(), y: v.number() })),
+		size: v.optional(v.object({ width: v.number(), height: v.number() })),
+		locked: v.optional(v.boolean()),
+	}).index("by_scene", ["sceneId"]),
 })
