@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
 import { useMutation, useQuery } from "convex/react"
+import { without } from "es-toolkit"
 import { useActionState, useEffect, useState, useTransition } from "react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
@@ -56,7 +57,9 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 		}
 	}, [showSuccess])
 
-	const [selection, setSelection] = useState(new Set<Id<"assets">>())
+	const [selection, setSelection] = useState<ReadonlySet<Id<"assets">>>(
+		new Set(),
+	)
 
 	useEffect(() => {
 		const controller = new AbortController()
@@ -68,12 +71,37 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 					for (const element of event.composedPath()) {
 						if (element instanceof HTMLElement) {
 							const { assetId } = element.dataset
-							if (assetId) return assetId
+							if (assetId) return assetId as Id<"assets">
 						}
 					}
 				})()
 
-				if (selectedAssetId) {
+				if (selectedAssetId && event.shiftKey) {
+					// this expands the whole selection such that it selects every item from the newly least selected index to the greatest
+					// this is technically different from how most file managers work,
+					// but it doesn't need to be perfect, and replicating their anchor-based behavior would be annoying
+					setSelection((selection) => {
+						const assetIds = assets?.map((it) => it._id)
+						const assetIdIndexes = new Map(
+							assetIds?.map((id, index) => [id, index]),
+						)
+
+						const selectionIndexes = [...selection, selectedAssetId].flatMap(
+							(it) => assetIdIndexes.get(it) ?? [],
+						)
+
+						const lowestIndex = Math.min(...selectionIndexes)
+						const highestIndex = Math.max(...selectionIndexes)
+
+						return new Set(assetIds?.slice(lowestIndex, highestIndex + 1))
+					})
+				} else if (selectedAssetId && event.ctrlKey) {
+					setSelection((selection) =>
+						selection.has(selectedAssetId)
+							? new Set(without([...selection], selectedAssetId))
+							: new Set([...selection, selectedAssetId]),
+					)
+				} else if (selectedAssetId) {
 					setSelection(new Set([selectedAssetId as Id<"assets">]))
 				} else {
 					setSelection(new Set())
