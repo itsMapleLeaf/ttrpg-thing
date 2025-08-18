@@ -50,8 +50,10 @@ export default defineSchema({
 		sceneId: v.id("rooms"),
 		ownerId: v.id("users"),
 		assetId: v.id("assets"),
-		position: v.optional(v.object({ x: v.number(), y: v.number() })),
-		size: v.optional(v.object({ width: v.number(), height: v.number() })),
+		left: v.number(),
+		top: v.number(),
+		width: v.number(),
+		height: v.number(),
 		locked: v.optional(v.boolean()),
 	}).index("by_scene", ["sceneId"]),
 })
