@@ -33,7 +33,7 @@ function RoomDetail() {
 				</div>
 			) : (
 				<div className="flex min-h-0 flex-1">
-					<nav className="w-64 overflow-y-auto border-r border-gray-700 bg-gray-800">
+					<nav className="w-72 overflow-y-auto border-r border-gray-700 bg-gray-800">
 						<AssetList roomId={room._id} />
 					</nav>
 					<div className="flex-1">

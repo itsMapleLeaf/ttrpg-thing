@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "convex/react"
 import { useActionState, useEffect, useState, useTransition } from "react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
-import type { ClientAsset } from "../../convex/assets.ts"
+import type { AssetListOrder, ClientAsset } from "../../convex/assets.ts"
 import { useStable } from "../hooks/useStable.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
 import {
@@ -12,17 +12,19 @@ import {
 	ContextMenuPanel,
 	ContextMenuTrigger,
 } from "./ContextMenu.tsx"
+import { Popover, PopoverButton, PopoverPanel } from "./Popover.tsx"
 import { SmartImage } from "./SmartImage.tsx"
 
 export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 	const [searchTerm, setSearchTerm] = useState("")
-	const [showSuccess, setShowSuccess] = useState(false)
+	const [order, setOrder] = useState<AssetListOrder>("alphabetical")
 
-	const assets = useStable(useQuery(api.assets.list, { roomId, searchTerm }))
+	const assets = useStable(
+		useQuery(api.assets.list, { roomId, searchTerm, order }),
+	)
 
 	const uploadImage = useUploadImage()
 	const createAsset = useMutation(api.assets.create)
-
 	const [uploadState, uploadAction, isPending] = useActionState(
 		async (_: unknown, formData: FormData) => {
 			const file = formData.get("file") as File
@@ -46,6 +48,7 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 		null,
 	)
 
+	const [showSuccess, setShowSuccess] = useState(false)
 	useEffect(() => {
 		if (showSuccess) {
 			const timer = setTimeout(() => setShowSuccess(false), 3000)
@@ -57,7 +60,7 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="flex flex-col gap-3 border-b border-gray-700 p-2">
+			<div className="flex flex-col gap-2 border-b border-gray-700 p-2">
 				<div className="flex gap-2">
 					<div className="relative flex flex-1 items-center">
 						<input
@@ -72,29 +75,51 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 							className="pointer-events-none absolute left-3 size-4 opacity-50"
 						/>
 					</div>
-					<form action={uploadAction}>
-						<label className="button-clear button-square">
-							{!isPending && (
-								<Icon icon="mingcute:upload-2-fill" className="button-icon" />
-							)}
-							<span className="sr-only">
-								{isPending ? "Uploading..." : "Upload"}
-							</span>
-							<input
-								type="file"
-								name="file"
-								accept="image/*"
-								className="hidden"
-								disabled={isPending}
-								onChange={(event) => {
-									if (event.target.files?.[0]) {
-										event.target.form?.requestSubmit()
-									}
-								}}
-							/>
-						</label>
-					</form>
+
+					<Popover>
+						<PopoverButton className="button-clear button-square">
+							<Icon icon="mingcute:filter-fill" />
+							<span className="sr-only">Filters</span>
+						</PopoverButton>
+						<PopoverPanel>
+							<div className="grid w-48 gap-2 p-2">
+								<label>
+									<div className="mb-1 label">Order</div>
+									<select
+										className="button-clear w-full min-w-0"
+										value={order}
+										onChange={(event) => {
+											setOrder(event.target.value as AssetListOrder)
+										}}
+									>
+										<option value="alphabetical">A-Z</option>
+										<option value="newestFirst">Newest first</option>
+									</select>
+								</label>
+							</div>
+						</PopoverPanel>
+					</Popover>
 				</div>
+
+				<form action={uploadAction}>
+					<label className="button-solid">
+						<Icon icon="mingcute:upload-2-fill" className="button-icon" />
+						{isPending ? "Uploading..." : "Upload"}
+
+						<input
+							type="file"
+							name="file"
+							accept="image/*"
+							className="hidden"
+							disabled={isPending}
+							onChange={(event) => {
+								if (event.target.files?.[0]) {
+									event.target.form?.requestSubmit()
+								}
+							}}
+						/>
+					</label>
+				</form>
 
 				{uploadState?.error && (
 					<div className="alert-sm alert alert-error">
@@ -132,6 +157,9 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 								key={asset._id}
 								asset={asset}
 								selected={selection.has(asset._id)}
+								onPointerDown={(_event) => {
+									setSelection(new Set([asset._id]))
+								}}
 								onContextMenuOpen={() => {
 									setSelection(new Set([asset._id]))
 								}}
@@ -154,11 +182,13 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 function AssetItem({
 	asset,
 	selected,
+	onPointerDown,
 	onContextMenuOpen,
 	onContextMenuClose,
 }: {
 	asset: ClientAsset
 	selected: boolean
+	onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => void
 	onContextMenuOpen: () => void
 	onContextMenuClose: () => void
 }) {
@@ -177,6 +207,7 @@ function AssetItem({
 			<ContextMenuTrigger
 				className="panel data-[selected=true]:border-primary-400"
 				data-selected={selected}
+				onPointerDown={onPointerDown}
 			>
 				<div className="aspect-square bg-gray-950/40">
 					{asset.url ? (

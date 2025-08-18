@@ -1,14 +1,21 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
-import { v } from "convex/values"
+import { type Infer, v } from "convex/values"
 import type { Doc, Id } from "./_generated/dataModel.js"
 import { mutation, type QueryCtx, query } from "./_generated/server"
+
+export type AssetListOrder = Infer<typeof assetListOrderValidator>
+const assetListOrderValidator = v.union(
+	v.literal("alphabetical"),
+	v.literal("newestFirst"),
+)
 
 export const list = query({
 	args: {
 		roomId: v.id("rooms"),
 		searchTerm: v.optional(v.string()),
+		order: v.optional(assetListOrderValidator),
 	},
-	handler: async (ctx, { roomId, searchTerm }) => {
+	handler: async (ctx, { roomId, searchTerm, order }) => {
 		const userId = await getAuthUserId(ctx)
 		if (!userId) return []
 
@@ -25,10 +32,12 @@ export const list = query({
 			query = query.withSearchIndex("search_by_name", (q) =>
 				q.search("name", searchTerm).eq("roomId", roomId),
 			)
+		} else if (order === "alphabetical") {
+			query = query.withIndex("by_room_and_name", (q) => q.eq("roomId", roomId))
 		} else {
 			query = query
 				.withIndex("by_room", (q) => q.eq("roomId", roomId))
-				.order("desc")
+				.order("desc") // indexes sort by creation date by default
 		}
 
 		const assets = await query.collect()
