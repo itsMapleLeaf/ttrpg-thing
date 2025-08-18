@@ -26,14 +26,14 @@ function RoomDetail() {
 					<p className="max-w-2xs text-center text-lg text-balance opacity-70">
 						This room doesn't exist, or you don't have access to it.
 					</p>
-					<Link to="/" className="btn btn-primary">
-						<Icon icon="mingcute:home-4-fill" className="btn-icon" />
+					<Link to="/" className="button button-primary">
+						<Icon icon="mingcute:home-4-fill" className="button-icon" />
 						Return to Home
 					</Link>
 				</div>
 			) : (
 				<div className="flex min-h-0 flex-1">
-					<nav className="w-64 overflow-y-auto border-r border-base-100 bg-base-200">
+					<nav className="w-64 overflow-y-auto border-r border-gray-700 bg-gray-800">
 						<AssetList roomId={room._id} />
 					</nav>
 					<div className="flex-1">

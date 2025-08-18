@@ -57,27 +57,25 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="flex flex-col gap-3 border-b border-base-100 p-2">
+			<div className="flex flex-col gap-3 border-b border-gray-700 p-2">
 				<div className="flex gap-2">
-					<div className="relative flex-1">
+					<div className="relative flex flex-1 items-center">
 						<input
 							type="text"
 							placeholder="Search assets..."
 							value={searchTerm}
 							onChange={(event) => setSearchTerm(event.target.value)}
-							className="input input-sm min-w-0 pl-8"
+							className="input pl-8"
 						/>
 						<Icon
 							icon="mingcute:search-line"
-							className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50"
+							className="pointer-events-none absolute left-3 size-4 opacity-50"
 						/>
 					</div>
 					<form action={uploadAction}>
-						<label
-							className={`btn btn-sm btn-primary ${isPending ? "loading" : ""}`}
-						>
+						<label className="button-clear button-square">
 							{!isPending && (
-								<Icon icon="mingcute:upload-2-fill" className="btn-icon" />
+								<Icon icon="mingcute:upload-2-fill" className="button-icon" />
 							)}
 							<span className="sr-only">
 								{isPending ? "Uploading..." : "Upload"}
@@ -113,7 +111,7 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 				)}
 			</div>
 
-			<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
+			<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto bg-gray-900/50 p-3">
 				{assets === undefined ? (
 					<p className="py-4 text-center text-sm opacity-70">Loading...</p>
 				) : assets.length === 0 ? (
@@ -121,7 +119,11 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 						{searchTerm ? "No assets found" : "No assets yet"}
 					</p>
 				) : (
-					assets.map((asset) => <AssetItem key={asset._id} asset={asset} />)
+					<div className="grid grid-cols-2 gap-2">
+						{assets.map((asset) => (
+							<AssetItem key={asset._id} asset={asset} />
+						))}
+					</div>
 				)}
 			</div>
 		</div>
@@ -129,53 +131,25 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 }
 
 function AssetItem({ asset }: { asset: ClientAsset }) {
-	const [imageError, setImageError] = useState(false)
-	const [copied, setCopied] = useState(false)
-
-	const isImage = asset.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)
-	const showImage = isImage && asset.url && !imageError
-
-	const handleCopyUrl = async () => {
-		if (asset.url) {
-			await navigator.clipboard.writeText(asset.url)
-			setCopied(true)
-			setTimeout(() => setCopied(false), 2000)
-		}
-	}
-
 	return (
-		<div className="group flex items-center gap-2 rounded-lg p-2 hover:bg-base-100">
-			<div className="flex-shrink-0">
-				{showImage && asset.url ? (
+		<div className="panel">
+			<div className="aspect-square">
+				{asset.url ? (
 					<img
 						src={asset.url}
 						alt={asset.name}
-						className="size-8 rounded object-cover"
-						onError={() => setImageError(true)}
+						className="size-full object-cover object-top"
 					/>
 				) : (
-					<div className="flex size-8 items-center justify-center rounded bg-base-300">
-						<Icon icon="mingcute:file-fill" className="size-4 opacity-70" />
+					<div className="flex-center">
+						<Icon icon="mingcute:file-unknown-line" />
 					</div>
 				)}
 			</div>
-			<div className="min-w-0 flex-1">
-				<p className="truncate text-sm font-medium" title={asset.name}>
-					{asset.name}
-				</p>
+
+			<div className="min-w-0 flex-1 truncate p-1.5 text-center text-sm leading-tight font-semibold">
+				{asset.name}
 			</div>
-			<button
-				type="button"
-				className={`btn opacity-0 btn-ghost btn-xs group-hover:opacity-100 ${copied ? "btn-success" : ""}`}
-				title={copied ? "Copied!" : "Copy URL"}
-				onClick={handleCopyUrl}
-				disabled={!asset.url}
-			>
-				<Icon
-					icon={copied ? "mingcute:check-fill" : "mingcute:copy-2-fill"}
-					className="btn-icon"
-				/>
-			</button>
 		</div>
 	)
 }

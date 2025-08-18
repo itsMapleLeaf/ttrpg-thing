@@ -16,10 +16,8 @@ function Account() {
 	return (
 		<>
 			<PageHeader heading="Account Settings" />
-			<div className="container mx-auto max-w-2xl space-y-6 p-6">
-				<div className="card card-body border border-base-100 bg-base-200 shadow">
-					<UpdateProfileForm />
-				</div>
+			<div className="container mx-auto max-w-2xl p-6">
+				<UpdateProfileForm />
 			</div>
 		</>
 	)
@@ -63,28 +61,14 @@ function UpdateProfileForm() {
 	)
 
 	return (
-		<form action={formAction} className="space-y-6">
-			{state?.error && (
-				<div className="alert alert-error">
-					<Icon icon="mingcute:close-circle-fill" className="h-4 w-4" />
-					<span>{state.error}</span>
-				</div>
-			)}
-
-			{state?.success && (
-				<div className="alert alert-success">
-					<Icon icon="mingcute:check-circle-fill" className="h-4 w-4" />
-					<span>{state.success}</span>
-				</div>
-			)}
-
-			<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+		<form action={formAction} className="grid gap-6 panel p-4">
+			<div className="items-center gap-6 sm:flex">
 				<div className="flex flex-col items-center space-y-4 text-center">
-					<div className="mb-2 block text-sm font-medium">Avatar image</div>
+					<div className="mb-2 label">Avatar image</div>
 					<AvatarUploader onFileSelect={setImage} selectedFile={image} />
 				</div>
 
-				<div className="space-y-4 lg:col-span-2">
+				<div className="flex-1 space-y-4">
 					<div>
 						<Label htmlFor={nameId} required>
 							Display name
@@ -93,7 +77,7 @@ function UpdateProfileForm() {
 							id={nameId}
 							name="name"
 							type="text"
-							className="input-bordered input w-full"
+							className="input w-full"
 							placeholder="Your display name"
 							required
 							disabled={isPending}
@@ -110,7 +94,7 @@ function UpdateProfileForm() {
 							id={emailId}
 							name="email"
 							type="email"
-							className="input-bordered input w-full"
+							className="input w-full"
 							placeholder="your.email@example.com"
 							required
 							disabled={isPending}
@@ -119,27 +103,32 @@ function UpdateProfileForm() {
 						/>
 					</div>
 
-					<div className="card-actions justify-end pt-4">
-						<button
-							type="submit"
-							className="btn btn-primary"
-							disabled={isPending}
-						>
+					<div className="flex justify-end pt-4">
+						<button type="submit" className="button-solid" disabled={isPending}>
 							{isPending ? (
-								<>
-									<span className="loading loading-sm loading-spinner" />
-									Updating...
-								</>
+								<Icon icon="mingcute:loading-3-fill" className="animate-spin" />
 							) : (
-								<>
-									<Icon icon="mingcute:check-fill" className="btn-icon" />
-									Save changes
-								</>
+								<Icon icon="mingcute:check-fill" className="button-icon" />
 							)}
+							Save changes
 						</button>
 					</div>
 				</div>
 			</div>
+
+			{state?.error && !isPending && (
+				<div className="callout-error">
+					<Icon icon="mingcute:close-circle-fill" />
+					<span>{state.error}</span>
+				</div>
+			)}
+
+			{state?.success && !isPending && (
+				<div className="callout-info">
+					<Icon icon="mingcute:check-circle-fill" className="h-4 w-4" />
+					<span>{state.success}</span>
+				</div>
+			)}
 		</form>
 	)
 }
@@ -182,7 +171,7 @@ function AvatarUploader({
 				{avatarSrc ? (
 					<img src={avatarSrc} alt="" className="avatar" />
 				) : (
-					<div className="flex items-center justify-center bg-base-300">
+					<div className="bg-base-300 flex items-center justify-center">
 						<Icon icon="mingcute:user-fill" className="size-8 opacity-50" />
 					</div>
 				)}
@@ -200,9 +189,9 @@ function AvatarUploader({
 				<button
 					type="button"
 					onClick={() => fileInputRef.current?.click()}
-					className="btn btn-ghost btn-sm"
+					className="button-clear"
 				>
-					<Icon icon="mingcute:upload-fill" className="btn-icon" />
+					<Icon icon="mingcute:upload-fill" className="button-icon" />
 					{selectedFile ? "Change photo" : "Choose photo"}
 				</button>
 

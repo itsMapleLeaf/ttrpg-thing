@@ -63,7 +63,7 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" className="bg-base-300">
+		<html lang="en" className="bg-gray-900 text-gray-50">
 			<head>
 				<HeadContent />
 			</head>

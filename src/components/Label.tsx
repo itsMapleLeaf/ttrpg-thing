@@ -11,22 +11,22 @@ export function Label({
 	children,
 	required = false,
 	htmlFor,
-	className,
+	className = "",
 }: LabelProps) {
 	const id = useId()
 	const labelId = htmlFor || id
 
 	return (
-		<label className={`label ${className || ""}`} htmlFor={labelId}>
-			<span className="label-text">
-				{children}
-				{required && (
-					<>
-						<span aria-hidden>*</span>{" "}
-						<span className="sr-only">(required)</span>
-					</>
-				)}
-			</span>
+		<label className={`label ${className}`} htmlFor={labelId}>
+			{children}
+			{required && (
+				<>
+					<span aria-hidden className="ml-0.5 text-base text-gray-400">
+						*
+					</span>
+					<span className="sr-only">(required)</span>
+				</>
+			)}
 		</label>
 	)
 }

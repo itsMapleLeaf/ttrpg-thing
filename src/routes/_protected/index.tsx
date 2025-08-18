@@ -5,6 +5,13 @@ import { useQuery } from "convex/react"
 import { formatDistanceToNow } from "date-fns"
 import { useActionState, useId, useRef, useState } from "react"
 import { api } from "../../../convex/_generated/api.js"
+import { Label } from "../../components/Label.js"
+import {
+	Modal,
+	ModalActions,
+	ModalButton,
+	ModalPanel,
+} from "../../components/Modal.js"
 import { PageHeader } from "../../components/PageHeader.js"
 
 export const Route = createFileRoute("/_protected/")({
@@ -33,25 +40,21 @@ function Home() {
 						</div>
 					</div>
 				) : (
-					<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
 						{rooms.map((room) => (
 							<Link
 								key={room._id}
 								to="/rooms/$slug"
 								params={{ slug: room.slug }}
-								className="card border border-base-100 bg-base-200 shadow transition hover:bg-base-100"
+								className="panel-interactive"
 							>
-								<div className="card-body">
-									<h3 className="card-title text-lg font-semibold">
-										{room.name}
-									</h3>
-									<p className="text-xs opacity-70">
-										Created{" "}
-										{formatDistanceToNow(room._creationTime, {
-											addSuffix: true,
-										})}
-									</p>
-								</div>
+								<h3 className="text-lg font-semibold">{room.name}</h3>
+								<p className="text-xs opacity-70">
+									Created{" "}
+									{formatDistanceToNow(room._creationTime, {
+										addSuffix: true,
+									})}
+								</p>
 							</Link>
 						))}
 					</div>
@@ -93,104 +96,76 @@ function CreateRoomButton() {
 	)
 
 	return (
-		<>
-			<button
+		<Modal>
+			<ModalButton
 				type="button"
-				className="btn btn-sm"
+				className="button-clear"
 				onClick={() => {
 					dialogRef.current?.showModal()
 				}}
 			>
-				<Icon icon="mingcute:add-fill" className="btn-icon" />
+				<Icon icon="mingcute:add-fill" className="button-icon" />
 				Create room
-			</button>
+			</ModalButton>
 
-			<dialog
-				className="modal transition-discrete duration-150"
-				ref={dialogRef}
-			>
-				<div className="modal-box transition-discrete duration-150">
-					<h3 className="mb-4 text-lg font-semibold">Create new room</h3>
-
-					<form action={formAction} className="space-y-4" id={formId}>
-						{state?.error && (
-							<div className="alert alert-error">
-								<span>{state.error}</span>
-							</div>
-						)}
-
-						<div>
-							<label className="label" htmlFor={nameId}>
-								<span className="label-text">
-									Room name<span aria-hidden>*</span>{" "}
-									<span className="sr-only">(required)</span>
-								</span>
-							</label>
-							<input
-								id={nameId}
-								name="name"
-								type="text"
-								className="input-bordered input w-full"
-								placeholder="My awesome room"
-								required
-								disabled={isPending}
-								value={name}
-								onChange={(event) => setName(event.target.value)}
-							/>
-						</div>
-
-						<div>
-							<label className="label" htmlFor={slugId}>
-								<span className="label-text">Slug (optional)</span>
-							</label>
-							<input
-								id={slugId}
-								name="slug"
-								type="text"
-								className="input-bordered input w-full"
-								placeholder={placeholderSlug}
-								disabled={isPending}
-								value={slug}
-								onChange={(event) => setSlug(event.target.value)}
-							/>
-							<div
-								className="label-text-alt label mt-1 text-sm opacity-0 data-visible:opacity-70 data-visible:transition"
-								data-visible={slug || placeholderSlug || undefined}
-							>
-								URL will be: /rooms/{slug || placeholderSlug}
-							</div>
-						</div>
-					</form>
-
-					<div className="modal-action">
-						<form method="dialog">
-							<button type="submit" className="btn" disabled={isPending}>
-								Cancel
-							</button>
-						</form>
-						<button
-							type="submit"
-							className="btn btn-primary"
+			<ModalPanel heading="New room">
+				<form action={formAction} id={formId} className="grid gap-2">
+					<div>
+						<Label htmlFor={nameId} required>
+							Room name
+						</Label>
+						<input
+							id={nameId}
+							name="name"
+							type="text"
+							className="input-bordered input w-full"
+							placeholder="My awesome room"
+							required
 							disabled={isPending}
-							form={formId}
-						>
-							{isPending ? (
-								<>
-									<span className="loading loading-sm loading-spinner" />
-									Creating...
-								</>
-							) : (
-								"Create room"
-							)}
-						</button>
+							value={name}
+							onChange={(event) => setName(event.target.value)}
+						/>
 					</div>
-				</div>
 
-				<form method="dialog" className="modal-backdrop">
-					<button type="submit">close</button>
+					<div>
+						<Label htmlFor={slugId}>Slug</Label>
+						<input
+							id={slugId}
+							name="slug"
+							type="text"
+							className="input-bordered input w-full"
+							placeholder={placeholderSlug}
+							disabled={isPending}
+							value={slug}
+							onChange={(event) => setSlug(event.target.value)}
+						/>
+						<div
+							className="label-text-alt mt-1 label text-sm opacity-0 data-visible:opacity-70 data-visible:transition"
+							data-visible={slug || placeholderSlug || undefined}
+						>
+							URL will be: /rooms/{slug || placeholderSlug}
+						</div>
+					</div>
+
+					{state?.error && (
+						<div className="callout-error">
+							<Icon icon="mingcute:close-circle-fill" />
+							<p>{state.error}</p>
+						</div>
+					)}
 				</form>
-			</dialog>
-		</>
+				<ModalActions>
+					<button
+						type="submit"
+						className="button-solid"
+						disabled={isPending}
+						form={formId}
+					>
+						Create room
+					</button>
+				</ModalActions>
+			</ModalPanel>
+		</Modal>
 	)
 }
 

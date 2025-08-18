@@ -10,7 +10,7 @@ export function PageHeader({
 	actions?: ReactNode
 }) {
 	return (
-		<header className="flex items-center justify-between border-b border-base-100 bg-base-200 px-4 py-3">
+		<header className="flex items-center justify-between panel rounded-none border-0 border-b px-3 py-3">
 			<div className="grid">
 				<Link
 					to="/"
@@ -20,7 +20,7 @@ export function PageHeader({
 				</Link>
 				<h1 className="text-2xl">{heading}</h1>
 			</div>
-			<div className="flex items-center gap-6">
+			<div className="flex items-center gap-2">
 				{actions}
 				<UserMenu />
 			</div>

@@ -15,7 +15,7 @@ function Protected() {
 	const auth = useConvexAuth()
 	const user = useQuery(api.users.me)
 	return (
-		<div className="min-h-dvh bg-base-300">
+		<div className="bg-base-300 min-h-dvh">
 			{user ? (
 				<UserProvider user={user}>
 					<Suspense
@@ -31,7 +31,7 @@ function Protected() {
 				</UserProvider>
 			) : !auth.isAuthenticated && !auth.isLoading ? (
 				<div className="flex min-h-dvh items-center justify-center px-4 py-8">
-					<div className="card w-full max-w-md border border-base-300 bg-base-100 shadow backdrop-blur card-md">
+					<div className="card border-base-300 card-md w-full max-w-md border bg-gray-700 shadow backdrop-blur">
 						<div className="card-body gap-6">
 							<SignInMessage />
 						</div>
@@ -54,7 +54,7 @@ function SignInMessage() {
 			<footer className="card-actions justify-end">
 				<button
 					type="button"
-					className="btn w-full btn-primary"
+					className="button button-primary w-full"
 					onClick={() => signIn("discord")}
 				>
 					Sign in with Discord

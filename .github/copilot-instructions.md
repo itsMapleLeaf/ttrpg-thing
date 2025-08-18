@@ -35,7 +35,7 @@
 ## Styling
 
 - Prefer `font-semibold` for headings over `font-bold`
-- Use `btn-icon` for icons in buttons
+- Use `button-icon` for icons in buttons
 - Do not add `cursor-pointer` if the element does not already have it
 - Use `size-*` for setting the same width and height of an element, e.g. `size-6` instead of `w-6 h-6`
 
