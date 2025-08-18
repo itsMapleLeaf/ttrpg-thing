@@ -6,6 +6,12 @@ import type { Id } from "../../convex/_generated/dataModel"
 import type { ClientAsset } from "../../convex/assets.ts"
 import { useStable } from "../hooks/useStable.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
+import {
+	ContextMenu,
+	ContextMenuItem,
+	ContextMenuPanel,
+	ContextMenuTrigger,
+} from "./ContextMenu.tsx"
 import { SmartImage } from "./SmartImage.tsx"
 
 export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
@@ -46,6 +52,8 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 			return () => clearTimeout(timer)
 		}
 	}, [showSuccess])
+
+	const [selection, setSelection] = useState(new Set<Id<"assets">>())
 
 	return (
 		<div className="flex h-full flex-col">
@@ -103,7 +111,14 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 				)}
 			</div>
 
-			<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto bg-gray-900/50 p-3">
+			<div
+				className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto bg-gray-900/50 p-3"
+				onPointerDown={(event) => {
+					if (event.target === event.currentTarget) {
+						setSelection(new Set())
+					}
+				}}
+			>
 				{assets === undefined ? (
 					<p className="py-4 text-center text-sm opacity-70">Loading...</p>
 				) : assets.length === 0 ? (
@@ -111,9 +126,23 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 						{searchTerm ? "No assets found" : "No assets yet"}
 					</p>
 				) : (
-					<div className="grid grid-cols-2 gap-2">
+					<div className="pointer-events-children grid grid-cols-2 gap-2">
 						{assets.map((asset) => (
-							<AssetItem key={asset._id} asset={asset} />
+							<AssetItem
+								key={asset._id}
+								asset={asset}
+								selected={selection.has(asset._id)}
+								onContextMenuOpen={() => {
+									setSelection(new Set([asset._id]))
+								}}
+								onContextMenuClose={() => {
+									setSelection((current) => {
+										const next = new Set(current)
+										next.delete(asset._id)
+										return next
+									})
+								}}
+							/>
 						))}
 					</div>
 				)}
@@ -122,31 +151,65 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 	)
 }
 
-function AssetItem({ asset }: { asset: ClientAsset }) {
+function AssetItem({
+	asset,
+	selected,
+	onContextMenuOpen,
+	onContextMenuClose,
+}: {
+	asset: ClientAsset
+	selected: boolean
+	onContextMenuOpen: () => void
+	onContextMenuClose: () => void
+}) {
 	const updateAsset = useMutation(api.assets.update)
+	const removeAsset = useMutation(api.assets.remove)
 	return (
-		<div className="panel">
-			<div className="aspect-square bg-gray-950/40">
-				{asset.url ? (
-					<SmartImage
-						src={getResizedImageUrl(asset.url, 150).href}
-						alt={asset.name}
-						className="size-full object-cover object-top"
-					/>
-				) : (
-					<div className="flex-center h-full">
-						<Icon
-							icon="mingcute:file-unknown-line"
-							className="size-12 opacity-50"
+		<ContextMenu
+			onOpenChange={(open) => {
+				if (open) {
+					onContextMenuOpen()
+				} else {
+					onContextMenuClose()
+				}
+			}}
+		>
+			<ContextMenuTrigger
+				className="panel data-[selected=true]:border-primary-400"
+				data-selected={selected}
+			>
+				<div className="aspect-square bg-gray-950/40">
+					{asset.url ? (
+						<SmartImage
+							src={getResizedImageUrl(asset.url, 150).href}
+							alt={asset.name}
+							className="size-full object-cover object-top"
 						/>
-					</div>
-				)}
-			</div>
-			<AssetItemNameInput
-				value={asset.name}
-				onChange={(name) => updateAsset({ id: asset._id, name })}
-			/>
-		</div>
+					) : (
+						<div className="flex-center h-full">
+							<Icon
+								icon="mingcute:file-unknown-line"
+								className="size-12 opacity-50"
+							/>
+						</div>
+					)}
+				</div>
+
+				<ContextMenuPanel>
+					<ContextMenuItem
+						icon="mingcute:delete-2-fill"
+						onClick={() => removeAsset({ id: asset._id })}
+					>
+						Delete
+					</ContextMenuItem>
+				</ContextMenuPanel>
+
+				<AssetItemNameInput
+					value={asset.name}
+					onChange={(name) => updateAsset({ id: asset._id, name })}
+				/>
+			</ContextMenuTrigger>
+		</ContextMenu>
 	)
 }
 

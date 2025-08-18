@@ -131,3 +131,10 @@
 		@apply translate-y-1 opacity-0;
 	}
 }
+
+@utility pointer-events-children {
+	pointer-events: none;
+	& > *:not(&) {
+		pointer-events: auto;
+	}
+}
