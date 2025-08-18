@@ -18,12 +18,7 @@ function Home() {
 		<>
 			<PageHeader heading="Your rooms" actions={<CreateRoomButton />} />
 			<div className="container py-6">
-				{rooms === undefined ? (
-					<div className="flex items-center gap-3" aria-live="polite">
-						<span className="loading loading-sm loading-spinner" />
-						<span className="text-sm opacity-70">Loading rooms...</span>
-					</div>
-				) : rooms.length === 0 ? (
+				{rooms.length === 0 ? (
 					<div className="py-12 text-center">
 						<div className="space-y-3">
 							<Icon
