@@ -48,7 +48,7 @@ function Home() {
 								params={{ slug: room.slug }}
 								className="panel-interactive"
 							>
-								<h3 className="text-lg font-semibold">{room.name}</h3>
+								<h3 className="text-lg font-medium">{room.name}</h3>
 								<p className="text-xs opacity-70">
 									Created{" "}
 									{formatDistanceToNow(room._creationTime, {
