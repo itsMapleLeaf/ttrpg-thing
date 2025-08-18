@@ -32,23 +32,6 @@
 
 - For Convex functions: define `args` schemas, but do not define `returns` schemas.
 
-## Convex (frontend)
-
-- Use `useSuspenseQuery` with `convexQuery` instead of `useQuery`
-
-  ```tsx
-  import { convexQuery } from "@convex-dev/react-query"
-  import { useSuspenseQuery } from "@tanstack/react-query"
-  import { api } from "../../../convex/_generated/api.js"
-
-  function SomeComponent() {
-  	const { data: thing } = useSuspenseQuery(
-  		convexQuery(api.thing.get, { id: "123" }),
-  	)
-  	return <div>{thing.name}</div>
-  }
-  ```
-
 ## Styling
 
 - Prefer `font-semibold` for headings over `font-bold`
