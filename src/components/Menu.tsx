@@ -17,7 +17,9 @@ export function MenuPanel({
 	return (
 		<BaseMenu.Portal>
 			<BaseMenu.Positioner sideOffset={8} {...positionerProps}>
-				<BaseMenu.Popup className="panel">{children}</BaseMenu.Popup>
+				<BaseMenu.Popup className="base-ui-fade-rise-transition panel shadow-md">
+					{children}
+				</BaseMenu.Popup>
 			</BaseMenu.Positioner>
 		</BaseMenu.Portal>
 	)

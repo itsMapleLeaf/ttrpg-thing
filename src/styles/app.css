@@ -115,3 +115,19 @@
 @utility fade-visible {
 	@apply visible opacity-100;
 }
+
+@utility base-ui-fade-transition {
+	@apply transition;
+	&[data-starting-style],
+	&[data-ending-style] {
+		@apply opacity-0;
+	}
+}
+
+@utility base-ui-fade-rise-transition {
+	@apply transition;
+	&[data-starting-style],
+	&[data-ending-style] {
+		@apply translate-y-1 opacity-0;
+	}
+}
