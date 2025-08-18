@@ -26,6 +26,7 @@
 		"convex": "^1.25.4",
 		"date-fns": "^4.1.0",
 		"es-toolkit": "^1.39.9",
+		"lru-cache": "^11.1.0",
 		"react": "^19.1.1",
 		"react-dom": "^19.1.1",
 		"sharp": "^0.34.3",
