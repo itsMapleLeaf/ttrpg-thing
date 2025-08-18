@@ -9,6 +9,7 @@ import type { Id } from "../../convex/_generated/dataModel"
 import type { ClientAsset } from "../../convex/assets.ts"
 import { useStable } from "../hooks/useStable.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
+import { SmartImage } from "./SmartImage.tsx"
 
 export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 	const [searchTerm, setSearchTerm] = useState("")
@@ -132,24 +133,30 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 
 function AssetItem({ asset }: { asset: ClientAsset }) {
 	return (
-		<div className="panel">
+		<button type="button" className="panel">
 			<div className="aspect-square">
 				{asset.url ? (
-					<img
-						src={asset.url}
+					<SmartImage
+						src={getResizedImageUrl(asset.url).href}
 						alt={asset.name}
 						className="size-full object-cover object-top"
 					/>
 				) : (
 					<div className="flex-center">
-						<Icon icon="mingcute:file-unknown-line" />
+						<Icon icon="mingcute:file-unknown-line" className="size-8" />
 					</div>
 				)}
 			</div>
-
 			<div className="min-w-0 flex-1 truncate p-1.5 text-center text-sm leading-tight font-semibold">
 				{asset.name}
 			</div>
-		</div>
+		</button>
 	)
+}
+
+function getResizedImageUrl(url: string) {
+	const imageUrl = new URL("/api/resize-image", window.origin)
+	imageUrl.searchParams.set("url", url)
+	imageUrl.searchParams.set("width", "150")
+	return imageUrl
 }

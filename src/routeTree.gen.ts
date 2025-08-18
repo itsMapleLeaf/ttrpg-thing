@@ -8,11 +8,16 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import { createServerRootRoute } from '@tanstack/react-start/server'
+
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
 import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
 import { Route as ProtectedRoomsSlugRouteImport } from './routes/_protected/rooms.$slug'
+import { ServerRoute as ApiResizeImageServerRouteImport } from './routes/api/resize-image'
+
+const rootServerRouteImport = createServerRootRoute()
 
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
@@ -32,6 +37,11 @@ const ProtectedRoomsSlugRoute = ProtectedRoomsSlugRouteImport.update({
   id: '/rooms/$slug',
   path: '/rooms/$slug',
   getParentRoute: () => ProtectedRoute,
+} as any)
+const ApiResizeImageServerRoute = ApiResizeImageServerRouteImport.update({
+  id: '/api/resize-image',
+  path: '/api/resize-image',
+  getParentRoute: () => rootServerRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -67,6 +77,27 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   ProtectedRoute: typeof ProtectedRouteWithChildren
 }
+export interface FileServerRoutesByFullPath {
+  '/api/resize-image': typeof ApiResizeImageServerRoute
+}
+export interface FileServerRoutesByTo {
+  '/api/resize-image': typeof ApiResizeImageServerRoute
+}
+export interface FileServerRoutesById {
+  __root__: typeof rootServerRouteImport
+  '/api/resize-image': typeof ApiResizeImageServerRoute
+}
+export interface FileServerRouteTypes {
+  fileServerRoutesByFullPath: FileServerRoutesByFullPath
+  fullPaths: '/api/resize-image'
+  fileServerRoutesByTo: FileServerRoutesByTo
+  to: '/api/resize-image'
+  id: '__root__' | '/api/resize-image'
+  fileServerRoutesById: FileServerRoutesById
+}
+export interface RootServerRouteChildren {
+  ApiResizeImageServerRoute: typeof ApiResizeImageServerRoute
+}
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
@@ -100,6 +131,17 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+declare module '@tanstack/react-start/server' {
+  interface ServerFileRoutesByPath {
+    '/api/resize-image': {
+      id: '/api/resize-image'
+      path: '/api/resize-image'
+      fullPath: '/api/resize-image'
+      preLoaderRoute: typeof ApiResizeImageServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+  }
+}
 
 interface ProtectedRouteChildren {
   ProtectedAccountRoute: typeof ProtectedAccountRoute
@@ -123,3 +165,9 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+const rootServerRouteChildren: RootServerRouteChildren = {
+  ApiResizeImageServerRoute: ApiResizeImageServerRoute,
+}
+export const serverRouteTree = rootServerRouteImport
+  ._addFileChildren(rootServerRouteChildren)
+  ._addFileTypes<FileServerRouteTypes>()
