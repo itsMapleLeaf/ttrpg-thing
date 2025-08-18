@@ -17,7 +17,7 @@ import { SmartImage } from "./SmartImage.tsx"
 
 export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 	const [searchTerm, setSearchTerm] = useState("")
-	const [order, setOrder] = useState<AssetListOrder>("alphabetical")
+	const [order, setOrder] = useState<AssetListOrder>("newestFirst")
 
 	const assets = useStable(
 		useQuery(api.assets.list, { roomId, searchTerm, order }),
