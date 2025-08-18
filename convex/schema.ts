@@ -26,6 +26,7 @@ export default defineSchema({
 		roomId: v.id("rooms"),
 		ownerId: v.id("users"),
 	})
+		.index("by_room", ["roomId"])
 		.index("by_room_and_name", ["roomId", "name"])
 		.searchIndex("search_by_name", {
 			searchField: "name",

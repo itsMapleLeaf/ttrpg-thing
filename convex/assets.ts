@@ -1,6 +1,6 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
 import { v } from "convex/values"
-import type { Doc } from "./_generated/dataModel.js"
+import type { Doc, Id } from "./_generated/dataModel.js"
 import { mutation, type QueryCtx, query } from "./_generated/server"
 
 export const list = query({
@@ -26,12 +26,16 @@ export const list = query({
 				q.search("name", searchTerm).eq("roomId", roomId),
 			)
 		} else {
-			query = query.withIndex("by_room_and_name", (q) => q.eq("roomId", roomId))
+			query = query
+				.withIndex("by_room", (q) => q.eq("roomId", roomId))
+				.order("desc")
 		}
 
 		const assets = await query.collect()
 
-		return await Promise.all(assets.map((asset) => makeClientAsset(ctx, asset)))
+		return await Promise.all(
+			assets.map((asset) => makeClientAsset(ctx, asset, userId)),
+		)
 	},
 })
 
@@ -54,7 +58,7 @@ export const get = query({
 		// 	return null
 		// }
 
-		return await makeClientAsset(ctx, asset)
+		return await makeClientAsset(ctx, asset, userId)
 	},
 })
 
@@ -146,9 +150,14 @@ export const remove = mutation({
 })
 
 export type ClientAsset = Awaited<ReturnType<typeof makeClientAsset>>
-async function makeClientAsset(ctx: QueryCtx, asset: Doc<"assets">) {
+async function makeClientAsset(
+	ctx: QueryCtx,
+	asset: Doc<"assets">,
+	userId: Id<"users">,
+) {
 	return {
 		...asset,
 		url: await ctx.storage.getUrl(asset.fileId),
+		isOwner: asset.ownerId === userId,
 	}
 }

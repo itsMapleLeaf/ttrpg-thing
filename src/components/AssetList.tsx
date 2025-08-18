@@ -1,9 +1,6 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
-import {
-	useMutation as useConvexMutation,
-	useQuery as useConvexQuery,
-} from "convex/react"
-import { useActionState, useEffect, useState } from "react"
+import { useMutation, useQuery } from "convex/react"
+import { useActionState, useEffect, useState, useTransition } from "react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 import type { ClientAsset } from "../../convex/assets.ts"
@@ -15,16 +12,10 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 	const [searchTerm, setSearchTerm] = useState("")
 	const [showSuccess, setShowSuccess] = useState(false)
 
-	// this is a regular useQuery call to keep the whole page from suspending on type
-	const assets = useStable(
-		useConvexQuery(api.assets.list, {
-			roomId,
-			searchTerm,
-		}),
-	)
+	const assets = useStable(useQuery(api.assets.list, { roomId, searchTerm }))
 
 	const uploadImage = useUploadImage()
-	const createAsset = useConvexMutation(api.assets.create)
+	const createAsset = useMutation(api.assets.create)
 
 	const [uploadState, uploadAction, isPending] = useActionState(
 		async (_: unknown, formData: FormData) => {
@@ -132,31 +123,75 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 }
 
 function AssetItem({ asset }: { asset: ClientAsset }) {
+	const updateAsset = useMutation(api.assets.update)
 	return (
-		<button type="button" className="panel">
-			<div className="aspect-square">
+		<div className="panel">
+			<div className="aspect-square bg-gray-950/40">
 				{asset.url ? (
 					<SmartImage
-						src={getResizedImageUrl(asset.url).href}
+						src={getResizedImageUrl(asset.url, 150).href}
 						alt={asset.name}
 						className="size-full object-cover object-top"
 					/>
 				) : (
-					<div className="flex-center">
-						<Icon icon="mingcute:file-unknown-line" className="size-8" />
+					<div className="flex-center h-full">
+						<Icon
+							icon="mingcute:file-unknown-line"
+							className="size-12 opacity-50"
+						/>
 					</div>
 				)}
 			</div>
-			<div className="min-w-0 flex-1 truncate p-1.5 text-center text-sm leading-tight font-semibold">
-				{asset.name}
-			</div>
-		</button>
+			<AssetItemNameInput
+				value={asset.name}
+				onChange={(name) => updateAsset({ id: asset._id, name })}
+			/>
+		</div>
 	)
 }
 
-function getResizedImageUrl(url: string) {
+function AssetItemNameInput({
+	value,
+	onChange,
+}: {
+	value: string
+	onChange: (value: string) => Promise<unknown>
+}) {
+	const [editing, setEditing] = useState(false)
+	const [pending, startTransition] = useTransition()
+
+	return (
+		<input
+			className="w-full min-w-0 rounded-b-md p-1.5 text-center text-sm leading-tight font-semibold focus:-outline-offset-1"
+			{...(editing || pending
+				? { defaultValue: value }
+				: { value, readOnly: true })}
+			onFocus={(event) => {
+				event.target.select()
+				setEditing(true)
+			}}
+			onBlur={(event) => {
+				const { value } = event.target
+				startTransition(async () => {
+					await onChange(value)
+				})
+				setEditing(false)
+			}}
+			onKeyDown={(event) => {
+				if (event.key === "Enter") {
+					const { value } = event.currentTarget
+					startTransition(async () => {
+						await onChange(value)
+					})
+				}
+			}}
+		/>
+	)
+}
+
+function getResizedImageUrl(url: string, width: number) {
 	const imageUrl = new URL("/api/resize-image", window.origin)
 	imageUrl.searchParams.set("url", url)
-	imageUrl.searchParams.set("width", "150")
+	imageUrl.searchParams.set("width", String(width))
 	return imageUrl
 }
