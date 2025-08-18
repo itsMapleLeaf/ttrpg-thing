@@ -1,13 +1,11 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
 import { type Infer, v } from "convex/values"
+import { literals } from "convex-helpers/validators"
 import type { Doc, Id } from "./_generated/dataModel.js"
 import { mutation, type QueryCtx, query } from "./_generated/server"
 
 export type AssetListOrder = Infer<typeof assetListOrderValidator>
-const assetListOrderValidator = v.union(
-	v.literal("alphabetical"),
-	v.literal("newestFirst"),
-)
+const assetListOrderValidator = literals("alphabetical", "newestFirst")
 
 export const list = query({
 	args: {

@@ -7,21 +7,44 @@ import type { Id } from "../../convex/_generated/dataModel"
 import type { AssetListOrder, ClientAsset } from "../../convex/assets.ts"
 import { useStable } from "../hooks/useStable.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
+import type { NonEmptyArray } from "../types.ts"
 import {
 	ContextMenu,
 	ContextMenuItem,
 	ContextMenuPanel,
 	ContextMenuTrigger,
 } from "./ContextMenu.tsx"
-import { Popover, PopoverButton, PopoverPanel } from "./Popover.tsx"
 import { SmartImage } from "./SmartImage.tsx"
+
+type SortOption = {
+	id: AssetListOrder
+	name: string
+	icon: string
+}
+
+const sortOptions: NonEmptyArray<SortOption> = [
+	{
+		id: "alphabetical",
+		name: "Alphabetical",
+		icon: "mingcute:az-sort-ascending-letters-fill",
+	},
+	{
+		id: "newestFirst",
+		name: "Newest first",
+		icon: "mingcute:time-fill",
+	},
+]
 
 export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 	const [searchTerm, setSearchTerm] = useState("")
-	const [order, setOrder] = useState<AssetListOrder>("newestFirst")
+	const [sortOption, setSortOption] = useState(sortOptions[0])
 
 	const assets = useStable(
-		useQuery(api.assets.list, { roomId, searchTerm, order }),
+		useQuery(api.assets.list, {
+			roomId,
+			searchTerm,
+			order: sortOption.id,
+		}),
 	)
 
 	const uploadImage = useUploadImage()
@@ -131,29 +154,24 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 						/>
 					</div>
 
-					<Popover>
-						<PopoverButton className="button-clear button-square">
-							<Icon icon="mingcute:filter-fill" />
-							<span className="sr-only">Filters</span>
-						</PopoverButton>
-						<PopoverPanel>
-							<div className="grid w-48 gap-2 p-2">
-								<label>
-									<div className="mb-1 label">Order</div>
-									<select
-										className="button-clear w-full min-w-0"
-										value={order}
-										onChange={(event) => {
-											setOrder(event.target.value as AssetListOrder)
-										}}
-									>
-										<option value="alphabetical">A-Z</option>
-										<option value="newestFirst">Newest first</option>
-									</select>
-								</label>
-							</div>
-						</PopoverPanel>
-					</Popover>
+					<button
+						type="button"
+						className="button-clear button-square"
+						onClick={() => {
+							setSortOption((order) => {
+								const currentIndex = sortOptions.findIndex(
+									(option) => option.id === order.id,
+								)
+								const nextIndex = (currentIndex + 1) % sortOptions.length
+								return sortOptions[nextIndex] as SortOption
+							})
+						}}
+					>
+						<Icon icon={sortOption.icon} />
+						<span className="sr-only">
+							Toggle sorting (current: {sortOption.name})
+						</span>
+					</button>
 				</div>
 
 				<form action={uploadAction}>
