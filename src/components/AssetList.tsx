@@ -58,6 +58,33 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 
 	const [selection, setSelection] = useState(new Set<Id<"assets">>())
 
+	useEffect(() => {
+		const controller = new AbortController()
+
+		window.addEventListener(
+			"pointerdown",
+			(event) => {
+				const selectedAssetId = (() => {
+					for (const element of event.composedPath()) {
+						if (element instanceof HTMLElement) {
+							const { assetId } = element.dataset
+							if (assetId) return assetId
+						}
+					}
+				})()
+
+				if (selectedAssetId) {
+					setSelection(new Set([selectedAssetId as Id<"assets">]))
+				} else {
+					setSelection(new Set())
+				}
+			},
+			{ signal: controller.signal },
+		)
+
+		return () => controller.abort()
+	})
+
 	return (
 		<div className="flex h-full flex-col">
 			<div className="flex flex-col gap-2 border-b border-gray-700 p-2">
@@ -157,19 +184,6 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 								key={asset._id}
 								asset={asset}
 								selected={selection.has(asset._id)}
-								onPointerDown={(_event) => {
-									setSelection(new Set([asset._id]))
-								}}
-								onContextMenuOpen={() => {
-									setSelection(new Set([asset._id]))
-								}}
-								onContextMenuClose={() => {
-									setSelection((current) => {
-										const next = new Set(current)
-										next.delete(asset._id)
-										return next
-									})
-								}}
 							/>
 						))}
 					</div>
@@ -182,32 +196,18 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 function AssetItem({
 	asset,
 	selected,
-	onPointerDown,
-	onContextMenuOpen,
-	onContextMenuClose,
 }: {
 	asset: ClientAsset
 	selected: boolean
-	onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => void
-	onContextMenuOpen: () => void
-	onContextMenuClose: () => void
 }) {
 	const updateAsset = useMutation(api.assets.update)
 	const removeAsset = useMutation(api.assets.remove)
 	return (
-		<ContextMenu
-			onOpenChange={(open) => {
-				if (open) {
-					onContextMenuOpen()
-				} else {
-					onContextMenuClose()
-				}
-			}}
-		>
+		<ContextMenu>
 			<ContextMenuTrigger
 				className="panel data-[selected=true]:border-primary-400"
 				data-selected={selected}
-				onPointerDown={onPointerDown}
+				data-asset-id={asset._id}
 			>
 				<div className="aspect-square bg-gray-950/40">
 					{asset.url ? (
