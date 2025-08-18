@@ -47,6 +47,10 @@
 	:focus-visible {
 		@apply outline-2 outline-offset-1 outline-primary-400;
 	}
+
+	::selection {
+		@apply bg-primary-500/50;
+	}
 }
 
 @utility container {
