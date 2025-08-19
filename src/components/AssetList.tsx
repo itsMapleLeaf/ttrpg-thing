@@ -175,7 +175,17 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 				</div>
 
 				<form action={uploadAction}>
-					<label className="button-solid">
+						<label
+							className="button-solid"
+							// biome-ignore lint/a11y/noNoninteractiveTabindex: this needs to be interactive
+							tabIndex={0}
+							onKeyDown={(event) => {
+								if (event.key === "Enter" || event.key === " ") {
+									event.preventDefault()
+									event.currentTarget.click()
+								}
+							}}
+						>
 						{isPending ? (
 							<Icon
 								icon="mingcute:loading-3-fill"
