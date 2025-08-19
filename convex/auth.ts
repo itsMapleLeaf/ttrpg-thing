@@ -1,6 +1,6 @@
 import Discord from "@auth/core/providers/discord"
-import { convexAuth } from "@convex-dev/auth/server"
-import type { MutationCtx } from "./_generated/server.js"
+import { convexAuth, getAuthUserId } from "@convex-dev/auth/server"
+import type { MutationCtx, QueryCtx } from "./_generated/server.js"
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 	providers: [Discord],
@@ -19,3 +19,11 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 		},
 	},
 })
+
+export async function ensureAuthUserId(ctx: QueryCtx) {
+	const userId = await getAuthUserId(ctx)
+	if (!userId) {
+		throw new Error("Unauthorized")
+	}
+	return userId
+}

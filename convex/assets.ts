@@ -3,6 +3,7 @@ import { type Infer, v } from "convex/values"
 import { literals } from "convex-helpers/validators"
 import type { Doc, Id } from "./_generated/dataModel.js"
 import { mutation, type QueryCtx, query } from "./_generated/server"
+import { ensureAuthUserId } from "./auth.js"
 
 export type AssetListOrder = Infer<typeof assetListOrderValidator>
 const assetListOrderValidator = literals("alphabetical", "newestFirst")
@@ -76,10 +77,7 @@ export const create = mutation({
 		roomId: v.id("rooms"),
 	},
 	handler: async (ctx, args) => {
-		const userId = await getAuthUserId(ctx)
-		if (!userId) {
-			throw new Error("Unauthorized")
-		}
+		const userId = await ensureAuthUserId(ctx)
 
 		// for now, all users can add assets
 		// if (room.ownerId !== userId) {
@@ -103,10 +101,7 @@ export const update = mutation({
 		name: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const userId = await getAuthUserId(ctx)
-		if (!userId) {
-			throw new Error("Unauthorized")
-		}
+		const userId = await ensureAuthUserId(ctx)
 
 		const asset = await ctx.db.get(args.id)
 		if (!asset) {
@@ -128,10 +123,7 @@ export const update = mutation({
 export const remove = mutation({
 	args: { id: v.id("assets") },
 	handler: async (ctx, args) => {
-		const userId = await getAuthUserId(ctx)
-		if (!userId) {
-			throw new Error("Unauthorized")
-		}
+		const userId = await ensureAuthUserId(ctx)
 
 		const asset = await ctx.db.get(args.id)
 		if (!asset) {
