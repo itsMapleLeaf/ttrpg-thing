@@ -136,10 +136,12 @@ export const remove = mutation({
 
 		// this can only fail if the file doesn't exist,
 		// but we'll warn just in case
-		try {
-			await ctx.storage.delete(asset.fileId)
-		} catch (error) {
-			console.warn("Failed to delete asset file", asset, error)
+		if (asset.fileId) {
+			try {
+				await ctx.storage.delete(asset.fileId)
+			} catch (error) {
+				console.warn("Failed to delete asset file", asset, error)
+			}
 		}
 
 		await ctx.db.delete(args.id)
@@ -156,7 +158,7 @@ async function makeClientAsset(
 ) {
 	return {
 		...asset,
-		url: await ctx.storage.getUrl(asset.fileId),
+		url: asset.fileId && (await ctx.storage.getUrl(asset.fileId)),
 		isOwner: asset.ownerId === userId,
 	}
 }

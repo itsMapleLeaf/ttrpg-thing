@@ -1,6 +1,7 @@
 import { authTables } from "@convex-dev/auth/server"
 import { defineSchema, defineTable } from "convex/server"
 import { v } from "convex/values"
+import { nullable } from "convex-helpers/validators"
 
 export default defineSchema({
 	...authTables,
@@ -9,7 +10,7 @@ export default defineSchema({
 		...authTables.users.validator.fields,
 		name: v.string(),
 		email: v.string(),
-		imageId: v.optional(v.union(v.id("_storage"), v.null())),
+		imageId: v.optional(nullable(v.id("_storage"))),
 	}).index("by_email", ["email"]),
 
 	rooms: defineTable({
@@ -22,9 +23,10 @@ export default defineSchema({
 
 	assets: defineTable({
 		name: v.string(),
-		fileId: v.id("_storage"),
 		roomId: v.id("rooms"),
 		ownerId: v.id("users"),
+		fileId: v.optional(nullable(v.id("_storage"))),
+		data: v.optional(v.record(v.string(), v.any())),
 	})
 		.index("by_room", ["roomId"])
 		.index("by_room_and_name", ["roomId", "name"])
@@ -37,7 +39,7 @@ export default defineSchema({
 		name: v.string(),
 		roomId: v.id("rooms"),
 		ownerId: v.id("users"),
-		backgroundAssetId: v.optional(v.union(v.id("assets"), v.null())),
+		backgroundAssetId: v.optional(nullable(v.id("assets"))),
 	})
 		.index("by_room", ["roomId"])
 		.index("by_room_and_name", ["roomId", "name"])

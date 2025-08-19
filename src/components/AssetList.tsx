@@ -14,6 +14,7 @@ import {
 	ContextMenuPanel,
 	ContextMenuTrigger,
 } from "./ContextMenu.tsx"
+import { Menu, MenuButton, MenuItem, MenuPanel } from "./Menu.tsx"
 import { SmartImage } from "./SmartImage.tsx"
 
 type SortOption = {
@@ -174,7 +175,23 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 					</button>
 				</div>
 
-				<form action={uploadAction}>
+				<div className="grid auto-cols-fr grid-flow-col gap-2">
+					<Menu>
+						<MenuButton type="button" className="button-solid">
+							<Icon
+								icon="mingcute:classify-add-2-fill"
+								className="button-icon"
+							/>
+							New...
+						</MenuButton>
+						<MenuPanel positionerProps={{ align: "start", sideOffset: 4 }}>
+							<MenuItem icon="mingcute:star-fill">Actor</MenuItem>
+							<MenuItem icon="mingcute:pic-2-fill">Scene</MenuItem>
+							<MenuItem icon="mingcute:document-2-fill">Note</MenuItem>
+						</MenuPanel>
+					</Menu>
+
+					<form action={uploadAction}>
 						<label
 							className="button-solid"
 							// biome-ignore lint/a11y/noNoninteractiveTabindex: this needs to be interactive
@@ -186,31 +203,31 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 								}
 							}}
 						>
-						{isPending ? (
-							<Icon
-								icon="mingcute:loading-3-fill"
-								className="button-icon animate-spin"
+							{isPending ? (
+								<Icon
+									icon="mingcute:loading-3-fill"
+									className="button-icon animate-spin"
+								/>
+							) : (
+								<Icon icon="mingcute:upload-2-fill" className="button-icon" />
+							)}
+							{isPending ? "Uploading..." : "Upload"}
+							<input
+								type="file"
+								name="file"
+								accept="image/*"
+								multiple
+								className="hidden"
+								disabled={isPending}
+								onChange={(event) => {
+									if (event.target.files?.[0]) {
+										event.target.form?.requestSubmit()
+									}
+								}}
 							/>
-						) : (
-							<Icon icon="mingcute:upload-2-fill" className="button-icon" />
-						)}
-						{isPending ? "Uploading..." : "Upload"}
-
-						<input
-							type="file"
-							name="file"
-							accept="image/*"
-							multiple
-							className="hidden"
-							disabled={isPending}
-							onChange={(event) => {
-								if (event.target.files?.[0]) {
-									event.target.form?.requestSubmit()
-								}
-							}}
-						/>
-					</label>
-				</form>
+						</label>
+					</form>
+				</div>
 
 				{uploadError && (
 					<div className="alert-sm alert alert-error">
