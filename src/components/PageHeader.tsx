@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 import { useOptionalUser } from "../user-context"
 import { UserMenu } from "./UserMenu.tsx"
@@ -11,12 +11,17 @@ export function PageHeader({
 	actions?: ReactNode
 }) {
 	const user = useOptionalUser()
+	const navigate = useNavigate()
 	return (
 		<header className="flex items-center justify-between panel rounded-none border-0 border-b px-3 py-3">
 			<div className="grid">
 				<Link
 					to="/"
 					className="-mb-1.5 opacity-75 transition-opacity hover:opacity-100"
+					onContextMenu={(event) => {
+						event.preventDefault()
+						navigate({ to: "/ds" })
+					}}
 				>
 					TTRPG Thing
 				</Link>
