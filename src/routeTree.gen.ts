@@ -15,7 +15,7 @@ import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
 import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
 import { Route as ProtectedRoomsSlugRouteImport } from './routes/_protected/rooms.$slug'
-import { ServerRoute as ApiResizeImageServerRouteImport } from './routes/api/resize-image'
+import { ServerRoute as ApiImagesOptimizeServerRouteImport } from './routes/api/images/optimize'
 
 const rootServerRouteImport = createServerRootRoute()
 
@@ -38,9 +38,9 @@ const ProtectedRoomsSlugRoute = ProtectedRoomsSlugRouteImport.update({
   path: '/rooms/$slug',
   getParentRoute: () => ProtectedRoute,
 } as any)
-const ApiResizeImageServerRoute = ApiResizeImageServerRouteImport.update({
-  id: '/api/resize-image',
-  path: '/api/resize-image',
+const ApiImagesOptimizeServerRoute = ApiImagesOptimizeServerRouteImport.update({
+  id: '/api/images/optimize',
+  path: '/api/images/optimize',
   getParentRoute: () => rootServerRouteImport,
 } as any)
 
@@ -78,25 +78,25 @@ export interface RootRouteChildren {
   ProtectedRoute: typeof ProtectedRouteWithChildren
 }
 export interface FileServerRoutesByFullPath {
-  '/api/resize-image': typeof ApiResizeImageServerRoute
+  '/api/images/optimize': typeof ApiImagesOptimizeServerRoute
 }
 export interface FileServerRoutesByTo {
-  '/api/resize-image': typeof ApiResizeImageServerRoute
+  '/api/images/optimize': typeof ApiImagesOptimizeServerRoute
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
-  '/api/resize-image': typeof ApiResizeImageServerRoute
+  '/api/images/optimize': typeof ApiImagesOptimizeServerRoute
 }
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: '/api/resize-image'
+  fullPaths: '/api/images/optimize'
   fileServerRoutesByTo: FileServerRoutesByTo
-  to: '/api/resize-image'
-  id: '__root__' | '/api/resize-image'
+  to: '/api/images/optimize'
+  id: '__root__' | '/api/images/optimize'
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
-  ApiResizeImageServerRoute: typeof ApiResizeImageServerRoute
+  ApiImagesOptimizeServerRoute: typeof ApiImagesOptimizeServerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -133,11 +133,11 @@ declare module '@tanstack/react-router' {
 }
 declare module '@tanstack/react-start/server' {
   interface ServerFileRoutesByPath {
-    '/api/resize-image': {
-      id: '/api/resize-image'
-      path: '/api/resize-image'
-      fullPath: '/api/resize-image'
-      preLoaderRoute: typeof ApiResizeImageServerRouteImport
+    '/api/images/optimize': {
+      id: '/api/images/optimize'
+      path: '/api/images/optimize'
+      fullPath: '/api/images/optimize'
+      preLoaderRoute: typeof ApiImagesOptimizeServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
   }
@@ -166,7 +166,7 @@ export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 const rootServerRouteChildren: RootServerRouteChildren = {
-  ApiResizeImageServerRoute: ApiResizeImageServerRoute,
+  ApiImagesOptimizeServerRoute: ApiImagesOptimizeServerRoute,
 }
 export const serverRouteTree = rootServerRouteImport
   ._addFileChildren(rootServerRouteChildren)

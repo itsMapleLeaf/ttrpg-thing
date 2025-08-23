@@ -292,7 +292,7 @@ function AssetCard({
 			<label className="group relative block aspect-square">
 				{asset.url ? (
 					<SmartImage
-						src={getResizedImageUrl(asset.url, 150).href}
+						src={getOptimizedImageUrl(asset.url, 150).href}
 						alt={asset.name}
 						className="size-full object-cover object-top"
 					/>
@@ -348,8 +348,8 @@ function AssetCard({
 	)
 }
 
-function getResizedImageUrl(url: string, width: number) {
-	const imageUrl = new URL("/api/resize-image", window.origin)
+function getOptimizedImageUrl(url: string, width: number) {
+	const imageUrl = new URL("/api/images/optimize", window.origin)
 	imageUrl.searchParams.set("url", url)
 	imageUrl.searchParams.set("width", String(width))
 	return imageUrl
