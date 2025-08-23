@@ -66,7 +66,7 @@
 - Do not add `cursor-pointer` if the element does not already have it
 - Use `size-*` for setting the same width and height of an element, e.g. `size-6` instead of `w-6 h-6`
 - Use `twMerge` from `tailwind-merge` to combine Tailwind CSS classes.
-- Avoid using `space-*` classes, and prefer grid or flex instead
+- Avoid using `space-*` classes, and prefer grid or flex with gap instead
 
 ## Technologies
 
