@@ -14,6 +14,7 @@ export function SmartImage(props: ComponentProps<"img">) {
 						duration: 200,
 						fill: "forwards",
 					})
+					clearTimeout(timeout)
 				}
 
 				const controller = new AbortController()
