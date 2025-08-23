@@ -240,7 +240,7 @@ function AssetListInternal({
 				},
 				selectedSceneAssets.length === 0 && {
 					name: "Add scene",
-					icon: "mingcute:plus-fill",
+					icon: "mingcute:add-fill",
 					callback: () => {
 						const name = prompt("Scene name?", "New Scene")?.trim()
 						if (!name) return
@@ -306,7 +306,7 @@ function AssetListInternal({
 				},
 				selectedActorAssets.length === 0 && {
 					name: "Add actor",
-					icon: "mingcute:plus-fill",
+					icon: "mingcute:add-fill",
 					callback: () => {
 						const name = prompt("Actor name?", "New Actor")?.trim()
 						if (!name) return
