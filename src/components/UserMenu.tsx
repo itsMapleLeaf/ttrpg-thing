@@ -1,12 +1,11 @@
 import { useAuthActions } from "@convex-dev/auth/react"
 import { Icon } from "@iconify/react/dist/iconify.js"
 import { Link } from "@tanstack/react-router"
-import { useUser } from "../user-context.tsx"
+import type { ClientUser } from "../../convex/users.ts"
 import { Menu, MenuButton, MenuItem, MenuPanel } from "./Menu.tsx"
 import { SmartImage } from "./SmartImage.tsx"
 
-export function UserMenu() {
-	const user = useUser()
+export function UserMenu({ user }: { user: ClientUser }) {
 	const { signOut } = useAuthActions()
 	return (
 		<Menu>

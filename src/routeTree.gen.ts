@@ -11,6 +11,7 @@
 import { createServerRootRoute } from '@tanstack/react-start/server'
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DsRouteImport } from './routes/ds'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
 import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
@@ -19,6 +20,11 @@ import { ServerRoute as ApiImagesOptimizeServerRouteImport } from './routes/api/
 
 const rootServerRouteImport = createServerRootRoute()
 
+const DsRoute = DsRouteImport.update({
+  id: '/ds',
+  path: '/ds',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
   getParentRoute: () => rootRouteImport,
@@ -45,11 +51,13 @@ const ApiImagesOptimizeServerRoute = ApiImagesOptimizeServerRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/ds': typeof DsRoute
   '/account': typeof ProtectedAccountRoute
   '/': typeof ProtectedIndexRoute
   '/rooms/$slug': typeof ProtectedRoomsSlugRoute
 }
 export interface FileRoutesByTo {
+  '/ds': typeof DsRoute
   '/account': typeof ProtectedAccountRoute
   '/': typeof ProtectedIndexRoute
   '/rooms/$slug': typeof ProtectedRoomsSlugRoute
@@ -57,18 +65,20 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_protected': typeof ProtectedRouteWithChildren
+  '/ds': typeof DsRoute
   '/_protected/account': typeof ProtectedAccountRoute
   '/_protected/': typeof ProtectedIndexRoute
   '/_protected/rooms/$slug': typeof ProtectedRoomsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/account' | '/' | '/rooms/$slug'
+  fullPaths: '/ds' | '/account' | '/' | '/rooms/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/account' | '/' | '/rooms/$slug'
+  to: '/ds' | '/account' | '/' | '/rooms/$slug'
   id:
     | '__root__'
     | '/_protected'
+    | '/ds'
     | '/_protected/account'
     | '/_protected/'
     | '/_protected/rooms/$slug'
@@ -76,6 +86,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   ProtectedRoute: typeof ProtectedRouteWithChildren
+  DsRoute: typeof DsRoute
 }
 export interface FileServerRoutesByFullPath {
   '/api/images/optimize': typeof ApiImagesOptimizeServerRoute
@@ -101,6 +112,13 @@ export interface RootServerRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/ds': {
+      id: '/ds'
+      path: '/ds'
+      fullPath: '/ds'
+      preLoaderRoute: typeof DsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_protected': {
       id: '/_protected'
       path: ''
@@ -161,6 +179,7 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   ProtectedRoute: ProtectedRouteWithChildren,
+  DsRoute: DsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

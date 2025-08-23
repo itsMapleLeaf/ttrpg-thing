@@ -7,7 +7,9 @@ import {
 } from "@tanstack/react-router"
 import type { ConvexReactClient } from "convex/react"
 import type * as React from "react"
+import { ToastProvider } from "../components/Toast.tsx"
 import appCss from "../styles/app.css?url"
+import { UserProvider } from "../user-context.tsx"
 
 export const Route = createRootRouteWithContext<{
 	convexClient: ConvexReactClient
@@ -56,7 +58,11 @@ export const Route = createRootRouteWithContext<{
 function RootComponent() {
 	return (
 		<RootDocument>
-			<Outlet />
+			<UserProvider>
+				<ToastProvider>
+					<Outlet />
+				</ToastProvider>
+			</UserProvider>
 		</RootDocument>
 	)
 }

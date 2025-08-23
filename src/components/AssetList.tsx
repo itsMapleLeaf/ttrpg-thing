@@ -10,6 +10,7 @@ import { useUploadImage } from "../hooks/useUploadImage.ts"
 import type { NonEmptyArray } from "../types.ts"
 import { Button, type ButtonProps } from "./Button.tsx"
 import { SmartImage } from "./SmartImage.tsx"
+import { useToastContext } from "./Toast.tsx"
 import { WithTooltip } from "./Tooltip.tsx"
 
 type SortOption = {
@@ -34,6 +35,7 @@ const sortOptions: NonEmptyArray<SortOption> = [
 export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 	const [searchTerm, setSearchTerm] = useState("")
 	const [sortOption, setSortOption] = useState(sortOptions[0])
+	const toast = useToastContext()
 
 	const assets = useStable(
 		useQuery(api.assets.list, {
@@ -66,7 +68,7 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 
 		const failedResults = results.filter((it) => !it.success)
 		if (failedResults.length > 0) {
-			alert(
+			toast.error(
 				`The following files failed to upload:\n${failedResults.map((it) => it.name).join("\n")}`,
 			)
 		}
@@ -235,6 +237,7 @@ function FilePicker({
 }: FilePickerProps) {
 	const inputRef = useRef<HTMLInputElement>(null)
 	const [pending, startTransition] = useTransition()
+	const toast = useToastContext()
 
 	return (
 		<>
@@ -268,7 +271,7 @@ function FilePicker({
 						try {
 							await onFilesChosen(files)
 						} catch (error) {
-							alert(error) // todo: toast
+							toast.error(String(error))
 						}
 					})
 				}}

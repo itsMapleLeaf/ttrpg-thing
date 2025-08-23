@@ -2,6 +2,7 @@ import { Icon } from "@iconify/react/dist/iconify.js"
 import { type ComponentProps, type ReactElement, useTransition } from "react"
 import { twMerge } from "tailwind-merge"
 import { usePendingDelay } from "../hooks/usePendingDelay.ts"
+import { useToastContext } from "./Toast.tsx"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip.tsx"
 
 export interface ButtonProps extends ComponentProps<"button"> {
@@ -26,13 +27,14 @@ export function Button({
 }: ButtonProps) {
 	const [transitionPending, startTransition] = useTransition()
 	const pending = usePendingDelay(transitionPending || pendingProp)
+	const toast = useToastContext()
 
 	const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 		startTransition(async () => {
 			try {
 				await onClick?.(event)
 			} catch (error) {
-				alert(error) // todo: toast
+				toast.error(String(error))
 			}
 		})
 	}

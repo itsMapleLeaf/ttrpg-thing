@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import type { ReactNode } from "react"
+import { useOptionalUser } from "../user-context"
 import { UserMenu } from "./UserMenu.tsx"
 
 export function PageHeader({
@@ -9,6 +10,7 @@ export function PageHeader({
 	heading: ReactNode
 	actions?: ReactNode
 }) {
+	const user = useOptionalUser()
 	return (
 		<header className="flex items-center justify-between panel rounded-none border-0 border-b px-3 py-3">
 			<div className="grid">
@@ -22,7 +24,7 @@ export function PageHeader({
 			</div>
 			<div className="flex items-center gap-2">
 				{actions}
-				<UserMenu />
+				{user && <UserMenu user={user} />}
 			</div>
 		</header>
 	)

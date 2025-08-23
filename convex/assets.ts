@@ -153,6 +153,8 @@ export const removeMany = mutation({
 	handler: async (ctx, args) => {
 		const userId = await ensureAuthUserId(ctx)
 
+		throw new Error("test error")
+
 		const results = await Promise.allSettled(
 			args.ids.map(async (id) => {
 				const asset = await ctx.db.get(id)
