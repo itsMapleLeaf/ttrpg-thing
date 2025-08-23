@@ -8,13 +8,18 @@ import type { AssetListOrder, ClientAsset } from "../../convex/assets.ts"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
 import { useStable } from "../hooks/useStable.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
-import { counted, getOptimizedImageUrl } from "../lib/helpers.ts"
+import {
+	counted,
+	getOptimizedImageUrl,
+	titleifyFileName,
+} from "../lib/helpers.ts"
 import type { Falsy } from "../lib/types.ts"
 import type { NonEmptyArray } from "../types.ts"
 import { Button } from "../ui/Button.tsx"
 import { EmptyState } from "../ui/EmptyState.tsx"
 import { Iconish, type IconishIcon } from "../ui/Iconish.tsx"
 import { Loading } from "../ui/Loading.tsx"
+import { Menu, MenuButton, MenuItem, MenuPanel } from "../ui/Menu.tsx"
 import { ScrollArea } from "../ui/ScrollArea.tsx"
 import { useToastContext } from "../ui/Toast.tsx"
 import { AssetCard } from "./AssetCard.tsx"
@@ -101,7 +106,7 @@ function AssetListInternal({
 					const fileId = await uploadImage(file)
 					await createAsset({
 						roomId,
-						name: file.name,
+						name: titleifyFileName(file.name),
 						type: "image",
 						image: { fileId },
 					})
@@ -163,13 +168,57 @@ function AssetListInternal({
 					},
 				},
 				selectedImageAssets.length > 0 && {
-					name: "Deselect all",
+					name: "Clear selection",
 					icon: "mingcute:minus-square-fill",
 					callback: () => {
 						for (const asset of imageAssets) {
 							setSelected(asset._id, false)
 						}
 					},
+				},
+				selectedImageAssets.length > 0 && {
+					name: "New from selected...",
+					icon: "mingcute:magic-3-fill",
+					options: [
+						{
+							name: `Create ${counted(selectedImageAssets.length, "scene")}`,
+							icon: "mingcute:clapperboard-fill",
+							callback: async () => {
+								for (const imageAsset of selectedImageAssets) {
+									await createAsset({
+										roomId,
+										name: imageAsset.name,
+										type: "scene",
+										scene: {
+											backgroundId: imageAsset._id,
+										},
+									})
+								}
+								clearSelection()
+							},
+						},
+						{
+							name: `Create ${counted(selectedImageAssets.length, "actor")}`,
+							icon: "mingcute:star-fill",
+							callback: async () => {
+								for (const imageAsset of selectedImageAssets) {
+									await createAsset({
+										roomId,
+										name: imageAsset.name,
+										type: "actor",
+										actor: {
+											imageId: imageAsset._id,
+											left: 0,
+											top: 0,
+											width: 100,
+											height: 100,
+										},
+									})
+								}
+								clearSelection()
+							},
+						},
+					],
 				},
 				selectedImageAssets.length === 0 && {
 					name: "Upload",
@@ -230,7 +279,7 @@ function AssetListInternal({
 					},
 				},
 				selectedSceneAssets.length > 0 && {
-					name: "Deselect all",
+					name: "Clear selection",
 					icon: "mingcute:minus-square-fill",
 					callback: () => {
 						for (const asset of sceneAssets) {
@@ -296,7 +345,7 @@ function AssetListInternal({
 					},
 				},
 				selectedActorAssets.length > 0 && {
-					name: "Deselect all",
+					name: "Clear selection",
 					icon: "mingcute:minus-square-fill",
 					callback: () => {
 						for (const asset of actorAssets) {
@@ -419,7 +468,7 @@ function AssetListInternal({
 								shape="square"
 								onClick={clearSelection}
 							>
-								Deselect all
+								Clear selection
 							</Button>
 						</>
 					)}
@@ -438,8 +487,18 @@ function AssetListInternal({
 type ToggleSectionAction = {
 	name: string
 	icon: IconishIcon
-	callback: () => void
-}
+} & (
+	| {
+			callback: () => unknown
+	  }
+	| {
+			options: {
+				name: string
+				icon: IconishIcon
+				callback: () => unknown
+			}[]
+	  }
+)
 
 type ToggleSectionProps = {
 	name: string
@@ -487,16 +546,42 @@ function ToggleSection({
 
 				{actions && actions.length > 0 && (
 					<div className="absolute right-0 z-20 flex gap-1 px-1.5 *:size-8">
-						{actions.filter(Boolean).map((action) => (
-							<Button
-								key={action.name}
-								icon={<Iconish icon={action.icon} className="size-4" />}
-								shape="square"
-								onClick={action.callback}
-							>
-								{action.name}
-							</Button>
-						))}
+						{actions.filter(Boolean).map((action) =>
+							"callback" in action ? (
+								<Button
+									key={action.name}
+									icon={<Iconish icon={action.icon} className="size-4" />}
+									shape="square"
+									onClick={action.callback}
+								>
+									{action.name}
+								</Button>
+							) : (
+								<Menu key={action.name}>
+									<MenuButton
+										render={
+											<Button
+												icon={<Iconish icon={action.icon} className="size-4" />}
+												shape="square"
+											>
+												{action.name}
+											</Button>
+										}
+									/>
+									<MenuPanel>
+										{action.options.map((option) => (
+											<MenuItem
+												key={option.name}
+												icon={<Iconish icon={option.icon} className="size-4" />}
+												onClick={option.callback}
+											>
+												{option.name}
+											</MenuItem>
+										))}
+									</MenuPanel>
+								</Menu>
+							),
+						)}
 					</div>
 				)}
 			</div>
