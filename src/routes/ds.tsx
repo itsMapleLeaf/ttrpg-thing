@@ -12,8 +12,51 @@ function TestToasts() {
 
 	return (
 		<>
-			<PageHeader heading="Toast Testing" />
-			<div className="container mx-auto max-w-lg space-y-4 py-6">
+			<PageHeader heading="Design System" />
+			<div className="container mx-auto grid max-w-lg gap-4 py-6">
+				<Section heading="Buttons">
+					<div className="flex gap-2">
+						<Button icon="mingcute:square-fill" appearance="solid">
+							Solid
+						</Button>
+						<Button icon="mingcute:square-line" appearance="clear">
+							Clear
+						</Button>
+					</div>
+
+					<section>
+						<h3 className="mb-1 label">Pending</h3>
+						<div className="flex gap-2">
+							<Button icon="mingcute:square-fill" appearance="solid" pending>
+								Solid
+							</Button>
+							<Button icon="mingcute:square-line" appearance="clear" pending>
+								Clear
+							</Button>
+						</div>
+					</section>
+
+					<section>
+						<h3 className="mb-1 label">Danger</h3>
+						<div className="flex gap-2">
+							<Button
+								icon="mingcute:square-fill"
+								appearance="solid"
+								intent="danger"
+							>
+								Solid
+							</Button>
+							<Button
+								icon="mingcute:square-line"
+								appearance="clear"
+								intent="danger"
+							>
+								Clear
+							</Button>
+						</div>
+					</section>
+				</Section>
+
 				<Section heading="Toasts">
 					<Button
 						icon="mingcute:alert-circle-fill"
