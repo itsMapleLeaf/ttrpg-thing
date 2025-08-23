@@ -40,7 +40,6 @@ export default defineSchema({
 		),
 		actor: v.optional(
 			v.object({
-				sceneId: v.id("rooms"),
 				imageId: v.id("assets"),
 				left: v.number(),
 				top: v.number(),
@@ -53,7 +52,6 @@ export default defineSchema({
 		.index("by_room", ["roomId"])
 		.index("by_room_and_name", ["roomId", "name"])
 		.index("by_type", ["type"])
-		.index("by_actor_scene", ["actor.sceneId"])
 		.searchIndex("search_by_name", {
 			searchField: "name",
 			filterFields: ["roomId", "type"],
