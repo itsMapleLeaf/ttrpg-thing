@@ -15,6 +15,7 @@ import { Button } from "../ui/Button.tsx"
 import { EmptyState } from "../ui/EmptyState.tsx"
 import { Iconish, type IconishIcon } from "../ui/Iconish.tsx"
 import { Loading } from "../ui/Loading.tsx"
+import { ScrollArea } from "../ui/ScrollArea.tsx"
 import { useToastContext } from "../ui/Toast.tsx"
 import { AssetCard } from "./AssetCard.tsx"
 
@@ -425,11 +426,11 @@ function AssetListInternal({
 				</div>
 			</div>
 
-			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-gray-900/50">
+			<ScrollArea className="min-h-0 flex-1 bg-gray-900/50">
 				{assetSections.map((section) => (
 					<ToggleSection {...section} key={section.name} />
 				))}
-			</div>
+			</ScrollArea>
 		</div>
 	)
 }
