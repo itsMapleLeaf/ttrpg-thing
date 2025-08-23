@@ -3,8 +3,8 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react"
 import { createRouter as createTanStackRouter } from "@tanstack/react-router"
 import { ConvexReactClient } from "convex/react"
 import { Suspense } from "react"
-import { Loading } from "./components/Loading.tsx"
 import { routeTree } from "./routeTree.gen"
+import { Loading } from "./ui/Loading.tsx"
 
 export function createRouter() {
 	const convexClient = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)

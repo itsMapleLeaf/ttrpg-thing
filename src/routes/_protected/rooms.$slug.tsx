@@ -2,9 +2,9 @@ import { Icon } from "@iconify/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api.js"
-import { AssetList } from "../../components/AssetList.js"
-import { PageHeader } from "../../components/PageHeader.js"
-import { Surface } from "../../components/Surface.js"
+import { AssetList } from "../../components/AssetList.tsx"
+import { PageHeader } from "../../components/PageHeader.tsx"
+import { Surface } from "../../components/Surface.tsx"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({
 	component: RoomDetail,

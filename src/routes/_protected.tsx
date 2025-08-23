@@ -1,8 +1,8 @@
 import { useAuthActions } from "@convex-dev/auth/react"
 import { createFileRoute, Outlet } from "@tanstack/react-router"
 import { Suspense } from "react"
-import { Loading } from "../components/Loading.tsx"
 import { PageHeader } from "../components/PageHeader.tsx"
+import { Loading } from "../ui/Loading.tsx"
 import { useOptionalUser } from "../user-context.tsx"
 
 export const Route = createFileRoute("/_protected")({

@@ -8,10 +8,10 @@ import type { AssetListOrder, ClientAsset } from "../../convex/assets.ts"
 import { useStable } from "../hooks/useStable.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
 import type { NonEmptyArray } from "../types.ts"
-import { Button, type ButtonProps } from "./Button.tsx"
-import { SmartImage } from "./SmartImage.tsx"
-import { useToastContext } from "./Toast.tsx"
-import { WithTooltip } from "./Tooltip.tsx"
+import { Button, type ButtonProps } from "../ui/Button.tsx"
+import { SmartImage } from "../ui/SmartImage.tsx"
+import { useToastContext } from "../ui/Toast.tsx"
+import { WithTooltip } from "../ui/Tooltip.tsx"
 
 type SortOption = {
 	id: AssetListOrder

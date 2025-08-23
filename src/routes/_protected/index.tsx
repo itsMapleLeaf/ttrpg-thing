@@ -5,14 +5,14 @@ import { useQuery } from "convex/react"
 import { formatDistanceToNow } from "date-fns"
 import { useActionState, useId, useRef, useState } from "react"
 import { api } from "../../../convex/_generated/api.js"
-import { Label } from "../../components/Label.js"
+import { PageHeader } from "../../components/PageHeader.tsx"
+import { Label } from "../../ui/Label.tsx"
 import {
 	Modal,
 	ModalActions,
 	ModalButton,
 	ModalPanel,
-} from "../../components/Modal.js"
-import { PageHeader } from "../../components/PageHeader.js"
+} from "../../ui/Modal.tsx"
 
 export const Route = createFileRoute("/_protected/")({
 	component: Home,

@@ -3,9 +3,9 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useMutation } from "convex/react"
 import { useActionState, useId, useMemo, useRef, useState } from "react"
 import { api } from "../../../convex/_generated/api.js"
-import { Label } from "../../components/Label.tsx"
 import { PageHeader } from "../../components/PageHeader.tsx"
 import { useUploadImage } from "../../hooks/useUploadImage.ts"
+import { Label } from "../../ui/Label.tsx"
 import { useUser } from "../../user-context.tsx"
 
 export const Route = createFileRoute("/_protected/account")({

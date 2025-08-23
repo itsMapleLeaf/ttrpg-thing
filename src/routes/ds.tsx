@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { Button } from "../components/Button.tsx"
 import { PageHeader } from "../components/PageHeader.tsx"
-import { useToastContext } from "../components/Toast.tsx"
+import { Button } from "../ui/Button.tsx"
+import { useToastContext } from "../ui/Toast.tsx"
 
 export const Route = createFileRoute("/ds")({
 	component: TestToasts,

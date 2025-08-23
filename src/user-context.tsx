@@ -2,7 +2,7 @@ import { useConvexAuth, useQuery } from "convex/react"
 import { createContext, useContext } from "react"
 import { api } from "../convex/_generated/api.js"
 import type { ClientUser } from "../convex/users.ts"
-import { Loading } from "./components/Loading.tsx"
+import { Loading } from "./ui/Loading.tsx"
 
 const UserContext = createContext<ClientUser | null | undefined>()
 
