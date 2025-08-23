@@ -1,21 +1,16 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
 import { useMutation, useQuery } from "convex/react"
-import { without } from "es-toolkit"
-import { useActionState, useEffect, useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
+import type { SetOptional } from "type-fest"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 import type { AssetListOrder, ClientAsset } from "../../convex/assets.ts"
 import { useStable } from "../hooks/useStable.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
 import type { NonEmptyArray } from "../types.ts"
-import {
-	ContextMenu,
-	ContextMenuItem,
-	ContextMenuPanel,
-	ContextMenuTrigger,
-} from "./ContextMenu.tsx"
-import { Menu, MenuButton, MenuItem, MenuPanel } from "./Menu.tsx"
+import { Button, type ButtonProps } from "./Button.tsx"
 import { SmartImage } from "./SmartImage.tsx"
+import { WithTooltip } from "./Tooltip.tsx"
 
 type SortOption = {
 	id: AssetListOrder
@@ -50,94 +45,75 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 
 	const uploadImage = useUploadImage()
 	const createAsset = useMutation(api.assets.create)
+	const removeManyAssets = useMutation(api.assets.removeMany)
 
-	const [uploadError, uploadAction, isPending] = useActionState<
-		string | undefined,
-		FormData
-	>(async (_state, formData) => {
-		const files = formData.getAll("file") as File[]
-		if (files.length === 0) return "No file selected"
+	const uploadAssets = async (files: File[]) => {
+		console.log(files)
+		const results = await Promise.all(
+			files.map(async (file) => {
+				const { name } = file // files can get GC'd, so capture the name for output later
+				try {
+					const humanName = titleifyFileName(file.name)
+					const fileId = await uploadImage(file)
+					await createAsset({ name: humanName, fileId, roomId })
+					return { success: true } as const
+				} catch (error) {
+					console.error(error)
+					return { success: false, name } as const
+				}
+			}),
+		)
 
-		try {
-			const results = await Promise.all(
-				files.map(async (file) => {
-					const { name } = file // files can get GC'd, so capture the name for output later
-					try {
-						const humanName = humanizeFileName(file.name)
-						const fileId = await uploadImage(file)
-						await createAsset({ name: humanName, fileId, roomId })
-						return { success: true } as const
-					} catch (error) {
-						console.error(error)
-						return { success: false, name } as const
-					}
-				}),
+		const failedResults = results.filter((it) => !it.success)
+		if (failedResults.length > 0) {
+			alert(
+				`The following files failed to upload:\n${failedResults.map((it) => it.name).join("\n")}`,
 			)
-
-			const failedResults = results.filter((it) => !it.success)
-			if (failedResults.length > 0) {
-				return `The following files failed to upload:\n${failedResults.map((it) => it.name).join("\n")}`
-			}
-		} catch (error) {
-			return error instanceof Error ? error.message : "Upload failed"
 		}
-	})
+	}
 
 	const [selection, setSelection] = useState<ReadonlySet<Id<"assets">>>(
 		new Set(),
 	)
 
-	useEffect(() => {
-		const controller = new AbortController()
+	const clearSelection = () => {
+		setSelection(new Set())
+	}
 
-		window.addEventListener(
-			"pointerdown",
-			(event) => {
-				const selectedAssetId = (() => {
-					for (const element of event.composedPath()) {
-						if (element instanceof HTMLElement) {
-							const { assetId } = element.dataset
-							if (assetId) return assetId as Id<"assets">
-						}
-					}
-				})()
+	const selectAll = () => {
+		setSelection(new Set(assets?.map((it) => it._id)))
+	}
 
-				if (selectedAssetId && event.shiftKey) {
-					// this expands the whole selection such that it selects every item from the newly least selected index to the greatest
-					// this is technically different from how most file managers work,
-					// but it doesn't need to be perfect, and replicating their anchor-based behavior would be annoying
-					setSelection((selection) => {
-						const assetIds = assets?.map((it) => it._id)
-						const assetIdIndexes = new Map(
-							assetIds?.map((id, index) => [id, index]),
-						)
+	const setSelected = (item: Id<"assets">, shouldBeSelected: boolean) => {
+		setSelection((selection) => {
+			const newSelection = new Set(selection)
+			if (shouldBeSelected) {
+				newSelection.add(item)
+			} else {
+				newSelection.delete(item)
+			}
+			return newSelection
+		})
+	}
 
-						const selectionIndexes = [...selection, selectedAssetId].flatMap(
-							(it) => assetIdIndexes.get(it) ?? [],
-						)
+	const _toggleSelected = (item: Id<"assets">) => {
+		setSelection((selection) => {
+			const newSelection = new Set(selection)
+			if (newSelection.has(item)) {
+				newSelection.delete(item)
+			} else {
+				newSelection.add(item)
+			}
+			return newSelection
+		})
+	}
 
-						const lowestIndex = Math.min(...selectionIndexes)
-						const highestIndex = Math.max(...selectionIndexes)
-
-						return new Set(assetIds?.slice(lowestIndex, highestIndex + 1))
-					})
-				} else if (selectedAssetId && event.ctrlKey) {
-					setSelection((selection) =>
-						selection.has(selectedAssetId)
-							? new Set(without([...selection], selectedAssetId))
-							: new Set([...selection, selectedAssetId]),
-					)
-				} else if (selectedAssetId) {
-					setSelection(new Set([selectedAssetId as Id<"assets">]))
-				} else {
-					setSelection(new Set())
-				}
-			},
-			{ signal: controller.signal },
-		)
-
-		return () => controller.abort()
-	})
+	const deleteSelected = async () => {
+		if (confirm(`Are you sure you want to delete ${selection.size} assets?`)) {
+			await removeManyAssets({ ids: [...selection] })
+			clearSelection()
+		}
+	}
 
 	return (
 		<div className="flex h-full flex-col">
@@ -157,9 +133,9 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 						/>
 					</div>
 
-					<button
-						type="button"
-						className="button-clear button-square"
+					<Button
+						icon={sortOption.icon}
+						shape="square"
 						onClick={() => {
 							setSortOption((order) => {
 								const currentIndex = sortOptions.indexOf(order)
@@ -168,83 +144,61 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 							})
 						}}
 					>
-						<Icon icon={sortOption.icon} className="pointer-events-none" />
-						<span className="sr-only">
-							Toggle sorting (current: {sortOption.name})
-						</span>
-					</button>
+						Toggle sorting{"\n"}(current: {sortOption.name})
+					</Button>
 				</div>
 
-				<div className="grid auto-cols-fr grid-flow-col gap-2">
-					<Menu>
-						<MenuButton type="button" className="button-solid">
-							<Icon
-								icon="mingcute:classify-add-2-fill"
-								className="button-icon"
-							/>
-							New...
-						</MenuButton>
-						<MenuPanel positionerProps={{ align: "start", sideOffset: 4 }}>
-							<MenuItem icon="mingcute:star-fill">Actor</MenuItem>
-							<MenuItem icon="mingcute:pic-2-fill">Scene</MenuItem>
-							<MenuItem icon="mingcute:document-2-fill">Note</MenuItem>
-						</MenuPanel>
-					</Menu>
-
-					<form action={uploadAction}>
-						<label
-							className="button-solid"
-							// biome-ignore lint/a11y/noNoninteractiveTabindex: this needs to be interactive
-							tabIndex={0}
-							onKeyDown={(event) => {
-								if (event.key === "Enter" || event.key === " ") {
-									event.preventDefault()
-									event.currentTarget.click()
-								}
-							}}
-						>
-							{isPending ? (
-								<Icon
-									icon="mingcute:loading-3-fill"
-									className="button-icon animate-spin"
-								/>
-							) : (
-								<Icon icon="mingcute:upload-2-fill" className="button-icon" />
+				<div className="flex gap-2">
+					{selection.size === 0 ? (
+						<>
+							<FilePicker className="flex-1" onFilesChosen={uploadAssets} />
+							{selection.size < (assets?.length ?? 0) && (
+								<Button
+									icon="mingcute:checks-fill"
+									appearance="clear"
+									shape="square"
+									onClick={selectAll}
+								>
+									Select all
+								</Button>
 							)}
-							{isPending ? "Uploading..." : "Upload"}
-							<input
-								type="file"
-								name="file"
-								accept="image/*"
-								multiple
-								className="hidden"
-								disabled={isPending}
-								onChange={(event) => {
-									if (event.target.files?.[0]) {
-										event.target.form?.requestSubmit()
-									}
-								}}
-							/>
-						</label>
-					</form>
-				</div>
+						</>
+					) : (
+						<>
+							<Button
+								icon="mingcute:delete-2-fill"
+								appearance="clear"
+								className="flex-1 button-danger"
+								onClick={deleteSelected}
+							>
+								Delete {counted(selection.size, "asset")}
+							</Button>
 
-				{uploadError && (
-					<div className="alert-sm alert alert-error">
-						<Icon icon="mingcute:close-circle-fill" />
-						{uploadError}
-					</div>
-				)}
+							{selection.size < (assets?.length ?? 0) && (
+								<Button
+									icon="mingcute:checks-fill"
+									appearance="clear"
+									shape="square"
+									onClick={selectAll}
+								>
+									Select all
+								</Button>
+							)}
+
+							<Button
+								icon="mingcute:minus-square-fill"
+								appearance="clear"
+								shape="square"
+								onClick={clearSelection}
+							>
+								Deselect all
+							</Button>
+						</>
+					)}
+				</div>
 			</div>
 
-			<div
-				className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto bg-gray-900/50 p-3"
-				onPointerDown={(event) => {
-					if (event.target === event.currentTarget) {
-						setSelection(new Set())
-					}
-				}}
-			>
+			<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto bg-gray-900/50 p-3">
 				{assets === undefined ? (
 					<p className="py-4 text-center text-sm opacity-70">Loading...</p>
 				) : assets.length === 0 ? (
@@ -254,10 +208,13 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 				) : (
 					<div className="pointer-events-children grid grid-cols-2 gap-2">
 						{assets.map((asset) => (
-							<AssetItem
+							<AssetCard
 								key={asset._id}
 								asset={asset}
 								selected={selection.has(asset._id)}
+								onSelectedChange={(selected) =>
+									setSelected(asset._id, selected)
+								}
 							/>
 						))}
 					</div>
@@ -267,93 +224,127 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 	)
 }
 
-function AssetItem({
-	asset,
-	selected,
-}: {
-	asset: ClientAsset
-	selected: boolean
-}) {
-	const updateAsset = useMutation(api.assets.update)
-	const removeAsset = useMutation(api.assets.remove)
-	return (
-		<ContextMenu>
-			<ContextMenuTrigger
-				className="panel data-[selected=true]:border-primary-400"
-				data-selected={selected}
-				data-asset-id={asset._id}
-			>
-				<div className="aspect-square bg-gray-950/40">
-					{asset.url ? (
-						<SmartImage
-							src={getResizedImageUrl(asset.url, 150).href}
-							alt={asset.name}
-							className="size-full object-cover object-top"
-						/>
-					) : (
-						<div className="flex-center h-full">
-							<Icon
-								icon="mingcute:file-unknown-line"
-								className="size-12 opacity-50"
-							/>
-						</div>
-					)}
-				</div>
-
-				<ContextMenuPanel>
-					<ContextMenuItem
-						icon="mingcute:delete-2-fill"
-						onClick={() => removeAsset({ id: asset._id })}
-					>
-						Delete
-					</ContextMenuItem>
-				</ContextMenuPanel>
-
-				<AssetItemNameInput
-					value={asset.name}
-					onChange={(name) => updateAsset({ id: asset._id, name })}
-				/>
-			</ContextMenuTrigger>
-		</ContextMenu>
-	)
+interface FilePickerProps extends SetOptional<ButtonProps, "icon"> {
+	onFilesChosen: (files: File[]) => unknown
 }
 
-function AssetItemNameInput({
-	value,
-	onChange,
-}: {
-	value: string
-	onChange: (value: string) => Promise<unknown>
-}) {
-	const [editing, setEditing] = useState(false)
+function FilePicker({
+	icon = "mingcute:upload-2-fill",
+	onFilesChosen,
+	...props
+}: FilePickerProps) {
+	const inputRef = useRef<HTMLInputElement>(null)
 	const [pending, startTransition] = useTransition()
 
 	return (
-		<input
-			className="w-full min-w-0 rounded-b-md p-1.5 text-center text-sm leading-tight font-semibold focus:-outline-offset-1"
-			{...(editing || pending
-				? { defaultValue: value }
-				: { value, readOnly: true })}
-			onFocus={(event) => {
-				event.target.select()
-				setEditing(true)
-			}}
-			onBlur={(event) => {
-				const { value } = event.target
-				startTransition(async () => {
-					await onChange(value)
-				})
-				setEditing(false)
-			}}
-			onKeyDown={(event) => {
-				if (event.key === "Enter") {
-					const { value } = event.currentTarget
+		<>
+			<Button
+				icon={icon}
+				appearance="solid"
+				pending={pending}
+				{...props}
+				onClick={() => inputRef.current?.click()}
+			>
+				Upload
+			</Button>
+
+			<input
+				hidden
+				type="file"
+				multiple
+				accept="image/png,image/jpeg,image/webp"
+				ref={inputRef}
+				onChange={(event) => {
+					if (pending) return
+
+					// capture the files so it doesn't get cleared when we clear the input
+					const files = [...(event.target.files ?? [])]
+					if (files.length === 0) return
+
+					// clear the input so we can select files again
+					event.target.value = ""
+
 					startTransition(async () => {
-						await onChange(value)
+						try {
+							await onFilesChosen(files)
+						} catch (error) {
+							alert(error) // todo: toast
+						}
 					})
-				}
-			}}
-		/>
+				}}
+			/>
+		</>
+	)
+}
+
+function AssetCard({
+	asset,
+	selected,
+	onSelectedChange,
+}: {
+	asset: ClientAsset
+	selected: boolean
+	onSelectedChange: (selected: boolean) => void
+}) {
+	const updateAsset = useMutation(api.assets.update)
+	return (
+		<div className="panel bg-gray-950/40 outline-2 outline-transparent transition-colors">
+			<label className="group relative block aspect-square">
+				{asset.url ? (
+					<SmartImage
+						src={getResizedImageUrl(asset.url, 150).href}
+						alt={asset.name}
+						className="size-full object-cover object-top"
+					/>
+				) : (
+					<div className="flex-center h-full">
+						<Icon
+							icon="mingcute:file-unknown-line"
+							className="size-12 opacity-50"
+						/>
+					</div>
+				)}
+
+				<div
+					className="absolute right-0 bottom-0 block p-2 opacity-0 transition-opacity group-hover:opacity-100 data-selected:opacity-100"
+					data-selected={selected || undefined}
+				>
+					<div className="sr-only">Selected</div>
+					<input
+						type="checkbox"
+						className="block size-5 accent-primary-400"
+						checked={selected}
+						onChange={(event) => onSelectedChange(event.target.checked)}
+					/>
+				</div>
+
+				<div
+					className="pointer-events-none absolute inset-0 bg-primary-400/25 opacity-0 transition-opacity data-visible:opacity-100"
+					data-visible={selected || undefined}
+				/>
+			</label>
+
+			<WithTooltip content={asset.name} positionerProps={{ side: "bottom" }}>
+				<button
+					type="button"
+					className="group flex h-6.5 w-full items-center gap-1 px-2 text-xs/tight font-semibold hover:bg-gray-800"
+					onClick={() => {
+						const newName = prompt("New name?", asset.name)?.trim()
+						if (!newName) return
+
+						updateAsset({ id: asset._id, name: newName })
+					}}
+				>
+					<div className="flex-1 truncate">{asset.name}</div>
+					<div className="flex h-4 w-0 justify-end transition-[width] group-hover:w-4">
+						<Icon
+							icon="mingcute:pencil-fill"
+							className="size-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+						/>
+					</div>
+				</button>
+			</WithTooltip>
+		</div>
 	)
 }
 
@@ -364,17 +355,27 @@ function getResizedImageUrl(url: string, width: number) {
 	return imageUrl
 }
 
-const articles = new Set(["the", "of", "and", "a", "in", "to", "is"])
+const articles = new Set([
+	"the",
+	"of",
+	"and",
+	"a",
+	"in",
+	"to",
+	"is",
+	"by",
+	"with",
+])
 
 /**
- * Convert a file name into a more human-readable format:
+ * Convert a file name into a human-readable title:
  * - Removes the file extension
  * - Turns all non-word characters (alphanumeric and period, e.g. for "Mr.") into spaces
  * - Converts the file name to Title Case, special-casing articles like "the" and "of"
  */
-function humanizeFileName(fileName: string) {
+function titleifyFileName(fileName: string) {
 	const nameWithoutExtension = fileName.replace(/\.[^/.]+$/, "")
-	const parts = nameWithoutExtension.matchAll(/[\w.]+/g)
+	const parts = nameWithoutExtension.matchAll(/[a-z0-9.]+/gi)
 	return [...parts]
 		.map(([part]) => {
 			if (articles.has(part.toLowerCase())) {
@@ -383,4 +384,12 @@ function humanizeFileName(fileName: string) {
 			return part.slice(0, 1).toUpperCase() + part.slice(1).toLowerCase()
 		})
 		.join(" ")
+}
+
+function counted(
+	count: number,
+	singluarWord: string,
+	pluralWord = `${singluarWord}s`,
+) {
+	return `${count} ${count === 1 ? singluarWord : pluralWord}`
 }
