@@ -330,7 +330,7 @@ function AssetCard({
 			<WithTooltip content={asset.name} positionerProps={{ side: "bottom" }}>
 				<button
 					type="button"
-					className="group flex h-6.5 w-full items-center gap-1 px-2 text-xs/tight font-semibold hover:bg-gray-800"
+					className="group flex h-6.5 w-full items-center justify-center gap-1 px-2 text-xs/tight font-semibold hover:bg-gray-800"
 					onClick={() => {
 						const newName = prompt("New name?", asset.name)?.trim()
 						if (!newName) return
@@ -338,7 +338,7 @@ function AssetCard({
 						updateAsset({ id: asset._id, name: newName })
 					}}
 				>
-					<div className="flex-1 truncate">{asset.name}</div>
+					<div className="truncate">{asset.name}</div>
 					<div className="flex h-4 w-0 justify-end transition-[width] group-hover:w-4">
 						<Icon
 							icon="mingcute:pencil-fill"
