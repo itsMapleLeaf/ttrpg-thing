@@ -1,9 +1,11 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
 import { ConvexError, type Infer, v } from "convex/values"
-import { literals } from "convex-helpers/validators"
-import type { Doc, Id } from "./_generated/dataModel.js"
+import { omit } from "convex-helpers"
+import { literals, partial } from "convex-helpers/validators"
+import type { Doc, Id } from "./_generated/dataModel"
 import { mutation, type QueryCtx, query } from "./_generated/server"
-import { ensureAuthUserId } from "./auth.js"
+import { ensureAuthUserId } from "./auth.ts"
+import schema from "./schema.ts"
 
 export type AssetListOrder = Infer<typeof assetListOrderValidator>
 const assetListOrderValidator = literals("alphabetical", "newestFirst")
@@ -71,11 +73,7 @@ export const get = query({
 })
 
 export const create = mutation({
-	args: {
-		name: v.string(),
-		fileId: v.id("_storage"),
-		roomId: v.id("rooms"),
-	},
+	args: omit(schema.tables.assets.validator.fields, ["ownerId"]),
 	handler: async (ctx, args) => {
 		const userId = await ensureAuthUserId(ctx)
 
@@ -85,9 +83,7 @@ export const create = mutation({
 		// }
 
 		const assetId = await ctx.db.insert("assets", {
-			name: args.name,
-			fileId: args.fileId,
-			roomId: args.roomId,
+			...args,
 			ownerId: userId,
 		})
 
@@ -98,7 +94,7 @@ export const create = mutation({
 export const update = mutation({
 	args: {
 		id: v.id("assets"),
-		name: v.string(),
+		patch: v.object(partial(schema.tables.assets.validator.fields)),
 	},
 	handler: async (ctx, args) => {
 		const userId = await ensureAuthUserId(ctx)
@@ -112,9 +108,7 @@ export const update = mutation({
 			throw new Error("You don't have permission to update this asset")
 		}
 
-		await ctx.db.patch(args.id, {
-			name: args.name,
-		})
+		await ctx.db.patch(args.id, args.patch)
 
 		return args.id
 	},
@@ -136,9 +130,9 @@ export const remove = mutation({
 
 		// this can only fail if the file doesn't exist,
 		// but we'll warn just in case
-		if (asset.fileId) {
+		if (asset.image?.fileId) {
 			try {
-				await ctx.storage.delete(asset.fileId)
+				await ctx.storage.delete(asset.image.fileId)
 			} catch (error) {
 				console.warn("Failed to delete asset file", asset, error)
 			}
@@ -172,9 +166,9 @@ export const removeMany = mutation({
 
 				// this can only fail if the file doesn't exist,
 				// but we'll warn just in case
-				if (asset.fileId) {
+				if (asset.image?.fileId) {
 					try {
-						await ctx.storage.delete(asset.fileId)
+						await ctx.storage.delete(asset.image.fileId)
 					} catch (error) {
 						console.warn("Failed to delete asset file", asset, error)
 					}
@@ -203,7 +197,10 @@ async function makeClientAsset(
 ) {
 	return {
 		...asset,
-		url: asset.fileId && (await ctx.storage.getUrl(asset.fileId)),
 		isOwner: asset.ownerId === userId,
+		image: asset.image && {
+			...asset.image,
+			imageUrl: await ctx.storage.getUrl(asset.image.fileId),
+		},
 	}
 }

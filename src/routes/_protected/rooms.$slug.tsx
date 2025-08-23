@@ -4,11 +4,11 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { useQuery } from "convex/react"
 import type { FunctionReturnType } from "convex/server"
 import { api } from "../../../convex/_generated/api.js"
-import { AssetList } from "../../components/AssetList.tsx"
+import { ImageAssetList } from "../../components/ImageAssetList.tsx"
 import { PageHeader } from "../../components/PageHeader.tsx"
 import { ResourceListFilterProvider } from "../../components/ResourceList.tsx"
+import { SceneList } from "../../components/SceneList.tsx"
 import { Surface } from "../../components/Surface.tsx"
-import { EmptyState } from "../../ui/EmptyState.tsx"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({
 	component: RoomDetail,
@@ -56,17 +56,12 @@ function RoomSidebar({
 		{
 			value: "assets",
 			icon: "mingcute:pic-fill",
-			content: <AssetList roomId={room._id} />,
+			content: <ImageAssetList roomId={room._id} />,
 		},
 		{
 			value: "scenes",
 			icon: "mingcute:clapperboard-fill",
-			content: (
-				<EmptyState
-					icon="mingcute:clapperboard-line"
-					message="No scenes found."
-				/>
-			),
+			content: <SceneList roomId={room._id} />,
 		},
 	]
 

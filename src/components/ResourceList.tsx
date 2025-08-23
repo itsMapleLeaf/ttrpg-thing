@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
 import { createContext, use, useRef, useState, useTransition } from "react"
+import { twMerge } from "tailwind-merge"
 import type { SetOptional } from "type-fest"
 import type { Id } from "../../convex/_generated/dataModel"
 import type { AssetListOrder } from "../../convex/assets.ts"
@@ -7,6 +8,7 @@ import { useUploadImage } from "../hooks/useUploadImage.ts"
 import { counted } from "../lib/helpers.ts"
 import type { NonEmptyArray } from "../types.ts"
 import { Button, type ButtonProps } from "../ui/Button.tsx"
+import { EmptyState } from "../ui/EmptyState.tsx"
 import { SmartImage } from "../ui/SmartImage.tsx"
 import { useToastContext } from "../ui/Toast.tsx"
 import { WithTooltip } from "../ui/Tooltip.tsx"
@@ -113,12 +115,14 @@ export function ResourceList<ResourceType, ResourceIdType>({
 	resources,
 	getResourceId,
 	createResource,
+	createResourceFromImage,
 	removeManyResources,
 	renderList,
 }: {
 	resources: ResourceType[]
 	getResourceId: (resource: ResourceType) => ResourceIdType
-	createResource: (args: {
+	createResource?: () => unknown
+	createResourceFromImage?: (args: {
 		fileName: string
 		fileId: Id<"_storage">
 	}) => unknown
@@ -141,31 +145,33 @@ export function ResourceList<ResourceType, ResourceIdType>({
 		resources.map(getResourceId),
 	)
 
-	const uploadAssets = async (files: File[]) => {
-		const results = await Promise.all(
-			files.map(async (file) => {
-				const { name } = file // files can get GC'd, so capture the name for output later
-				try {
-					const fileId = await uploadImage(file)
-					await createResource({
-						fileName: file.name,
-						fileId,
-					})
-					return { success: true } as const
-				} catch (error) {
-					console.error(error)
-					return { success: false, name } as const
-				}
-			}),
-		)
-
-		const failedResults = results.filter((it) => !it.success)
-		if (failedResults.length > 0) {
-			toast.error(
-				`The following files failed to upload:\n${failedResults.map((it) => it.name).join("\n")}`,
+	const uploadAssets =
+		createResourceFromImage &&
+		(async (files: File[]) => {
+			const results = await Promise.all(
+				files.map(async (file) => {
+					const { name } = file // files can get GC'd, so capture the name for output later
+					try {
+						const fileId = await uploadImage(file)
+						await createResourceFromImage({
+							fileName: file.name,
+							fileId,
+						})
+						return { success: true } as const
+					} catch (error) {
+						console.error(error)
+						return { success: false, name } as const
+					}
+				}),
 			)
-		}
-	}
+
+			const failedResults = results.filter((it) => !it.success)
+			if (failedResults.length > 0) {
+				toast.error(
+					`The following files failed to upload:\n${failedResults.map((it) => it.name).join("\n")}`,
+				)
+			}
+		})
 
 	const deleteSelected = async () => {
 		if (confirm(`Are you sure you want to delete ${selection.size} assets?`)) {
@@ -175,7 +181,7 @@ export function ResourceList<ResourceType, ResourceIdType>({
 	}
 
 	return (
-		<div className="flex h-full flex-col">
+		<div className="flex h-full w-full flex-col">
 			<div className="flex flex-col gap-2 border-b border-gray-700 p-2">
 				<div className="flex gap-2">
 					<div className="relative flex flex-1 items-center">
@@ -210,7 +216,19 @@ export function ResourceList<ResourceType, ResourceIdType>({
 				<div className="flex gap-2">
 					{selection.size === 0 ? (
 						<>
-							<FilePicker className="flex-1" onFilesChosen={uploadAssets} />
+							{uploadAssets && (
+								<FilePicker className="flex-1" onFilesChosen={uploadAssets} />
+							)}
+							{createResource && (
+								<Button
+									icon="mingcute:add-fill"
+									appearance="solid"
+									className="flex-1"
+									onClick={createResource}
+								>
+									New
+								</Button>
+							)}
 							{selection.size < (resources?.length ?? 0) && (
 								<Button
 									icon="mingcute:checks-fill"
@@ -261,9 +279,7 @@ export function ResourceList<ResourceType, ResourceIdType>({
 				{resources === undefined ? (
 					<p className="py-4 text-center text-sm opacity-70">Loading...</p>
 				) : resources.length === 0 ? (
-					<p className="py-4 text-center text-sm opacity-70">
-						{searchTerm ? "No assets found" : "No assets yet"}
-					</p>
+					<EmptyState icon="mingcute:empty-box-line" message="Nothing here!" />
 				) : (
 					renderList(
 						resources.map((resource) => ({
@@ -336,19 +352,26 @@ function FilePicker({
 export function ResourceCard({
 	name,
 	imageUrl,
+	imageWrapperClass,
 	selected,
 	onChangeSelected,
 	onChangeName,
 }: {
 	name: string
 	imageUrl: string | null | undefined
+	imageWrapperClass?: string
 	selected: boolean
 	onChangeSelected: (selected: boolean) => void
 	onChangeName: (name: string) => unknown
 }) {
 	return (
-		<div className="panel bg-gray-950/40 outline-2 outline-transparent transition-colors">
-			<label className="group relative block aspect-square">
+		<div className="w-full panel bg-gray-950/40 outline-2 outline-transparent transition-colors">
+			<label
+				className={twMerge(
+					"group relative block select-none",
+					imageWrapperClass,
+				)}
+			>
 				{imageUrl ? (
 					<SmartImage
 						src={imageUrl}
@@ -395,7 +418,7 @@ export function ResourceCard({
 					}}
 				>
 					<div className="truncate">{name}</div>
-					<div className="flex h-4 w-0 justify-end transition-[width] group-hover:w-4">
+					<div className="flex h-4 w-0 justify-center transition-[width] group-hover:w-4">
 						<Icon
 							icon="mingcute:pencil-fill"
 							className="size-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"

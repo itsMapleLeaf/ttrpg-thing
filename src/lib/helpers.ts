@@ -1,3 +1,10 @@
+export function trace<T>(value: T) {
+	if (process.env.NODE_ENV === "development") {
+		console.log("TRACE:", value)
+	}
+	return value
+}
+
 export function counted(
 	count: number,
 	singluarWord: string,
