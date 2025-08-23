@@ -40,12 +40,21 @@ const sortOptions: NonEmptyArray<SortOption> = [
 type FilterState = ReturnType<typeof useFilterState>
 function useFilterState() {
 	const [searchTerm, setSearchTerm] = useState("")
-	const [sortOption, setSortOption] = useState(sortOptions[0])
+
+	const [sortOptionId, setSortOptionId] = useLocalStorage({
+		key: "AssetList:sortOptionId",
+		fallback: sortOptions[0].id,
+		schema: type.enumerated("alphabetical", "newestFirst"),
+	})
+
+	const sortOption =
+		sortOptions.find((it) => it.id === sortOptionId) ?? sortOptions[0]
+
 	return {
 		searchTerm,
 		setSearchTerm,
 		sortOption,
-		setSortOption,
+		setSortOptionId,
 	}
 }
 
@@ -73,7 +82,7 @@ function AssetListInternal({
 	searchTerm,
 	setSearchTerm,
 	sortOption,
-	setSortOption,
+	setSortOptionId,
 }: {
 	roomId: Id<"rooms">
 	assets: ClientAsset[]
@@ -356,10 +365,12 @@ function AssetListInternal({
 						icon={sortOption.icon}
 						shape="square"
 						onClick={() => {
-							setSortOption((order) => {
-								const currentIndex = sortOptions.indexOf(order)
+							setSortOptionId((orderId) => {
+								const currentIndex = sortOptions.findIndex(
+									(it) => it.id === orderId,
+								)
 								const nextIndex = (currentIndex + 1) % sortOptions.length
-								return sortOptions[nextIndex] as SortOption
+								return (sortOptions[nextIndex] ?? sortOptions[0]).id
 							})
 						}}
 					>
