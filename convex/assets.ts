@@ -73,7 +73,24 @@ export const get = query({
 })
 
 export const create = mutation({
-	args: omit(schema.tables.assets.validator.fields, ["ownerId"]),
+	args: {
+		...omit(schema.tables.assets.validator.fields, ["ownerId"]),
+		image: v.optional(
+			v.object({
+				...omit(schema.tables.assets.validator.fields.image.fields, ["key"]),
+			}),
+		),
+		scene: v.optional(
+			v.object({
+				...omit(schema.tables.assets.validator.fields.scene.fields, ["key"]),
+			}),
+		),
+		actor: v.optional(
+			v.object({
+				...omit(schema.tables.assets.validator.fields.actor.fields, ["key"]),
+			}),
+		),
+	},
 	handler: async (ctx, args) => {
 		const userId = await ensureAuthUserId(ctx)
 
@@ -85,6 +102,9 @@ export const create = mutation({
 		const assetId = await ctx.db.insert("assets", {
 			...args,
 			ownerId: userId,
+			image: args.image && { ...args.image, key: crypto.randomUUID() },
+			scene: args.scene && { ...args.scene, key: crypto.randomUUID() },
+			actor: args.actor && { ...args.actor, key: crypto.randomUUID() },
 		})
 
 		return assetId

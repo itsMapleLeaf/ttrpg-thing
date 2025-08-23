@@ -19,6 +19,7 @@ export default defineSchema({
 		name: v.string(),
 		slug: v.string(),
 		ownerId: v.id("users"),
+		currentSceneKey: v.optional(nullable(v.string())),
 	})
 		.index("by_owner", ["ownerId"])
 		.index("by_slug", ["slug"]),
@@ -30,16 +31,19 @@ export default defineSchema({
 		type: assetTypeValidator,
 		image: v.optional(
 			v.object({
+				key: v.string(),
 				fileId: v.id("_storage"),
 			}),
 		),
 		scene: v.optional(
 			v.object({
+				key: v.string(),
 				backgroundId: v.optional(v.id("assets")),
 			}),
 		),
 		actor: v.optional(
 			v.object({
+				key: v.string(),
 				imageId: v.id("assets"),
 				left: v.number(),
 				top: v.number(),
@@ -51,7 +55,9 @@ export default defineSchema({
 	})
 		.index("by_room", ["roomId"])
 		.index("by_room_and_name", ["roomId", "name"])
-		.index("by_type", ["type"])
+		.index("by_image_key", ["image.key"])
+		.index("by_scene_key", ["scene.key"])
+		.index("by_actor_key", ["actor.key"])
 		.searchIndex("search_by_name", {
 			searchField: "name",
 			filterFields: ["roomId", "type"],
