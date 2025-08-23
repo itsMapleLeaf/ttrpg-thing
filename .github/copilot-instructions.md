@@ -16,6 +16,8 @@
 
 - Do not use `e` as the argument for event handlers, use `event` instead.
 
+- Do **not** preemptively add type casts. Only consider doing so if you encounter a type error
+
 ## React
 
 - Use `<form action={...}>` for form submissions instead of `<form onSubmit={...}>`
