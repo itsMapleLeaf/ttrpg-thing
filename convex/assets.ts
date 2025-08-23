@@ -1,5 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
-import { type Infer, v } from "convex/values"
+import { ConvexError, type Infer, v } from "convex/values"
 import { literals } from "convex-helpers/validators"
 import type { Doc, Id } from "./_generated/dataModel.js"
 import { mutation, type QueryCtx, query } from "./_generated/server"
@@ -145,8 +145,53 @@ export const remove = mutation({
 		}
 
 		await ctx.db.delete(args.id)
+	},
+})
 
-		return args.id
+export const removeMany = mutation({
+	args: { ids: v.array(v.id("assets")) },
+	handler: async (ctx, args) => {
+		const userId = await ensureAuthUserId(ctx)
+
+		const results = await Promise.allSettled(
+			args.ids.map(async (id) => {
+				const asset = await ctx.db.get(id)
+				if (!asset) {
+					throw new ConvexError({
+						message: "Not found",
+						id,
+					})
+				}
+
+				if (asset.ownerId !== userId) {
+					throw new ConvexError({
+						message: `You don't have permission to do that.`,
+						id,
+					})
+				}
+
+				// this can only fail if the file doesn't exist,
+				// but we'll warn just in case
+				if (asset.fileId) {
+					try {
+						await ctx.storage.delete(asset.fileId)
+					} catch (error) {
+						console.warn("Failed to delete asset file", asset, error)
+					}
+				}
+
+				await ctx.db.delete(id)
+			}),
+		)
+
+		return {
+			errors: results
+				.filter((it) => it.status === "rejected")
+				.map((result) => {
+					console.error(result.reason)
+					return result instanceof Error ? result.message : String(result)
+				}),
+		}
 	},
 })
 
