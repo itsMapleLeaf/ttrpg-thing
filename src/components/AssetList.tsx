@@ -1,9 +1,11 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
+import { type } from "arktype"
 import { useMutation, useQuery } from "convex/react"
 import { type ReactNode, useState } from "react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
-import type { AssetListOrder } from "../../convex/assets.ts"
+import type { AssetListOrder, ClientAsset } from "../../convex/assets.ts"
+import { useLocalStorage } from "../hooks/useLocalStorage.ts"
 import { useStable } from "../hooks/useStable.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
 import { counted, getOptimizedImageUrl } from "../lib/helpers.ts"
@@ -12,6 +14,7 @@ import type { NonEmptyArray } from "../types.ts"
 import { Button } from "../ui/Button.tsx"
 import { EmptyState } from "../ui/EmptyState.tsx"
 import { Iconish, type IconishIcon } from "../ui/Iconish.tsx"
+import { Loading } from "../ui/Loading.tsx"
 import { useToastContext } from "../ui/Toast.tsx"
 import { AssetCard } from "./AssetCard.tsx"
 
@@ -34,18 +37,47 @@ const sortOptions: NonEmptyArray<SortOption> = [
 	},
 ]
 
-export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
+type FilterState = ReturnType<typeof useFilterState>
+function useFilterState() {
 	const [searchTerm, setSearchTerm] = useState("")
 	const [sortOption, setSortOption] = useState(sortOptions[0])
+	return {
+		searchTerm,
+		setSearchTerm,
+		sortOption,
+		setSortOption,
+	}
+}
+
+export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
+	const filterState = useFilterState()
 
 	const assets = useStable(
 		useQuery(api.assets.list, {
 			roomId,
-			searchTerm,
-			order: sortOption.id,
+			searchTerm: filterState.searchTerm,
+			order: filterState.sortOption.id,
 		}),
 	)
 
+	return assets === undefined ? (
+		<Loading />
+	) : (
+		<AssetListInternal {...filterState} roomId={roomId} assets={assets} />
+	)
+}
+
+function AssetListInternal({
+	roomId,
+	assets,
+	searchTerm,
+	setSearchTerm,
+	sortOption,
+	setSortOption,
+}: {
+	roomId: Id<"rooms">
+	assets: ClientAsset[]
+} & FilterState) {
 	const createAsset = useMutation(api.assets.create)
 	const removeAssets = useMutation(api.assets.removeMany)
 	const toast = useToastContext()
@@ -410,7 +442,11 @@ function ToggleSection({
 	children,
 	actions,
 }: ToggleSectionProps) {
-	const [isCollapsed, setIsCollapsed] = useState(false)
+	const [isCollapsed, setIsCollapsed] = useLocalStorage({
+		key: `AssetListToggleSection:${name}:collapsed`,
+		fallback: false,
+		schema: type("boolean"),
+	})
 
 	const toggleCollapsed = () => {
 		setIsCollapsed((prev) => !prev)
