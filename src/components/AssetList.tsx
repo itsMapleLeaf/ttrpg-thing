@@ -94,6 +94,7 @@ function AssetListInternal({
 	assets: ClientAsset[]
 } & FilterState) {
 	const createAsset = useMutation(api.assets.create)
+	const updateAsset = useMutation(api.assets.update)
 	const removeAssets = useMutation(api.assets.removeMany)
 	const toast = useToastContext()
 	const uploadImage = useUploadImage()
@@ -133,9 +134,8 @@ function AssetListInternal({
 		}
 	}
 
-	const { selection, clearSelection, selectAll, setSelected } = useSelection(
-		assets?.map((asset) => asset._id) ?? [],
-	)
+	const { selection, setSelection, clearSelection, selectAll, setSelected } =
+		useSelection(assets?.map((asset) => asset._id) ?? [])
 
 	const imageAssets = assets?.filter((asset) => asset.type === "image") || []
 	const sceneAssets = assets?.filter((asset) => asset.type === "scene") || []
@@ -256,7 +256,10 @@ function AssetListInternal({
 								onChangeSelected={(selected) => {
 									setSelected(asset._id, selected)
 								}}
-								onChangeName={() => {}}
+								onChangeName={async (name) => {
+									await updateAsset({ id: asset._id, patch: { name } })
+									setSelection([asset._id])
+								}}
 							/>
 						))}
 					</div>
@@ -322,7 +325,10 @@ function AssetListInternal({
 								onChangeSelected={(selected) => {
 									setSelected(asset._id, selected)
 								}}
-								onChangeName={() => {}}
+								onChangeName={async (name) => {
+									await updateAsset({ id: asset._id, patch: { name } })
+									setSelection([asset._id])
+								}}
 							/>
 						))}
 					</div>
@@ -385,7 +391,10 @@ function AssetListInternal({
 								onChangeSelected={(selected) => {
 									setSelected(asset._id, selected)
 								}}
-								onChangeName={() => {}}
+								onChangeName={async (name) => {
+									await updateAsset({ id: asset._id, patch: { name } })
+									setSelection([asset._id])
+								}}
 							/>
 						))}
 					</div>
@@ -631,5 +640,8 @@ function useSelection<T>(library: T[]) {
 		selectAll,
 		setSelected: setItemSelected,
 		toggleSelected,
+		setSelection: (selection: Iterable<T>) => {
+			setSelection(new Set(selection))
+		},
 	}
 }
