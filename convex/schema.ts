@@ -25,8 +25,7 @@ export default defineSchema({
 		name: v.string(),
 		roomId: v.id("rooms"),
 		ownerId: v.id("users"),
-		fileId: v.optional(nullable(v.id("_storage"))),
-		data: v.optional(v.record(v.string(), v.any())),
+		fileId: v.id("_storage"),
 	})
 		.index("by_room", ["roomId"])
 		.index("by_room_and_name", ["roomId", "name"])
