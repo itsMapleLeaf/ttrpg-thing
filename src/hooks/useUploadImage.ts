@@ -14,7 +14,7 @@ export function useUploadImage() {
 			body: image,
 		})
 
-		const { storageId } = await result.json()
-		return storageId as Id<"_storage">
+		const { storageId } = (await result.json()) as { storageId: Id<"_storage"> }
+		return storageId
 	}
 }
