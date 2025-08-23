@@ -200,7 +200,26 @@ async function makeClientAsset(
 		isOwner: asset.ownerId === userId,
 		image: asset.image && {
 			...asset.image,
-			imageUrl: await ctx.storage.getUrl(asset.image.fileId),
+			imageUrl: await getAssetImageUrl(ctx, asset._id),
+		},
+		scene: asset.scene && {
+			...asset.scene,
+			backgroundUrl:
+				asset.scene?.backgroundId &&
+				(await getAssetImageUrl(ctx, asset.scene.backgroundId)),
+		},
+		actor: asset.actor && {
+			...asset.actor,
+			imageUrl:
+				asset.actor?.imageId &&
+				(await getAssetImageUrl(ctx, asset.actor.imageId)),
 		},
 	}
+}
+
+async function getAssetImageUrl(ctx: QueryCtx, assetId: Id<"assets">) {
+	const asset = await ctx.db.get(assetId)
+	if (!asset?.image?.fileId) return
+
+	return await ctx.storage.getUrl(asset.image.fileId)
 }

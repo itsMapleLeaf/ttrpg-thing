@@ -41,6 +41,7 @@ export default defineSchema({
 		actor: v.optional(
 			v.object({
 				sceneId: v.id("rooms"),
+				imageId: v.id("assets"),
 				left: v.number(),
 				top: v.number(),
 				width: v.number(),
