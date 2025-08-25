@@ -7,7 +7,7 @@
 		"dev": "convex dev --once && concurrently -r npm:dev:web npm:dev:convex",
 		"dev:web": "vite dev",
 		"dev:ts": "tsc -b -w",
-		"dev:convex": "convex dev",
+		"dev:convex": "convex dev --typecheck=disable",
 		"build": "vite build && tsc --noEmit",
 		"start": "node .output/server/index.mjs",
 		"format": "prettier --write ."
