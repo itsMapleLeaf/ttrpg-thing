@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!src/routeTree.gen.ts", "!convex/_generated"]
+		"includes": ["**", "!src/routeTree.gen.ts", "!convex/_generated/*"]
 	},
 	"formatter": {
 		"enabled": false
