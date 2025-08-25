@@ -1,10 +1,13 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
 import { type } from "arktype"
 import { useMutation, useQuery } from "convex/react"
+import { isEqual } from "es-toolkit"
 import { type ReactNode, useState } from "react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
+import type { ClientActor } from "../../convex/actors.ts"
 import type { AssetListOrder, ClientAsset } from "../../convex/assets.ts"
+import type { ClientScene } from "../../convex/scenes.ts"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
 import { useStable } from "../hooks/useStable.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
@@ -23,6 +26,11 @@ import { Menu, MenuButton, MenuItem, MenuPanel } from "../ui/Menu.tsx"
 import { ScrollArea } from "../ui/ScrollArea.tsx"
 import { useToastContext } from "../ui/Toast.tsx"
 import { AssetCard } from "./AssetCard.tsx"
+
+type SelectedItem =
+	| { type: "asset"; id: Id<"assets"> }
+	| { type: "scene"; id: Id<"scenes"> }
+	| { type: "actor"; id: Id<"actors"> }
 
 type SortOption = {
 	id: AssetListOrder
@@ -75,16 +83,42 @@ export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
 		}),
 	)
 
-	return assets === undefined ? (
+	const scenes = useStable(
+		useQuery(api.scenes.list, {
+			roomId,
+			searchTerm: filterState.searchTerm,
+			order: filterState.sortOption.id,
+		}),
+	)
+
+	const actors = useStable(
+		useQuery(api.actors.list, {
+			roomId,
+			searchTerm: filterState.searchTerm,
+			order: filterState.sortOption.id,
+		}),
+	)
+
+	return assets === undefined ||
+		scenes === undefined ||
+		actors === undefined ? (
 		<Loading />
 	) : (
-		<AssetListInternal {...filterState} roomId={roomId} assets={assets} />
+		<AssetListInternal
+			{...filterState}
+			roomId={roomId}
+			assets={assets}
+			scenes={scenes}
+			actors={actors}
+		/>
 	)
 }
 
 function AssetListInternal({
 	roomId,
 	assets,
+	scenes,
+	actors,
 	searchTerm,
 	setSearchTerm,
 	sortOption,
@@ -92,10 +126,16 @@ function AssetListInternal({
 }: {
 	roomId: Id<"rooms">
 	assets: ClientAsset[]
+	scenes: ClientScene[]
+	actors: ClientActor[]
 } & FilterState) {
 	const createAsset = useMutation(api.assets.create)
 	const updateAsset = useMutation(api.assets.update)
 	const removeAssets = useMutation(api.assets.removeMany)
+	const createScene = useMutation(api.scenes.create)
+	const updateScene = useMutation(api.scenes.update)
+	const createActor = useMutation(api.actors.create)
+	const updateActor = useMutation(api.actors.update)
 	const toast = useToastContext()
 	const uploadImage = useUploadImage()
 
@@ -108,8 +148,7 @@ function AssetListInternal({
 					await createAsset({
 						roomId,
 						name: titleifyFileName(file.name),
-						type: "image",
-						image: { fileId },
+						fileId,
 					})
 					return { success: true } as const
 				} catch (error) {
@@ -128,27 +167,40 @@ function AssetListInternal({
 	}
 
 	const deleteSelected = async () => {
-		if (confirm(`Are you sure you want to delete ${selection.size} assets?`)) {
-			await removeAssets({ ids: [...selection] })
+		const assetIds: Id<"assets">[] = []
+		const sceneIds: Id<"scenes">[] = []
+		const actorIds: Id<"actors">[] = []
+
+		for (const item of selection) {
+			if (item.type === "asset") assetIds.push(item.id)
+			else if (item.type === "scene") sceneIds.push(item.id)
+			else if (item.type === "actor") actorIds.push(item.id)
+		}
+
+		if (confirm(`Are you sure you want to delete ${selection.length} items?`)) {
+			if (assetIds.length > 0) await removeAssets({ ids: assetIds })
+			// TODO: Add scene and actor deletion when needed
 			clearSelection()
 		}
 	}
 
-	const { selection, setSelection, clearSelection, selectAll, setSelected } =
-		useSelection(assets?.map((asset) => asset._id) ?? [])
+	const allSelectableItems: SelectedItem[] = [
+		...assets.map((asset) => ({ type: "asset" as const, id: asset._id })),
+		...scenes.map((scene) => ({ type: "scene" as const, id: scene._id })),
+		...actors.map((actor) => ({ type: "actor" as const, id: actor._id })),
+	]
 
-	const imageAssets = assets?.filter((asset) => asset.type === "image") || []
-	const sceneAssets = assets?.filter((asset) => asset.type === "scene") || []
-	const actorAssets = assets?.filter((asset) => asset.type === "actor") || []
+	const {
+		selection,
+		isSelected,
+		setSelection,
+		clearSelection,
+		selectAll,
+		setSelected,
+	} = useSelection(allSelectableItems)
 
-	const selectedImageAssets = imageAssets.filter((asset) =>
-		selection.has(asset._id),
-	)
-	const selectedSceneAssets = sceneAssets.filter((asset) =>
-		selection.has(asset._id),
-	)
-	const selectedActorAssets = actorAssets.filter((asset) =>
-		selection.has(asset._id),
+	const selectedImageAssets = assets.filter((asset) =>
+		isSelected({ type: "asset", id: asset._id }),
 	)
 
 	const assetSections: ToggleSectionProps[] = [
@@ -158,12 +210,12 @@ function AssetListInternal({
 				selectedImageAssets.length > 0 &&
 				`${selectedImageAssets.length} selected`,
 			actions: [
-				selectedImageAssets.length < imageAssets.length && {
+				selectedImageAssets.length < assets.length && {
 					name: "Select all",
 					icon: "mingcute:checks-fill",
 					callback: () => {
-						for (const asset of imageAssets) {
-							setSelected(asset._id, true)
+						for (const asset of assets) {
+							setSelected({ type: "asset", id: asset._id }, true)
 						}
 					},
 				},
@@ -171,8 +223,8 @@ function AssetListInternal({
 					name: "Clear selection",
 					icon: "mingcute:minus-square-fill",
 					callback: () => {
-						for (const asset of imageAssets) {
-							setSelected(asset._id, false)
+						for (const asset of assets) {
+							setSelected({ type: "asset", id: asset._id }, false)
 						}
 					},
 				},
@@ -185,13 +237,10 @@ function AssetListInternal({
 							icon: "mingcute:clapperboard-fill",
 							callback: async () => {
 								for (const imageAsset of selectedImageAssets) {
-									await createAsset({
+									await createScene({
 										roomId,
 										name: imageAsset.name,
-										type: "scene",
-										scene: {
-											backgroundId: imageAsset._id,
-										},
+										backgroundId: imageAsset._id,
 									})
 								}
 								clearSelection()
@@ -202,17 +251,10 @@ function AssetListInternal({
 							icon: "mingcute:star-fill",
 							callback: async () => {
 								for (const imageAsset of selectedImageAssets) {
-									await createAsset({
+									await createActor({
 										roomId,
 										name: imageAsset.name,
-										type: "actor",
-										actor: {
-											imageId: imageAsset._id,
-											left: 0,
-											top: 0,
-											width: 100,
-											height: 100,
-										},
+										assetId: imageAsset._id,
 									})
 								}
 								clearSelection()
@@ -239,26 +281,26 @@ function AssetListInternal({
 				},
 			],
 			children:
-				imageAssets.length === 0 ? (
+				assets.length === 0 ? (
 					<EmptyState icon="mingcute:pic-line" message="No images yet" />
 				) : (
 					<div className="grid grid-cols-2 gap-2 p-2">
-						{imageAssets.map((asset) => (
+						{assets.map((asset) => (
 							<AssetCard
 								key={asset._id}
 								name={asset.name}
 								imageUrl={
-									asset.image?.imageUrl &&
-									getOptimizedImageUrl(asset.image.imageUrl, 200).href
+									asset.imageUrl &&
+									getOptimizedImageUrl(asset.imageUrl, 200).href
 								}
-								selected={selection.has(asset._id)}
+								selected={isSelected({ type: "asset", id: asset._id })}
 								imageWrapperClass="aspect-square"
 								onChangeSelected={(selected) => {
-									setSelected(asset._id, selected)
+									setSelected({ type: "asset", id: asset._id }, selected)
 								}}
 								onChangeName={async (name) => {
 									await updateAsset({ id: asset._id, patch: { name } })
-									setSelection([asset._id])
+									setSelection([{ type: "asset", id: asset._id }])
 								}}
 							/>
 						))}
@@ -268,66 +310,43 @@ function AssetListInternal({
 
 		{
 			name: "Scenes",
-			subtext:
-				selectedSceneAssets.length > 0 &&
-				`${selectedSceneAssets.length} selected`,
 			actions: [
-				selectedSceneAssets.length < sceneAssets.length && {
-					name: "Select all",
-					icon: "mingcute:checks-fill",
-					callback: () => {
-						for (const asset of sceneAssets) {
-							setSelected(asset._id, true)
-						}
-					},
-				},
-				selectedSceneAssets.length > 0 && {
-					name: "Clear selection",
-					icon: "mingcute:minus-square-fill",
-					callback: () => {
-						for (const asset of sceneAssets) {
-							setSelected(asset._id, false)
-						}
-					},
-				},
-				selectedSceneAssets.length === 0 && {
+				{
 					name: "Add scene",
 					icon: "mingcute:add-fill",
 					callback: () => {
 						const name = prompt("Scene name?", "New Scene")?.trim()
 						if (!name) return
-						createAsset({
+						createScene({
 							roomId,
 							name,
-							type: "scene",
 						})
 					},
 				},
 			],
 			children:
-				sceneAssets.length === 0 ? (
+				scenes.length === 0 ? (
 					<EmptyState
 						icon="mingcute:clapperboard-line"
 						message="No scenes yet"
 					/>
 				) : (
 					<div className="grid grid-cols-1 gap-2 p-2">
-						{sceneAssets.map((asset) => (
+						{scenes.map((asset) => (
 							<AssetCard
 								key={asset._id}
 								name={asset.name}
 								imageUrl={
-									asset.scene?.backgroundUrl &&
-									getOptimizedImageUrl(asset.scene.backgroundUrl, 500).href
+									asset.backgroundUrl &&
+									getOptimizedImageUrl(asset.backgroundUrl, 500).href
 								}
-								selected={selection.has(asset._id)}
+								selected={isSelected({ type: "scene", id: asset._id })}
 								imageWrapperClass="aspect-video"
 								onChangeSelected={(selected) => {
-									setSelected(asset._id, selected)
+									setSelected({ type: "scene", id: asset._id }, selected)
 								}}
 								onChangeName={async (name) => {
-									await updateAsset({ id: asset._id, patch: { name } })
-									setSelection([asset._id])
+									await updateScene({ id: asset._id, patch: { name } })
 								}}
 							/>
 						))}
@@ -337,63 +356,40 @@ function AssetListInternal({
 
 		{
 			name: "Actors",
-			subtext:
-				selectedActorAssets.length > 0 &&
-				`${selectedActorAssets.length} selected`,
 			actions: [
-				selectedActorAssets.length < actorAssets.length && {
-					name: "Select all",
-					icon: "mingcute:checks-fill",
-					callback: () => {
-						for (const asset of actorAssets) {
-							setSelected(asset._id, true)
-						}
-					},
-				},
-				selectedActorAssets.length > 0 && {
-					name: "Clear selection",
-					icon: "mingcute:minus-square-fill",
-					callback: () => {
-						for (const asset of actorAssets) {
-							setSelected(asset._id, false)
-						}
-					},
-				},
-				selectedActorAssets.length === 0 && {
+				{
 					name: "Add actor",
 					icon: "mingcute:add-fill",
 					callback: () => {
 						const name = prompt("Actor name?", "New Actor")?.trim()
 						if (!name) return
-						createAsset({
+						createActor({
 							roomId,
 							name,
-							type: "actor",
 						})
 					},
 				},
 			],
 			children:
-				actorAssets.length === 0 ? (
+				actors.length === 0 ? (
 					<EmptyState icon="mingcute:star-line" message="No actors yet" />
 				) : (
 					<div className="grid grid-cols-2 gap-2 p-2">
-						{actorAssets.map((asset) => (
+						{actors.map((asset) => (
 							<AssetCard
 								key={asset._id}
 								name={asset.name}
 								imageUrl={
-									asset.actor?.imageUrl &&
-									getOptimizedImageUrl(asset.actor.imageUrl, 200).href
+									asset.imageUrl &&
+									getOptimizedImageUrl(asset.imageUrl, 200).href
 								}
-								selected={selection.has(asset._id)}
+								selected={isSelected({ type: "actor", id: asset._id })}
 								imageWrapperClass="aspect-square"
 								onChangeSelected={(selected) => {
-									setSelected(asset._id, selected)
+									setSelected({ type: "actor", id: asset._id }, selected)
 								}}
 								onChangeName={async (name) => {
-									await updateAsset({ id: asset._id, patch: { name } })
-									setSelection([asset._id])
+									await updateActor({ id: asset._id, patch: { name } })
 								}}
 							/>
 						))}
@@ -438,8 +434,8 @@ function AssetListInternal({
 				</div>
 
 				<div className="flex gap-2">
-					{selection.size === 0 ? (
-						selection.size < (assets?.length ?? 0) && (
+					{selection.length === 0 ? (
+						selection.length < (assets?.length ?? 0) && (
 							<Button
 								icon="mingcute:checks-fill"
 								appearance="clear"
@@ -457,10 +453,10 @@ function AssetListInternal({
 								className="flex-1 button-danger"
 								onClick={deleteSelected}
 							>
-								Delete {counted(selection.size, "asset")}
+								Delete {counted(selection.length, "asset")}
 							</Button>
 
-							{selection.size < (assets?.length ?? 0) && (
+							{selection.length < (assets?.length ?? 0) && (
 								<Button
 									icon="mingcute:checks-fill"
 									appearance="clear"
@@ -599,49 +595,46 @@ function ToggleSection({
 	)
 }
 
-function useSelection<T>(library: T[]) {
-	const [selection, setSelection] = useState<ReadonlySet<T>>(new Set())
+function useSelection<T>(library: readonly T[]) {
+	const [selection, setSelection] = useState<readonly T[]>([])
 
 	const clearSelection = () => {
-		setSelection(new Set())
+		setSelection([])
 	}
 
 	const selectAll = () => {
-		setSelection(new Set(library))
+		setSelection(library)
 	}
 
 	const setItemSelected = (item: T, shouldBeSelected: boolean) => {
 		setSelection((selection) => {
-			const newSelection = new Set(selection)
-			if (shouldBeSelected) {
-				newSelection.add(item)
-			} else {
-				newSelection.delete(item)
+			if (!shouldBeSelected) {
+				return selection.filter((it) => !isEqual(it, item))
 			}
-			return newSelection
+			return isSelected(item, selection) ? selection : [...selection, item]
 		})
 	}
 
 	const toggleSelected = (item: T) => {
 		setSelection((selection) => {
-			const newSelection = new Set(selection)
-			if (newSelection.has(item)) {
-				newSelection.delete(item)
-			} else {
-				newSelection.add(item)
-			}
-			return newSelection
+			return isSelected(item, selection)
+				? selection.filter((it) => !isEqual(it, item))
+				: [...selection, item]
 		})
 	}
 
+	const isSelected = (item: T, currentSelection = selection) =>
+		currentSelection.some((it) => isEqual(it, item))
+
 	return {
 		selection,
+		isSelected,
 		clearSelection,
 		selectAll,
 		setSelected: setItemSelected,
 		toggleSelected,
 		setSelection: (selection: Iterable<T>) => {
-			setSelection(new Set(selection))
+			setSelection([...selection])
 		},
 	}
 }

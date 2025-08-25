@@ -75,21 +75,6 @@ export const get = query({
 export const create = mutation({
 	args: {
 		...omit(schema.tables.assets.validator.fields, ["ownerId"]),
-		image: v.optional(
-			v.object({
-				...omit(schema.tables.assets.validator.fields.image.fields, ["key"]),
-			}),
-		),
-		scene: v.optional(
-			v.object({
-				...omit(schema.tables.assets.validator.fields.scene.fields, ["key"]),
-			}),
-		),
-		actor: v.optional(
-			v.object({
-				...omit(schema.tables.assets.validator.fields.actor.fields, ["key"]),
-			}),
-		),
 	},
 	handler: async (ctx, args) => {
 		const userId = await ensureAuthUserId(ctx)
@@ -102,9 +87,6 @@ export const create = mutation({
 		const assetId = await ctx.db.insert("assets", {
 			...args,
 			ownerId: userId,
-			image: args.image && { ...args.image, key: crypto.randomUUID() },
-			scene: args.scene && { ...args.scene, key: crypto.randomUUID() },
-			actor: args.actor && { ...args.actor, key: crypto.randomUUID() },
 		})
 
 		return assetId
@@ -218,28 +200,6 @@ async function makeClientAsset(
 	return {
 		...asset,
 		isOwner: asset.ownerId === userId,
-		image: asset.image && {
-			...asset.image,
-			imageUrl: await getAssetImageUrl(ctx, asset._id),
-		},
-		scene: asset.scene && {
-			...asset.scene,
-			backgroundUrl:
-				asset.scene?.backgroundId &&
-				(await getAssetImageUrl(ctx, asset.scene.backgroundId)),
-		},
-		actor: asset.actor && {
-			...asset.actor,
-			imageUrl:
-				asset.actor?.imageId &&
-				(await getAssetImageUrl(ctx, asset.actor.imageId)),
-		},
+		imageUrl: await ctx.storage.getUrl(asset.fileId),
 	}
-}
-
-async function getAssetImageUrl(ctx: QueryCtx, assetId: Id<"assets">) {
-	const asset = await ctx.db.get(assetId)
-	if (!asset?.image?.fileId) return
-
-	return await ctx.storage.getUrl(asset.image.fileId)
 }
