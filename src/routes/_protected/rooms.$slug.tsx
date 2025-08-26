@@ -4,7 +4,7 @@ import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api.js"
 import { PageHeader } from "../../components/PageHeader.tsx"
 import { ResourcePanel } from "../../components/resource-panel/ResourcePanel.tsx"
-import { Surface } from "../../components/Surface.tsx"
+import { SurfaceViewer } from "../../components/surface/SurfaceViewer.tsx"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({
 	component: RoomDetail,
@@ -32,8 +32,8 @@ function RoomDetail() {
 					</Link>
 				</div>
 			) : (
-				<div className="relative flex min-h-0 flex-1">
-					<Surface />
+				<div className="relative flex-1">
+					<SurfaceViewer />
 					<div className="pointer-events-children absolute inset-y-0 left-0 p-2">
 						<ResourcePanel roomId={room._id} />
 					</div>
