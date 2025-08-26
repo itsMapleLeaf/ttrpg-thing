@@ -39,32 +39,28 @@ export function ResourcePanel({ roomId }: { roomId: Id<"rooms"> }) {
 
 function ResourcePanelToggle({ children }: { children: React.ReactNode }) {
 	const [expanded, setExpanded] = useState(false)
-	return (
-		<div className="pointer-events-children absolute inset-y-0 left-0 p-2">
-			{expanded ? (
-				<div className="relative h-full">
-					{children}
-					<div className="absolute top-0 left-full pl-2">
-						<Button
-							icon="mingcute:close-fill"
-							shape="square"
-							tooltipProps={{ positionerProps: { side: "right" } }}
-							onClick={() => setExpanded(false)}
-						>
-							Close menu
-						</Button>
-					</div>
-				</div>
-			) : (
+	return expanded ? (
+		<div className="pointer-events-children relative h-full">
+			{children}
+			<div className="pointer-events-children absolute top-0 left-full pl-2">
 				<Button
-					icon="mingcute:menu-fill"
+					icon="mingcute:close-fill"
 					shape="square"
 					tooltipProps={{ positionerProps: { side: "right" } }}
-					onClick={() => setExpanded(true)}
+					onClick={() => setExpanded(false)}
 				>
-					Open menu
+					Close menu
 				</Button>
-			)}
+			</div>
 		</div>
+	) : (
+		<Button
+			icon="mingcute:menu-fill"
+			shape="square"
+			tooltipProps={{ positionerProps: { side: "right" } }}
+			onClick={() => setExpanded(true)}
+		>
+			Open menu
+		</Button>
 	)
 }
