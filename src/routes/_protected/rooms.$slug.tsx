@@ -4,13 +4,15 @@ import { useQuery } from "convex/react"
 import { useState } from "react"
 import { api } from "../../../convex/_generated/api.js"
 import {
-	AssetList,
+	AssetListFilter,
 	useAssetListFilterState,
-} from "../../components/AssetList.tsx"
+} from "../../components/AssetListFilter.tsx"
+import { ImageAssetSection } from "../../components/ImageAssetSection.tsx"
 import { PageHeader } from "../../components/PageHeader.tsx"
 import { Surface } from "../../components/Surface.tsx"
 import { useStable } from "../../hooks/useStable.ts"
 import { Button } from "../../ui/Button.tsx"
+import { ScrollArea } from "../../ui/ScrollArea.tsx"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({
 	component: RoomDetail,
@@ -23,21 +25,21 @@ function RoomDetail() {
 	const loaderData = Route.useLoaderData()
 	const { slug } = Route.useParams()
 	const room = useQuery(api.rooms.get, { slug }) ?? loaderData
-
 	const filterState = useAssetListFilterState()
 
-	const assets = useStable(
-		useQuery(
-			api.assets.list,
-			room
-				? {
-						roomId: room._id,
-						searchTerm: filterState.searchTerm,
-						order: filterState.sortOption.id,
-					}
-				: "skip",
-		),
-	)
+	const assets =
+		useStable(
+			useQuery(
+				api.assets.list,
+				room
+					? {
+							roomId: room._id,
+							searchTerm: filterState.searchTerm,
+							order: filterState.sortOption.id,
+						}
+					: "skip",
+			),
+		) ?? []
 
 	return (
 		<div className="flex h-dvh flex-col">
@@ -57,11 +59,10 @@ function RoomDetail() {
 					<Surface />
 					<RoomMenuToggle>
 						<nav className="flex h-full w-72 flex-col panel overflow-y-auto border-gray-700 bg-gray-800">
-							<AssetList
-								{...filterState}
-								roomId={room._id}
-								assets={assets ?? []}
-							/>
+							<AssetListFilter {...filterState} />
+							<ScrollArea className="min-h-0 flex-1 bg-gray-900/50">
+								<ImageAssetSection roomId={room._id} assets={assets} />
+							</ScrollArea>
 						</nav>
 					</RoomMenuToggle>
 				</div>
