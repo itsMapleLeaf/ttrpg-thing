@@ -13,11 +13,13 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as artifacts from "../artifacts.js";
 import type * as assets from "../assets.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as rooms from "../rooms.js";
 import type * as storage from "../storage.js";
+import type * as surfaces from "../surfaces.js";
 import type * as users from "../users.js";
 
 /**
@@ -29,11 +31,13 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  artifacts: typeof artifacts;
   assets: typeof assets;
   auth: typeof auth;
   http: typeof http;
   rooms: typeof rooms;
   storage: typeof storage;
+  surfaces: typeof surfaces;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

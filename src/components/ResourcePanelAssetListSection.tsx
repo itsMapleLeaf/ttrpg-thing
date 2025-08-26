@@ -41,7 +41,6 @@ export function ResourcePanelAssetListSection({
 					await createAsset({
 						roomId,
 						name: titleifyFileName(file.name),
-						type: "image",
 						fileId,
 					})
 					return { success: true } as const

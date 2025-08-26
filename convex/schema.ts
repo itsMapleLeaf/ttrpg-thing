@@ -1,9 +1,7 @@
 import { authTables } from "@convex-dev/auth/server"
 import { defineSchema, defineTable } from "convex/server"
 import { v } from "convex/values"
-import { literals, nullable } from "convex-helpers/validators"
-
-export const assetTypeValidator = literals("image", "scene", "actor")
+import { nullable } from "convex-helpers/validators"
 
 export default defineSchema({
 	...authTables,
@@ -28,14 +26,13 @@ export default defineSchema({
 		name: v.string(),
 		roomId: v.id("rooms"),
 		ownerId: v.id("users"),
-		type: assetTypeValidator,
 		fileId: v.id("_storage"),
 	})
 		.index("by_room", ["roomId"])
 		.index("by_room_and_name", ["roomId", "name"])
 		.searchIndex("search_by_name", {
 			searchField: "name",
-			filterFields: ["roomId", "type"],
+			filterFields: ["roomId"],
 		}),
 
 	artifacts: defineTable({
@@ -46,6 +43,7 @@ export default defineSchema({
 		ownerId: v.id("users"),
 	})
 		.index("by_room", ["roomId"])
+		.index("by_room_and_name", ["roomId", "name"])
 		.searchIndex("search_by_name", {
 			searchField: "name",
 			filterFields: ["roomId", "type", "ownerId"],
@@ -53,11 +51,12 @@ export default defineSchema({
 
 	surfaces: defineTable({
 		name: v.string(),
-		backgroundId: v.id("assets"),
+		backgroundId: v.optional(nullable(v.id("assets"))),
 		roomId: v.id("rooms"),
 		ownerId: v.id("users"),
 	})
 		.index("by_room", ["roomId"])
+		.index("by_room_and_name", ["roomId", "name"])
 		.searchIndex("search_by_name", {
 			searchField: "name",
 			filterFields: ["roomId", "ownerId"],

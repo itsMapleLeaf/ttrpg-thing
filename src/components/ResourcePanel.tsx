@@ -10,6 +10,7 @@ import {
 	ResourcePanelFilter,
 	useResourceFilterState,
 } from "./ResourcePanelFilter.tsx"
+import { ResourcePanelSurfaceListSection } from "./ResourcePanelSurfaceListSection.tsx"
 
 export function ResourcePanel({ roomId }: { roomId: Id<"rooms"> }) {
 	const filterState = useResourceFilterState()
@@ -22,11 +23,23 @@ export function ResourcePanel({ roomId }: { roomId: Id<"rooms"> }) {
 		}),
 	)
 
+	const surfaces = useStable(
+		useQuery(api.surfaces.list, {
+			roomId,
+			searchTerm: filterState.searchTerm,
+			order: filterState.sortOption.id,
+		}),
+	)
+
 	return (
 		<ResourcePanelToggle>
 			<nav className="flex h-full w-72 flex-col panel border-gray-700 bg-gray-800">
 				<ResourcePanelFilter {...filterState} />
 				<ScrollArea className="min-h-0 flex-1 bg-gray-900/75">
+					<ResourcePanelSurfaceListSection
+						roomId={roomId}
+						surfaces={surfaces ?? []}
+					/>
 					<ResourcePanelAssetListSection
 						roomId={roomId}
 						assets={assets ?? []}
