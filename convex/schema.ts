@@ -62,4 +62,40 @@ export default defineSchema({
 			searchField: "name",
 			filterFields: ["roomId", "type"],
 		}),
+
+	artifacts: defineTable({
+		name: v.string(),
+		type: v.string(),
+		data: v.optional(v.record(v.string(), v.any())),
+		roomId: v.id("rooms"),
+		ownerId: v.id("users"),
+	})
+		.index("by_room", ["roomId"])
+		.searchIndex("search_by_name", {
+			searchField: "name",
+			filterFields: ["roomId", "type", "ownerId"],
+		}),
+
+	surfaces: defineTable({
+		name: v.string(),
+		backgroundId: v.id("assets"),
+		roomId: v.id("rooms"),
+		ownerId: v.id("users"),
+	})
+		.index("by_room", ["roomId"])
+		.searchIndex("search_by_name", {
+			searchField: "name",
+			filterFields: ["roomId", "ownerId"],
+		}),
+
+	surfaceArtifacts: defineTable({
+		surfaceId: v.id("surfaces"),
+		artifactId: v.id("artifacts"),
+		left: v.number(),
+		top: v.number(),
+		width: v.number(),
+		height: v.number(),
+		roomId: v.id("rooms"),
+		ownerId: v.id("users"),
+	}).index("roomId_surfaceId", ["roomId", "surfaceId"]),
 })
