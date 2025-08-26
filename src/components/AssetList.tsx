@@ -92,7 +92,7 @@ export function AssetList({
 						roomId,
 						name: titleifyFileName(file.name),
 						type: "image",
-						image: { fileId },
+						fileId,
 					})
 					return { success: true } as const
 				} catch (error) {
@@ -121,16 +121,8 @@ export function AssetList({
 		useSelection(assets?.map((asset) => asset._id) ?? [])
 
 	const imageAssets = assets?.filter((asset) => asset.type === "image") || []
-	const sceneAssets = assets?.filter((asset) => asset.type === "scene") || []
-	const actorAssets = assets?.filter((asset) => asset.type === "actor") || []
 
 	const selectedImageAssets = imageAssets.filter((asset) =>
-		selection.has(asset._id),
-	)
-	const selectedSceneAssets = sceneAssets.filter((asset) =>
-		selection.has(asset._id),
-	)
-	const selectedActorAssets = actorAssets.filter((asset) =>
 		selection.has(asset._id),
 	)
 
@@ -242,50 +234,6 @@ export function AssetList({
 								}
 							},
 						},
-						selectedImageAssets.length > 0 && {
-							name: "New from selected...",
-							icon: "mingcute:magic-3-fill",
-							options: [
-								{
-									name: `Create ${counted(selectedImageAssets.length, "scene")}`,
-									icon: "mingcute:clapperboard-fill",
-									callback: async () => {
-										for (const imageAsset of selectedImageAssets) {
-											await createAsset({
-												roomId,
-												name: imageAsset.name,
-												type: "scene",
-												scene: {
-													backgroundId: imageAsset._id,
-												},
-											})
-										}
-										clearSelection()
-									},
-								},
-								{
-									name: `Create ${counted(selectedImageAssets.length, "actor")}`,
-									icon: "mingcute:star-fill",
-									callback: async () => {
-										for (const imageAsset of selectedImageAssets) {
-											await createAsset({
-												roomId,
-												name: imageAsset.name,
-												type: "actor",
-												actor: {
-													imageId: imageAsset._id,
-													left: 0,
-													top: 0,
-													width: 100,
-													height: 100,
-												},
-											})
-										}
-										clearSelection()
-									},
-								},
-							],
-						},
 						selectedImageAssets.length === 0 && {
 							name: "Upload",
 							icon: "mingcute:upload-2-fill",
@@ -314,145 +262,8 @@ export function AssetList({
 									key={asset._id}
 									name={asset.name}
 									imageUrl={
-										asset.image?.imageUrl &&
-										getOptimizedImageUrl(asset.image.imageUrl, 200).href
-									}
-									selected={selection.has(asset._id)}
-									imageWrapperClass="aspect-square"
-									onChangeSelected={(selected) => {
-										setSelected(asset._id, selected)
-									}}
-									onChangeName={async (name) => {
-										await updateAsset({ id: asset._id, patch: { name } })
-										setSelection([asset._id])
-									}}
-								/>
-							))}
-						</div>
-					)}
-				</ToggleSection>
-
-				<ToggleSection
-					name="Scenes"
-					subtext={
-						selectedSceneAssets.length > 0 &&
-						`${selectedSceneAssets.length} selected`
-					}
-					actions={[
-						selectedSceneAssets.length < sceneAssets.length && {
-							name: "Select all",
-							icon: "mingcute:checks-fill",
-							callback: () => {
-								for (const asset of sceneAssets) {
-									setSelected(asset._id, true)
-								}
-							},
-						},
-						selectedSceneAssets.length > 0 && {
-							name: "Clear selection",
-							icon: "mingcute:minus-square-fill",
-							callback: () => {
-								for (const asset of sceneAssets) {
-									setSelected(asset._id, false)
-								}
-							},
-						},
-						selectedSceneAssets.length === 0 && {
-							name: "Add scene",
-							icon: "mingcute:add-fill",
-							callback: () => {
-								const name = prompt("Scene name?", "New Scene")?.trim()
-								if (!name) return
-								createAsset({
-									roomId,
-									name,
-									type: "scene",
-								})
-							},
-						},
-					]}
-				>
-					{sceneAssets.length === 0 ? (
-						<EmptyState
-							icon="mingcute:clapperboard-line"
-							message="No scenes yet"
-						/>
-					) : (
-						<div className="grid grid-cols-1 gap-2 p-2">
-							{sceneAssets.map((asset) => (
-								<AssetCard
-									key={asset._id}
-									name={asset.name}
-									imageUrl={
-										asset.scene?.backgroundUrl &&
-										getOptimizedImageUrl(asset.scene.backgroundUrl, 500).href
-									}
-									selected={selection.has(asset._id)}
-									imageWrapperClass="aspect-video"
-									onChangeSelected={(selected) => {
-										setSelected(asset._id, selected)
-									}}
-									onChangeName={async (name) => {
-										await updateAsset({ id: asset._id, patch: { name } })
-										setSelection([asset._id])
-									}}
-								/>
-							))}
-						</div>
-					)}
-				</ToggleSection>
-
-				<ToggleSection
-					name="Actors"
-					subtext={
-						selectedActorAssets.length > 0 &&
-						`${selectedActorAssets.length} selected`
-					}
-					actions={[
-						selectedActorAssets.length < actorAssets.length && {
-							name: "Select all",
-							icon: "mingcute:checks-fill",
-							callback: () => {
-								for (const asset of actorAssets) {
-									setSelected(asset._id, true)
-								}
-							},
-						},
-						selectedActorAssets.length > 0 && {
-							name: "Clear selection",
-							icon: "mingcute:minus-square-fill",
-							callback: () => {
-								for (const asset of actorAssets) {
-									setSelected(asset._id, false)
-								}
-							},
-						},
-						selectedActorAssets.length === 0 && {
-							name: "Add actor",
-							icon: "mingcute:add-fill",
-							callback: () => {
-								const name = prompt("Actor name?", "New Actor")?.trim()
-								if (!name) return
-								createAsset({
-									roomId,
-									name,
-									type: "actor",
-								})
-							},
-						},
-					]}
-				>
-					{actorAssets.length === 0 ? (
-						<EmptyState icon="mingcute:star-line" message="No actors yet" />
-					) : (
-						<div className="grid grid-cols-2 gap-2 p-2">
-							{actorAssets.map((asset) => (
-								<AssetCard
-									key={asset._id}
-									name={asset.name}
-									imageUrl={
-										asset.actor?.imageUrl &&
-										getOptimizedImageUrl(asset.actor.imageUrl, 200).href
+										asset?.imageUrl &&
+										getOptimizedImageUrl(asset.imageUrl, 200).href
 									}
 									selected={selection.has(asset._id)}
 									imageWrapperClass="aspect-square"

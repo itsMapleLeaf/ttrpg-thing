@@ -3,7 +3,12 @@ import { ConvexError, type Infer, v } from "convex/values"
 import { omit } from "convex-helpers"
 import { literals, partial } from "convex-helpers/validators"
 import type { Doc, Id } from "./_generated/dataModel"
-import { mutation, type QueryCtx, query } from "./_generated/server"
+import {
+	type MutationCtx,
+	mutation,
+	type QueryCtx,
+	query,
+} from "./_generated/server"
 import { ensureAuthUserId } from "./auth.ts"
 import schema from "./schema.ts"
 
@@ -75,21 +80,6 @@ export const get = query({
 export const create = mutation({
 	args: {
 		...omit(schema.tables.assets.validator.fields, ["ownerId"]),
-		image: v.optional(
-			v.object({
-				...omit(schema.tables.assets.validator.fields.image.fields, ["key"]),
-			}),
-		),
-		scene: v.optional(
-			v.object({
-				...omit(schema.tables.assets.validator.fields.scene.fields, ["key"]),
-			}),
-		),
-		actor: v.optional(
-			v.object({
-				...omit(schema.tables.assets.validator.fields.actor.fields, ["key"]),
-			}),
-		),
 	},
 	handler: async (ctx, args) => {
 		const userId = await ensureAuthUserId(ctx)
@@ -102,9 +92,6 @@ export const create = mutation({
 		const assetId = await ctx.db.insert("assets", {
 			...args,
 			ownerId: userId,
-			image: args.image && { ...args.image, key: crypto.randomUUID() },
-			scene: args.scene && { ...args.scene, key: crypto.randomUUID() },
-			actor: args.actor && { ...args.actor, key: crypto.randomUUID() },
 		})
 
 		return assetId
@@ -137,65 +124,15 @@ export const update = mutation({
 export const remove = mutation({
 	args: { id: v.id("assets") },
 	handler: async (ctx, args) => {
-		const userId = await ensureAuthUserId(ctx)
-
-		const asset = await ctx.db.get(args.id)
-		if (!asset) {
-			throw new Error("Asset not found")
-		}
-
-		if (asset.ownerId !== userId) {
-			throw new Error("You don't have permission to delete this asset")
-		}
-
-		// this can only fail if the file doesn't exist,
-		// but we'll warn just in case
-		if (asset.image?.fileId) {
-			try {
-				await ctx.storage.delete(asset.image.fileId)
-			} catch (error) {
-				console.warn("Failed to delete asset file", asset, error)
-			}
-		}
-
-		await ctx.db.delete(args.id)
+		await removeAsset(ctx, args.id)
 	},
 })
 
 export const removeMany = mutation({
 	args: { ids: v.array(v.id("assets")) },
 	handler: async (ctx, args) => {
-		const userId = await ensureAuthUserId(ctx)
-
 		const results = await Promise.allSettled(
-			args.ids.map(async (id) => {
-				const asset = await ctx.db.get(id)
-				if (!asset) {
-					throw new ConvexError({
-						message: "Not found",
-						id,
-					})
-				}
-
-				if (asset.ownerId !== userId) {
-					throw new ConvexError({
-						message: `You don't have permission to do that.`,
-						id,
-					})
-				}
-
-				// this can only fail if the file doesn't exist,
-				// but we'll warn just in case
-				if (asset.image?.fileId) {
-					try {
-						await ctx.storage.delete(asset.image.fileId)
-					} catch (error) {
-						console.warn("Failed to delete asset file", asset, error)
-					}
-				}
-
-				await ctx.db.delete(id)
-			}),
+			args.ids.map(async (id) => removeAsset(ctx, id)),
 		)
 
 		return {
@@ -218,28 +155,34 @@ async function makeClientAsset(
 	return {
 		...asset,
 		isOwner: asset.ownerId === userId,
-		image: asset.image && {
-			...asset.image,
-			imageUrl: await getAssetImageUrl(ctx, asset._id),
-		},
-		scene: asset.scene && {
-			...asset.scene,
-			backgroundUrl:
-				asset.scene?.backgroundId &&
-				(await getAssetImageUrl(ctx, asset.scene.backgroundId)),
-		},
-		actor: asset.actor && {
-			...asset.actor,
-			imageUrl:
-				asset.actor?.imageId &&
-				(await getAssetImageUrl(ctx, asset.actor.imageId)),
-		},
+		imageUrl: await ctx.storage.getUrl(asset.fileId),
 	}
 }
 
-async function getAssetImageUrl(ctx: QueryCtx, assetId: Id<"assets">) {
-	const asset = await ctx.db.get(assetId)
-	if (!asset?.image?.fileId) return
+async function removeAsset(ctx: MutationCtx, id: Id<"assets">) {
+	const userId = await ensureAuthUserId(ctx)
 
-	return await ctx.storage.getUrl(asset.image.fileId)
+	const asset = await ctx.db.get(id)
+	if (!asset) {
+		throw new ConvexError({ message: "Not found", id })
+	}
+
+	if (asset.ownerId !== userId) {
+		throw new ConvexError({
+			message: `You don't have permission to do that.`,
+			id,
+		})
+	}
+
+	// this can only fail if the file doesn't exist,
+	// but we'll warn just in case
+	if (asset?.fileId) {
+		try {
+			await ctx.storage.delete(asset.fileId)
+		} catch (error) {
+			console.warn("Failed to delete asset file", asset, error)
+		}
+	}
+
+	await ctx.db.delete(id)
 }
