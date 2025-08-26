@@ -5,6 +5,7 @@ import type { Id } from "../../../convex/_generated/dataModel"
 import { useStable } from "../../hooks/useStable.ts"
 import { Button } from "../../ui/Button.tsx"
 import { ScrollArea } from "../../ui/ScrollArea.tsx"
+import { ArtifactListSection } from "./ArtifactListSection.tsx"
 import { AssetListSection } from "./AssetListSection.tsx"
 import {
 	ResourcePanelFilter,
@@ -31,12 +32,21 @@ export function ResourcePanel({ roomId }: { roomId: Id<"rooms"> }) {
 		}),
 	)
 
+	const artifacts = useStable(
+		useQuery(api.artifacts.list, {
+			roomId,
+			searchTerm: filterState.searchTerm,
+			order: filterState.sortOption.id,
+		}),
+	)
+
 	return (
 		<ResourcePanelToggle>
 			<nav className="flex h-full w-72 flex-col panel border-gray-700 bg-gray-800">
 				<ResourcePanelFilter {...filterState} />
 				<ScrollArea className="min-h-0 flex-1 bg-gray-900/75">
 					<SurfaceListSection roomId={roomId} surfaces={surfaces ?? []} />
+					<ArtifactListSection roomId={roomId} artifacts={artifacts ?? []} />
 					<AssetListSection roomId={roomId} assets={assets ?? []} />
 				</ScrollArea>
 			</nav>
