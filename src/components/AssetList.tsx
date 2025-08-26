@@ -392,7 +392,7 @@ export function AssetList({
 					<div className="relative flex flex-1 items-center">
 						<input
 							type="text"
-							placeholder="Search assets..."
+							placeholder="Search..."
 							value={searchTerm}
 							onChange={(event) => setSearchTerm(event.target.value)}
 							className="input pl-8"
