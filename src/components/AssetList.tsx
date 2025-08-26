@@ -1,12 +1,11 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
 import { type } from "arktype"
-import { useMutation, useQuery } from "convex/react"
+import { useMutation } from "convex/react"
 import { type ReactNode, useState } from "react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 import type { AssetListOrder, ClientAsset } from "../../convex/assets.ts"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
-import { useStable } from "../hooks/useStable.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
 import {
 	counted,
@@ -18,7 +17,6 @@ import type { NonEmptyArray } from "../types.ts"
 import { Button } from "../ui/Button.tsx"
 import { EmptyState } from "../ui/EmptyState.tsx"
 import { Iconish, type IconishIcon } from "../ui/Iconish.tsx"
-import { Loading } from "../ui/Loading.tsx"
 import { Menu, MenuButton, MenuItem, MenuPanel } from "../ui/Menu.tsx"
 import { ScrollArea } from "../ui/ScrollArea.tsx"
 import { useToastContext } from "../ui/Toast.tsx"
@@ -43,7 +41,10 @@ const sortOptions: NonEmptyArray<SortOption> = [
 	},
 ]
 
+export type { FilterState as AssetListFilterState }
 type FilterState = ReturnType<typeof useFilterState>
+
+export { useFilterState as useAssetListFilterState }
 function useFilterState() {
 	const [searchTerm, setSearchTerm] = useState("")
 
@@ -64,25 +65,7 @@ function useFilterState() {
 	}
 }
 
-export function AssetList({ roomId }: { roomId: Id<"rooms"> }) {
-	const filterState = useFilterState()
-
-	const assets = useStable(
-		useQuery(api.assets.list, {
-			roomId,
-			searchTerm: filterState.searchTerm,
-			order: filterState.sortOption.id,
-		}),
-	)
-
-	return assets === undefined ? (
-		<Loading />
-	) : (
-		<AssetListInternal {...filterState} roomId={roomId} assets={assets} />
-	)
-}
-
-function AssetListInternal({
+export function AssetList({
 	roomId,
 	assets,
 	searchTerm,
