@@ -9,6 +9,7 @@ export interface ButtonProps extends ComponentProps<"button"> {
 	icon: string | ReactElement | null
 	appearance?: "solid" | "clear"
 	shape?: "default" | "square"
+	size?: "default" | "sm"
 	intent?: "default" | "danger"
 	pending?: boolean
 	tooltipProps?: Partial<ComponentProps<typeof WithTooltip>>
@@ -21,6 +22,7 @@ export function Button({
 	icon,
 	appearance = "clear",
 	shape = "default",
+	size = "default",
 	intent = "default",
 	pending: pendingProp,
 	tooltipProps,
@@ -41,12 +43,18 @@ export function Button({
 		})
 	}
 
+	const iconClass = twMerge(
+		"pointer-events-none",
+		size === "default" && "size-5",
+		size === "sm" && "size-4",
+	)
+
 	const iconElement = pending ? (
-		<div aria-hidden className="pointer-events-none size-5">
+		<div aria-hidden className={iconClass}>
 			<Icon icon="mingcute:loading-3-fill" className="size-full animate-spin" />
 		</div>
 	) : typeof icon === "string" ? (
-		<div aria-hidden className="pointer-events-none size-5">
+		<div aria-hidden className={iconClass}>
 			<Icon icon={icon} className="size-full" />
 		</div>
 	) : (
@@ -57,6 +65,7 @@ export function Button({
 		appearance === "solid" && "button-solid",
 		appearance === "clear" && "button-clear",
 		shape === "square" && "button-square",
+		size === "sm" && "button-sm",
 		intent === "danger" && "button-danger",
 		pending && "opacity-50",
 		className,

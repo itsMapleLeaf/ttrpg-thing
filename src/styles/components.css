@@ -35,6 +35,10 @@
 	@apply aspect-square p-0;
 }
 
+@utility button-sm {
+	@apply h-8;
+}
+
 @utility label {
 	@apply text-sm font-semibold;
 }
