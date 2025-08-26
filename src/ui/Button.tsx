@@ -3,7 +3,7 @@ import { type ComponentProps, type ReactElement, useTransition } from "react"
 import { twMerge } from "tailwind-merge"
 import { usePendingDelay } from "../hooks/usePendingDelay.ts"
 import { useToastContext } from "./Toast.tsx"
-import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip.tsx"
+import { WithTooltip } from "./Tooltip.tsx"
 
 export interface ButtonProps extends ComponentProps<"button"> {
 	icon: string | ReactElement | null
@@ -11,6 +11,7 @@ export interface ButtonProps extends ComponentProps<"button"> {
 	shape?: "default" | "square"
 	intent?: "default" | "danger"
 	pending?: boolean
+	tooltipProps?: Partial<ComponentProps<typeof WithTooltip>>
 	onClick?: (event: React.MouseEvent<HTMLButtonElement>) => unknown
 }
 
@@ -22,6 +23,7 @@ export function Button({
 	shape = "default",
 	intent = "default",
 	pending: pendingProp,
+	tooltipProps,
 	onClick,
 	...props
 }: ButtonProps) {
@@ -69,13 +71,12 @@ export function Button({
 	return (
 		<>
 			{shape === "square" ? (
-				<Tooltip>
-					<TooltipTrigger type="button" {...derivedProps}>
+				<WithTooltip content={children} {...tooltipProps}>
+					<button type="button" {...derivedProps}>
 						{iconElement}
 						<div className="sr-only">{children}</div>
-					</TooltipTrigger>
-					<TooltipContent>{children}</TooltipContent>
-				</Tooltip>
+					</button>
+				</WithTooltip>
 			) : (
 				<button type="button" {...derivedProps}>
 					{iconElement}
