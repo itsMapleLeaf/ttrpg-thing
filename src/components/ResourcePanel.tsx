@@ -26,7 +26,7 @@ export function ResourcePanel({ roomId }: { roomId: Id<"rooms"> }) {
 		<ResourcePanelToggle>
 			<nav className="flex h-full w-72 flex-col panel border-gray-700 bg-gray-800">
 				<ResourcePanelFilter {...filterState} />
-				<ScrollArea className="min-h-0 flex-1 bg-gray-900/50">
+				<ScrollArea className="min-h-0 flex-1 bg-gray-900/75">
 					<ResourcePanelAssetListSection
 						roomId={roomId}
 						assets={assets ?? []}
