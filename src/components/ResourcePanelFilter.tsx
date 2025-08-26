@@ -25,11 +25,9 @@ const sortOptions: NonEmptyArray<SortOption> = [
 	},
 ]
 
-export type { FilterState as AssetListFilterState }
-type FilterState = ReturnType<typeof useFilterState>
+export type ResourceFilterState = ReturnType<typeof useResourceFilterState>
 
-export { useFilterState as useAssetListFilterState }
-function useFilterState() {
+export function useResourceFilterState() {
 	const [searchTerm, setSearchTerm] = useState("")
 
 	const [sortOptionId, setSortOptionId] = useLocalStorage({
@@ -49,12 +47,12 @@ function useFilterState() {
 	}
 }
 
-export function AssetListFilter({
+export function ResourcePanelFilter({
 	searchTerm,
 	setSearchTerm,
 	sortOption,
 	setSortOptionId,
-}: FilterState) {
+}: ResourceFilterState) {
 	return (
 		<div className="flex flex-col gap-2 border-b border-gray-700 p-2">
 			<div className="flex gap-2">
