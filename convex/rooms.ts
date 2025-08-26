@@ -1,6 +1,9 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
 import { v } from "convex/values"
+import { omit } from "convex-helpers"
 import { mutation, query } from "./_generated/server"
+import { ensureAuthUserId } from "./auth.ts"
+import schema from "./schema.ts"
 
 export const list = query({
 	args: {},
@@ -40,15 +43,9 @@ export const get = query({
 })
 
 export const create = mutation({
-	args: {
-		name: v.string(),
-		slug: v.string(),
-	},
+	args: omit(schema.tables.rooms.validator.fields, ["ownerId"]),
 	handler: async (ctx, args) => {
-		const userId = await getAuthUserId(ctx)
-		if (!userId) {
-			throw new Error("Unauthorized")
-		}
+		const userId = await ensureAuthUserId(ctx)
 
 		const existingRoom = await ctx.db
 			.query("rooms")
@@ -60,8 +57,7 @@ export const create = mutation({
 		}
 
 		const roomId = await ctx.db.insert("rooms", {
-			name: args.name,
-			slug: args.slug,
+			...args,
 			ownerId: userId,
 		})
 
