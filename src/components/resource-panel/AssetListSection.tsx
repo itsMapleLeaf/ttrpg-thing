@@ -1,16 +1,16 @@
 import { useMutation } from "convex/react"
-import { api } from "../../convex/_generated/api"
-import type { Id } from "../../convex/_generated/dataModel"
-import type { ClientAsset } from "../../convex/assets.ts"
-import { useSelection } from "../hooks/useSelection.ts"
-import { useUploadImage } from "../hooks/useUploadImage.ts"
-import { getOptimizedImageUrl, titleifyFileName } from "../lib/helpers.ts"
-import { EmptyState } from "../ui/EmptyState.tsx"
-import { useToastContext } from "../ui/Toast.tsx"
-import { AssetCard } from "./AssetCard.tsx"
-import { ResourcePanelToggleSection } from "./ResourcePanelToggleSection.tsx"
+import { api } from "../../../convex/_generated/api"
+import type { Id } from "../../../convex/_generated/dataModel"
+import type { ClientAsset } from "../../../convex/assets.ts"
+import { useSelection } from "../../hooks/useSelection.ts"
+import { useUploadImage } from "../../hooks/useUploadImage.ts"
+import { getOptimizedImageUrl, titleifyFileName } from "../../lib/helpers.ts"
+import { EmptyState } from "../../ui/EmptyState.tsx"
+import { useToastContext } from "../../ui/Toast.tsx"
+import { AssetCard } from "../AssetCard.tsx"
+import { ToggleSection } from "./ToggleSection.tsx"
 
-export function ResourcePanelAssetListSection({
+export function AssetListSection({
 	roomId,
 	assets,
 }: {
@@ -60,7 +60,7 @@ export function ResourcePanelAssetListSection({
 	}
 
 	return (
-		<ResourcePanelToggleSection
+		<ToggleSection
 			name="Assets"
 			subtext={selectedCount > 0 && `${selectedCount} selected`}
 			actions={[
@@ -136,6 +136,6 @@ export function ResourcePanelAssetListSection({
 					))}
 				</div>
 			)}
-		</ResourcePanelToggleSection>
+		</ToggleSection>
 	)
 }

@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api.js"
 import { PageHeader } from "../../components/PageHeader.tsx"
-import { ResourcePanel } from "../../components/ResourcePanel.tsx"
+import { ResourcePanel } from "../../components/resource-panel/ResourcePanel.tsx"
 import { Surface } from "../../components/Surface.tsx"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({

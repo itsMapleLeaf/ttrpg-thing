@@ -1,13 +1,13 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
 import { type } from "arktype"
 import type { ReactNode } from "react"
-import { useLocalStorage } from "../hooks/useLocalStorage.ts"
-import type { Falsy } from "../lib/types.ts"
-import { Button } from "../ui/Button.tsx"
-import { Iconish, type IconishIcon } from "../ui/Iconish.tsx"
-import { Menu, MenuButton, MenuItem, MenuPanel } from "../ui/Menu.tsx"
+import { useLocalStorage } from "../../hooks/useLocalStorage.ts"
+import type { Falsy } from "../../lib/types.ts"
+import { Button } from "../../ui/Button.tsx"
+import { Iconish, type IconishIcon } from "../../ui/Iconish.tsx"
+import { Menu, MenuButton, MenuItem, MenuPanel } from "../../ui/Menu.tsx"
 
-type ResourcePanelToggleSectionAction = {
+type ToggleSectionAction = {
 	name: string
 	icon: IconishIcon
 } & (
@@ -23,19 +23,19 @@ type ResourcePanelToggleSectionAction = {
 	  }
 )
 
-type ResourcePanelToggleSectionProps = {
+type ToggleSectionProps = {
 	name: string
 	subtext?: ReactNode
 	children: ReactNode
-	actions?: (ResourcePanelToggleSectionAction | Falsy)[]
+	actions?: (ToggleSectionAction | Falsy)[]
 }
 
-export function ResourcePanelToggleSection({
+export function ToggleSection({
 	name,
 	subtext,
 	children,
 	actions,
-}: ResourcePanelToggleSectionProps) {
+}: ToggleSectionProps) {
 	const [isCollapsed, setIsCollapsed] = useLocalStorage({
 		key: `AssetListToggleSection:${name}:collapsed`,
 		fallback: false,

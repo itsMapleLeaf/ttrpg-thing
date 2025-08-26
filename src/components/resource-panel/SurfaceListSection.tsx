@@ -1,18 +1,18 @@
 import { useConvex, useMutation } from "convex/react"
-import { api } from "../../convex/_generated/api"
-import type { Id } from "../../convex/_generated/dataModel"
-import type { ClientSurface } from "../../convex/surfaces.ts"
-import { useSelection } from "../hooks/useSelection.ts"
-import { useUploadImage } from "../hooks/useUploadImage.ts"
-import { getOptimizedImageUrl, titleifyFileName } from "../lib/helpers.ts"
-import { Button } from "../ui/Button.tsx"
-import { EmptyState } from "../ui/EmptyState.tsx"
-import { Iconish } from "../ui/Iconish.tsx"
-import { SmartImage } from "../ui/SmartImage.tsx"
-import { useToastContext } from "../ui/Toast.tsx"
-import { ResourcePanelToggleSection } from "./ResourcePanelToggleSection.tsx"
+import { api } from "../../../convex/_generated/api"
+import type { Id } from "../../../convex/_generated/dataModel"
+import type { ClientSurface } from "../../../convex/surfaces.ts"
+import { useSelection } from "../../hooks/useSelection.ts"
+import { useUploadImage } from "../../hooks/useUploadImage.ts"
+import { getOptimizedImageUrl, titleifyFileName } from "../../lib/helpers.ts"
+import { Button } from "../../ui/Button.tsx"
+import { EmptyState } from "../../ui/EmptyState.tsx"
+import { Iconish } from "../../ui/Iconish.tsx"
+import { SmartImage } from "../../ui/SmartImage.tsx"
+import { useToastContext } from "../../ui/Toast.tsx"
+import { ToggleSection } from "./ToggleSection.tsx"
 
-export function ResourcePanelSurfaceListSection({
+export function SurfaceListSection({
 	roomId,
 	surfaces,
 }: {
@@ -71,7 +71,7 @@ export function ResourcePanelSurfaceListSection({
 	}
 
 	return (
-		<ResourcePanelToggleSection
+		<ToggleSection
 			name="Surfaces"
 			subtext={selectedCount > 0 && `${selectedCount} selected`}
 			actions={[
@@ -102,7 +102,7 @@ export function ResourcePanelSurfaceListSection({
 					},
 				},
 				selectedCount === 0 && {
-					name: "Create surfaces from background image(s)",
+					name: "New surface(s) from background(s)",
 					icon: "mingcute:upload-2-fill",
 					callback: () => {
 						const input = document.createElement("input")
@@ -189,6 +189,6 @@ export function ResourcePanelSurfaceListSection({
 					))}
 				</div>
 			)}
-		</ResourcePanelToggleSection>
+		</ToggleSection>
 	)
 }

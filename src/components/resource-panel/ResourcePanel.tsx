@@ -1,16 +1,16 @@
 import { useQuery } from "convex/react"
 import { useState } from "react"
-import { api } from "../../convex/_generated/api"
-import type { Id } from "../../convex/_generated/dataModel"
-import { useStable } from "../hooks/useStable.ts"
-import { Button } from "../ui/Button.tsx"
-import { ScrollArea } from "../ui/ScrollArea.tsx"
-import { ResourcePanelAssetListSection } from "./ResourcePanelAssetListSection.tsx"
+import { api } from "../../../convex/_generated/api"
+import type { Id } from "../../../convex/_generated/dataModel"
+import { useStable } from "../../hooks/useStable.ts"
+import { Button } from "../../ui/Button.tsx"
+import { ScrollArea } from "../../ui/ScrollArea.tsx"
+import { AssetListSection } from "./AssetListSection.tsx"
 import {
 	ResourcePanelFilter,
 	useResourceFilterState,
 } from "./ResourcePanelFilter.tsx"
-import { ResourcePanelSurfaceListSection } from "./ResourcePanelSurfaceListSection.tsx"
+import { SurfaceListSection } from "./SurfaceListSection.tsx"
 
 export function ResourcePanel({ roomId }: { roomId: Id<"rooms"> }) {
 	const filterState = useResourceFilterState()
@@ -36,14 +36,8 @@ export function ResourcePanel({ roomId }: { roomId: Id<"rooms"> }) {
 			<nav className="flex h-full w-72 flex-col panel border-gray-700 bg-gray-800">
 				<ResourcePanelFilter {...filterState} />
 				<ScrollArea className="min-h-0 flex-1 bg-gray-900/75">
-					<ResourcePanelSurfaceListSection
-						roomId={roomId}
-						surfaces={surfaces ?? []}
-					/>
-					<ResourcePanelAssetListSection
-						roomId={roomId}
-						assets={assets ?? []}
-					/>
+					<SurfaceListSection roomId={roomId} surfaces={surfaces ?? []} />
+					<AssetListSection roomId={roomId} assets={assets ?? []} />
 				</ScrollArea>
 			</nav>
 		</ResourcePanelToggle>
