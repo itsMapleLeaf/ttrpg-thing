@@ -1,8 +1,8 @@
 import { useMutation } from "convex/react"
-import { useState } from "react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 import type { ClientAsset } from "../../convex/assets.ts"
+import { useSelection } from "../hooks/useSelection.ts"
 import { useUploadImage } from "../hooks/useUploadImage.ts"
 import { getOptimizedImageUrl, titleifyFileName } from "../lib/helpers.ts"
 import { EmptyState } from "../ui/EmptyState.tsx"
@@ -139,57 +139,4 @@ export function ResourcePanelAssetListSection({
 			)}
 		</ResourcePanelToggleSection>
 	)
-}
-
-function useSelection<T>(library: T[]) {
-	const [selection, setSelection] = useState<ReadonlySet<T>>(new Set())
-
-	const clearSelection = () => {
-		setSelection(new Set())
-	}
-
-	const selectAll = () => {
-		setSelection(new Set(library))
-	}
-
-	const setItemSelected = (item: T, shouldBeSelected: boolean) => {
-		setSelection((selection) => {
-			const newSelection = new Set(selection)
-			if (shouldBeSelected) {
-				newSelection.add(item)
-			} else {
-				newSelection.delete(item)
-			}
-			return newSelection
-		})
-	}
-
-	const toggleSelected = (item: T) => {
-		setSelection((selection) => {
-			const newSelection = new Set(selection)
-			if (newSelection.has(item)) {
-				newSelection.delete(item)
-			} else {
-				newSelection.add(item)
-			}
-			return newSelection
-		})
-	}
-
-	const isSelected = (item: T) => selection.has(item)
-
-	const selectedCount = selection.size
-
-	return {
-		selection,
-		selectedCount,
-		isSelected,
-		clearSelection,
-		selectAll,
-		setSelected: setItemSelected,
-		toggleSelected,
-		setSelection: (selection: Iterable<T>) => {
-			setSelection(new Set(selection))
-		},
-	}
 }
