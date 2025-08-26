@@ -3,7 +3,9 @@ import { type } from "arktype"
 import { LRUCache } from "lru-cache"
 import sharp from "sharp"
 
-export const ServerRoute = createServerFileRoute("/api/images/optimize").methods({
+export const ServerRoute = createServerFileRoute(
+	"/api/images/optimize",
+).methods({
 	GET: async (ctx) => {
 		try {
 			const result = await cache.fetch(ctx.request.url)
@@ -40,9 +42,17 @@ const cache = new LRUCache({
 			throw new Error(`Failed to fetch image: ${imageResponse.statusText}`)
 		}
 
-		const resized = await sharp(await imageResponse.arrayBuffer())
+		const image = sharp(await imageResponse.arrayBuffer())
+
+		const meta = await image.metadata()
+
+		const resized = await image
 			.webp({ quality: 100 })
-			.resize(args.width)
+			.resize(
+				meta.width > meta.height
+					? { height: args.width }
+					: { width: args.width },
+			)
 			.toBuffer()
 
 		return new Uint8Array(resized)
