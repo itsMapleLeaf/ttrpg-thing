@@ -17,11 +17,14 @@ export function counted(
  * Convert a file name into a human-readable title:
  * - Removes the file extension
  * - Turns all non-word characters (alphanumeric and period, e.g. for "Mr.") into spaces
- * - Converts the file name to Title Case, special-casing articles like "the" and "of"
+ * - Converts the file name to Title Case, accounting for camelCase and PascalCase
+ *   while special-casing articles like "the" and "of"
  */
 export function titleifyFileName(fileName: string) {
 	const nameWithoutExtension = fileName.replace(/\.[^/.]+$/, "")
-	const parts = nameWithoutExtension.matchAll(/[a-z0-9.]+/gi)
+	const parts = nameWithoutExtension.matchAll(
+		/[A-Z]?[a-z0-9.]+(?![A-Z])[a-z0-9.]/g,
+	)
 	return [...parts]
 		.map(([part]) => {
 			if (titleifyFileName.articles.has(part.toLowerCase())) {
