@@ -69,17 +69,17 @@ export function useSelection<T>(library: T[]) {
 		selection,
 		/** Number of currently selected items */
 		selectedCount,
-		/** Function to check if an item is selected */
+		/** Check if an item is selected */
 		isSelected,
-		/** Function to clear all selections */
+		/** Clear all selections */
 		clearSelection,
-		/** Function to select all items in the library */
+		/** Select all items in the library */
 		selectAll,
-		/** Function to set the selection state of a specific item */
+		/** Set the selection state of a specific item */
 		setSelected: setItemSelected,
-		/** Function to toggle the selection state of a specific item */
+		/** Toggle the selection state of a specific item */
 		toggleSelected,
-		/** Function to replace the entire selection with a new set of items */
+		/** Replace the entire selection with a new set of items */
 		setSelection: (selection: Iterable<T>) => {
 			setSelection(new Set(selection))
 		},
