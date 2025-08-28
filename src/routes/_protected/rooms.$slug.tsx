@@ -9,14 +9,16 @@ import { SurfaceViewer } from "../../components/surface/SurfaceViewer.tsx"
 export const Route = createFileRoute("/_protected/rooms/$slug")({
 	component: RoomDetail,
 	loader({ context, params }) {
-		return context.convexClient.query(api.rooms.get, { slug: params.slug })
+		return context.convexClient.query(api.rooms.getBySlug, {
+			slug: params.slug,
+		})
 	},
 })
 
 function RoomDetail() {
 	const loaderData = Route.useLoaderData()
 	const { slug } = Route.useParams()
-	const room = useQuery(api.rooms.get, { slug }) ?? loaderData
+	const room = useQuery(api.rooms.getBySlug, { slug }) ?? loaderData
 
 	return (
 		<div className="flex h-dvh flex-col">

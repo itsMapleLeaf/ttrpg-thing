@@ -22,6 +22,13 @@ export const list = query({
 })
 
 export const get = query({
+	args: { id: v.id("rooms") },
+	handler: async (ctx, args) => {
+		return await ctx.db.get(args.id)
+	},
+})
+
+export const getBySlug = query({
 	args: { slug: v.string() },
 	handler: async (ctx, args) => {
 		const userId = await getAuthUserId(ctx)
