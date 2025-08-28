@@ -153,9 +153,11 @@ async function makeClientSurface(
 	surface: Doc<"surfaces">,
 	userId: Id<"users">,
 ) {
+	const room = await ctx.db.get(surface.roomId)
 	return {
 		...surface,
 		isOwner: surface.ownerId === userId,
+		isCurrent: room?.currentSurfaceId === surface._id,
 		backgroundUrl:
 			surface.backgroundId &&
 			(await getAssetImageUrl(ctx, surface.backgroundId)),

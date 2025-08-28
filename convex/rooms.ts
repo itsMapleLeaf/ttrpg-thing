@@ -1,6 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
 import { v } from "convex/values"
 import { omit } from "convex-helpers"
+import { partial } from "convex-helpers/validators"
 import { mutation, query } from "./_generated/server"
 import { ensureAuthUserId } from "./auth.ts"
 import schema from "./schema.ts"
@@ -69,5 +70,27 @@ export const create = mutation({
 		})
 
 		return roomId
+	},
+})
+
+export const update = mutation({
+	args: {
+		id: v.id("rooms"),
+		patch: v.object(
+			partial(omit(schema.tables.rooms.validator.fields, ["ownerId"])),
+		),
+	},
+	handler: async (ctx, args) => {
+		const userId = await ensureAuthUserId(ctx)
+
+		const room = await ctx.db.get(args.id)
+		if (!room) {
+			throw new Error("Room not found")
+		}
+		if (room.ownerId !== userId) {
+			throw new Error("Unauthorized")
+		}
+
+		await ctx.db.patch(args.id, args.patch)
 	},
 })

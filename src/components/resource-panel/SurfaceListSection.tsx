@@ -8,6 +8,7 @@ import { getOptimizedImageUrl, titleifyFileName } from "../../lib/helpers.ts"
 import { Button } from "../../ui/Button.tsx"
 import { EmptyState } from "../../ui/EmptyState.tsx"
 import { Iconish } from "../../ui/Iconish.tsx"
+import { Menu, MenuButton, MenuItem, MenuPanel } from "../../ui/Menu.tsx"
 import { SmartImage } from "../../ui/SmartImage.tsx"
 import { useToastContext } from "../../ui/Toast.tsx"
 import { ToggleSection } from "./ToggleSection.tsx"
@@ -19,7 +20,6 @@ export function SurfaceListSection({
 	roomId: Id<"rooms">
 	surfaces: ClientSurface[]
 }) {
-	const updateSurface = useMutation(api.surfaces.update)
 	const createSurface = useMutation(api.surfaces.create)
 	const removeSurfaces = useMutation(api.surfaces.removeMany)
 	const convex = useConvex()
@@ -139,56 +139,108 @@ export function SurfaceListSection({
 			) : (
 				<div className="grid gap-1 p-1">
 					{surfaces.map((surface) => (
-						<div
+						<SurfaceCard
 							key={surface._id}
-							className="group flex items-center gap-2 rounded-md p-1 transition-colors select-none has-checked:bg-primary-700/20"
-						>
-							<label className="flex flex-1 items-center gap-2">
-								<div className="relative flex-center size-10 rounded border border-gray-800 bg-gray-950/50">
-									{surface.backgroundUrl ? (
-										<SmartImage
-											src={
-												getOptimizedImageUrl(surface.backgroundUrl, 100).href
-											}
-											className="size-full object-cover"
-										/>
-									) : (
-										<Iconish
-											icon="mingcute:layer-fill"
-											className="size-6 opacity-75"
-										/>
-									)}
-									<div className="fade absolute inset-0 flex-center overflow-clip px-2 opacity-0 transition group-hover:fade-visible has-checked:fade-visible">
-										<input
-											type="checkbox"
-											className="size-5 accent-primary-400"
-											checked={isSelected(surface._id)}
-											onChange={(event) =>
-												setSelected(surface._id, event.target.checked)
-											}
-										/>
-									</div>
-								</div>
-								<p className="line-clamp-2 flex-1">{surface.name}</p>
-							</label>
-
-							<Button
-								icon="mingcute:pencil-fill"
-								shape="square"
-								size="sm"
-								className="fade overflow-clip group-hover:fade-visible"
-								onClick={async () => {
-									const name = prompt("New name?", surface.name)
-									if (!name) return
-									await updateSurface({ id: surface._id, patch: { name } })
-								}}
-							>
-								Edit
-							</Button>
-						</div>
+							surface={surface}
+							selected={isSelected(surface._id)}
+							onChangeSelected={(selected) =>
+								setSelected(surface._id, selected)
+							}
+						/>
 					))}
 				</div>
 			)}
 		</ToggleSection>
+	)
+}
+
+function SurfaceCard({
+	surface,
+	selected,
+	onChangeSelected,
+}: {
+	surface: ClientSurface
+	selected: boolean
+	onChangeSelected: (selected: boolean) => void
+}) {
+	return (
+		<div
+			key={surface._id}
+			className="group flex items-center gap-2 rounded-md p-1 transition-colors select-none has-checked:bg-primary-700/20"
+		>
+			<label className="flex flex-1 items-center gap-2">
+				<div className="relative flex-center size-10 rounded border border-gray-800 bg-gray-950/50">
+					{surface.backgroundUrl ? (
+						<SmartImage
+							src={getOptimizedImageUrl(surface.backgroundUrl, 100).href}
+							className="size-full object-cover"
+						/>
+					) : (
+						<Iconish icon="mingcute:layer-fill" className="size-6 opacity-75" />
+					)}
+					<div className="fade absolute inset-0 flex-center overflow-clip px-2 opacity-0 transition group-hover:fade-visible has-checked:fade-visible">
+						<input
+							type="checkbox"
+							className="size-5 accent-primary-400"
+							checked={selected}
+							onChange={(event) => onChangeSelected(event.target.checked)}
+						/>
+					</div>
+				</div>
+				<div className="flex-1 leading-tight">
+					<p className="line-clamp-2">{surface.name}</p>
+					{surface.isCurrent && (
+						<p className="line-clamp-1 text-sm/tight font-semibold text-primary-400/75">
+							Currently active
+						</p>
+					)}
+				</div>
+			</label>
+			<SurfaceCardMenu surface={surface} />
+		</div>
+	)
+}
+
+function SurfaceCardMenu({ surface }: { surface: ClientSurface }) {
+	const updateSurface = useMutation(api.surfaces.update)
+	const updateRoom = useMutation(api.rooms.update)
+
+	return (
+		<Menu>
+			<MenuButton
+				render={<Button icon="mingcute:more-2-fill" shape="square" size="sm" />}
+				className="fade overflow-clip group-hover:fade-visible"
+			>
+				Actions
+			</MenuButton>
+			<MenuPanel>
+				<MenuItem
+					icon="mingcute:check-fill"
+					onClick={async () => {
+						await updateRoom({
+							id: surface.roomId,
+							patch: {
+								currentSurfaceId: surface._id,
+							},
+						})
+					}}
+				>
+					Set as current
+				</MenuItem>
+				<MenuItem
+					icon="mingcute:pencil-fill"
+					onClick={async () => {
+						const name = prompt("New name?", surface.name)
+						if (!name) return
+						await updateSurface({
+							id: surface._id,
+							patch: { name },
+						})
+					}}
+				>
+					Rename
+				</MenuItem>
+			</MenuPanel>
+		</Menu>
 	)
 }
