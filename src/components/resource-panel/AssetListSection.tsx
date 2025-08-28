@@ -4,7 +4,7 @@ import type { Id } from "../../../convex/_generated/dataModel"
 import type { ClientAsset } from "../../../convex/assets.ts"
 import { useSelection } from "../../hooks/useSelection.ts"
 import { useUploadImage } from "../../hooks/useUploadImage.ts"
-import { getOptimizedImageUrl, titleifyFileName } from "../../lib/helpers.ts"
+import { titleifyFileName } from "../../lib/helpers.ts"
 import { EmptyState } from "../../ui/EmptyState.tsx"
 import { useToastContext } from "../../ui/Toast.tsx"
 import { AssetCard } from "../AssetCard.tsx"
@@ -17,20 +17,13 @@ export function AssetListSection({
 	roomId: Id<"rooms">
 	assets: ClientAsset[]
 }) {
-	const updateAsset = useMutation(api.assets.update)
 	const createAsset = useMutation(api.assets.create)
 	const removeAssets = useMutation(api.assets.removeMany)
 	const toast = useToastContext()
 	const uploadImage = useUploadImage()
 
-	const {
-		selection,
-		selectedCount,
-		setSelection,
-		clearSelection,
-		selectAll,
-		setSelected,
-	} = useSelection(assets?.map((asset) => asset._id) ?? [])
+	const { selection, selectedCount, clearSelection, selectAll, setSelected } =
+		useSelection(assets?.map((asset) => asset._id) ?? [])
 
 	const uploadAssets = async (files: File[]) => {
 		const results = await Promise.all(
@@ -118,20 +111,9 @@ export function AssetListSection({
 					{assets.map((asset) => (
 						<AssetCard
 							key={asset._id}
-							name={asset.name}
-							imageUrl={
-								asset?.imageUrl &&
-								getOptimizedImageUrl(asset.imageUrl, 200).href
-							}
+							asset={asset}
 							selected={selection.has(asset._id)}
-							imageWrapperClass="aspect-square"
-							onChangeSelected={(selected) => {
-								setSelected(asset._id, selected)
-							}}
-							onChangeName={async (name) => {
-								await updateAsset({ id: asset._id, patch: { name } })
-								setSelection([asset._id])
-							}}
+							onChangeSelected={(selected) => setSelected(asset._id, selected)}
 						/>
 					))}
 				</div>

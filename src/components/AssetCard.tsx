@@ -1,36 +1,40 @@
 import { Icon } from "@iconify/react"
-import { twMerge } from "tailwind-merge"
+import { useMutation } from "convex/react"
+import { api } from "../../convex/_generated/api"
+import type { ClientAsset } from "../../convex/assets.ts"
+import { getOptimizedImageUrl } from "../lib/helpers.ts"
 import { SmartImage } from "../ui/SmartImage.tsx"
 import { WithTooltip } from "../ui/Tooltip.tsx"
+import type { SurfaceAssetDropData } from "./surface/SurfaceViewer.tsx"
 
 export function AssetCard({
-	name,
-	imageUrl,
-	imageWrapperClass,
+	asset,
 	selected,
 	onChangeSelected,
-	onChangeName,
 }: {
-	name: string
-	imageUrl: string | null | undefined
-	imageWrapperClass?: string
+	asset: ClientAsset
 	selected: boolean
 	onChangeSelected: (selected: boolean) => void
-	onChangeName: (name: string) => unknown
 }) {
+	const updateAsset = useMutation(api.assets.update)
 	return (
-		<div className="w-full panel bg-gray-950/40 outline-2 outline-transparent transition-colors">
-			<label
-				className={twMerge(
-					"group relative block select-none",
-					imageWrapperClass,
-				)}
-			>
-				{imageUrl ? (
+		<div
+			className="w-full panel bg-gray-950/40 outline-2 outline-transparent transition-colors"
+			draggable
+			onDragStart={(event) => {
+				const dropData: typeof SurfaceAssetDropData.inferIn = {
+					assetId: asset._id,
+				}
+				event.dataTransfer.setData("application/json", JSON.stringify(dropData))
+			}}
+		>
+			<label className="group relative block aspect-square select-none">
+				{asset.imageUrl ? (
 					<SmartImage
-						src={imageUrl}
+						src={getOptimizedImageUrl(asset.imageUrl, 200).href}
 						alt=""
 						className="size-full object-cover object-top"
+						draggable={false}
 					/>
 				) : (
 					<div className="flex-center h-full">
@@ -60,18 +64,20 @@ export function AssetCard({
 				/>
 			</label>
 
-			<WithTooltip content={name} positionerProps={{ side: "bottom" }}>
+			<WithTooltip content={asset.name} positionerProps={{ side: "bottom" }}>
 				<button
 					type="button"
 					className="group flex h-6.5 w-full items-center justify-center gap-1 px-2 text-xs/tight font-semibold hover:bg-gray-800"
 					onClick={() => {
-						const newName = prompt("New name?", name)?.trim()
+						const newName = prompt("New name?", asset.name)?.trim()
 						if (!newName) return
-
-						onChangeName(newName)
+						updateAsset({
+							id: asset._id,
+							patch: { name: newName },
+						})
 					}}
 				>
-					<div className="truncate">{name}</div>
+					<div className="truncate">{asset.name}</div>
 					<div className="flex h-4 w-0 justify-center transition-[width] group-hover:w-4">
 						<Icon
 							icon="mingcute:pencil-fill"

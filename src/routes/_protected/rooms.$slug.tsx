@@ -35,7 +35,9 @@ function RoomDetail() {
 				</div>
 			) : (
 				<div className="relative flex-1">
-					<SurfaceViewer />
+					{room.currentSurfaceId && (
+						<SurfaceViewer surfaceId={room.currentSurfaceId} />
+					)}
 					<div className="pointer-events-children absolute inset-y-0 left-0 p-2">
 						<ResourcePanel roomId={room._id} />
 					</div>

@@ -1,31 +1,84 @@
-import { useEffect, useRef, useState } from "react"
+import { type } from "arktype"
+import { useMutation, useQuery } from "convex/react"
+import { useEffect, useState } from "react"
+import { api } from "../../../convex/_generated/api"
+import type { Id } from "../../../convex/_generated/dataModel"
+import type { ClientSurface } from "../../../convex/surfaces.ts"
+import type { ClientTile } from "../../../convex/tiles.ts"
+import { getOptimizedImageUrl } from "../../lib/helpers.ts"
 import { type Vec, vec } from "../../lib/vec.ts"
+import { useToastContext } from "../../ui/Toast.tsx"
 
-type SurfaceState = {
-	status: "idle" | "down" | "dragging"
-	offset: Vec
-	dragStart: Vec
-	dragEnd: Vec
-}
-
-const surfaceWidth = 1000
-const surfaceHeight = 1000
-
-export function SurfaceViewer() {
+export function SurfaceViewer({ surfaceId }: { surfaceId: Id<"surfaces"> }) {
+	const surface = useQuery(api.surfaces.get, { id: surfaceId })
 	return (
-		<SurfacePanel>
-			<SurfaceCounter />
-		</SurfacePanel>
+		surface && (
+			<SurfacePanel surface={surface}>
+				<SurfaceTiles surface={surface} />
+			</SurfacePanel>
+		)
 	)
 }
 
-function SurfaceCounter() {
-	const renders = useRef(0)
-	renders.current += 1
-	return <div>{renders.current}</div>
+function SurfaceTiles({ surface }: { surface: ClientSurface }) {
+	const tiles = useQuery(api.tiles.list, { surfaceId: surface._id })
+	return (
+		<div className="relative size-full">
+			{tiles?.map((tile) => (
+				<SurfaceTile key={tile._id} tile={tile} />
+			))}
+		</div>
+	)
 }
 
-function SurfacePanel({ children }: { children: React.ReactNode }) {
+function SurfaceTile({ tile }: { tile: ClientTile }) {
+	return (
+		<div
+			key={tile._id}
+			className="absolute panel"
+			style={{
+				translate: `${tile.left}px ${tile.top}px`,
+				width: tile.width,
+				height: tile.height,
+				backgroundImage:
+					tile.assetUrl == null
+						? undefined
+						: `url(${getOptimizedImageUrl(tile.assetUrl, ceilToNearest(tile.width, 100))})`,
+				backgroundPosition: "center",
+				backgroundSize: "cover",
+			}}
+		></div>
+	)
+}
+
+function ceilToNearest(input: number, multiple: number) {
+	return Math.ceil(input / multiple) * multiple
+}
+
+export const SurfaceAssetDropData = type({
+	assetId: type.string.as<Id<"assets">>(),
+})
+
+function SurfacePanel({
+	children,
+	surface,
+}: {
+	children: React.ReactNode
+	surface: ClientSurface
+}) {
+	type SurfaceState = {
+		status: "idle" | "down" | "dragging"
+		offset: Vec
+		dragStart: Vec
+		dragEnd: Vec
+	}
+
+	const surfaceWidth = 1000
+	const surfaceHeight = 1000
+
+	const toast = useToastContext()
+	const createTile = useMutation(api.tiles.create)
+
 	const [state, setState] = useState<SurfaceState>({
 		status: "idle",
 		offset: { x: 0, y: 0 },
@@ -44,7 +97,6 @@ function SurfacePanel({ children }: { children: React.ReactNode }) {
 					setState((current) => {
 						const dragEnd = { x: event.clientX, y: event.clientY }
 						const distance = vec.distance(current.dragStart, dragEnd)
-						console.log(distance)
 						return {
 							...current,
 							dragEnd,
@@ -131,6 +183,36 @@ function SurfacePanel({ children }: { children: React.ReactNode }) {
 					dragStart: { x: event.clientX, y: event.clientY },
 					dragEnd: { x: event.clientX, y: event.clientY },
 				}))
+			}}
+			onDragEnter={(event) => {
+				event.preventDefault()
+				event.dataTransfer.dropEffect = "copy"
+			}}
+			onDragOver={(event) => {
+				event.preventDefault()
+			}}
+			onDrop={async (event) => {
+				try {
+					const DropDataFromJson =
+						type("string.json.parse").to(SurfaceAssetDropData)
+
+					const data = DropDataFromJson.assert(
+						event.dataTransfer.getData("application/json"),
+					)
+
+					const rect = event.currentTarget.getBoundingClientRect()
+
+					await createTile({
+						surfaceId: surface._id,
+						left: event.clientX - rect.left - state.offset.x - 50,
+						top: event.clientY - rect.top - state.offset.y - 50,
+						width: 100,
+						height: 100,
+						assetId: data.assetId,
+					})
+				} catch (error) {
+					toast.error(String(error))
+				}
 			}}
 		>
 			<div

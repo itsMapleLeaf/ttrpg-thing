@@ -19,6 +19,9 @@
 			},
 			"style": {
 				"useConsistentObjectDefinitions": "warn"
+			},
+			"a11y": {
+				"noStaticElementInteractions": "off"
 			}
 		}
 	}

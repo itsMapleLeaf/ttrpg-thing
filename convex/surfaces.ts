@@ -148,7 +148,7 @@ export const removeMany = mutation({
 })
 
 export type ClientSurface = Awaited<ReturnType<typeof makeClientSurface>>
-async function makeClientSurface(
+export async function makeClientSurface(
 	ctx: QueryCtx,
 	surface: Doc<"surfaces">,
 	userId: Id<"users">,
