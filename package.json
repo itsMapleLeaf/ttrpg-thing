@@ -8,9 +8,10 @@
 		"dev:web": "vite dev",
 		"dev:ts": "tsc -b -w",
 		"dev:convex": "convex dev --typecheck=disable",
-		"build": "vite build && tsc --noEmit",
+		"build": "vite build",
 		"start": "node .output/server/index.mjs",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"predeploy": "convex deploy --typecheck=disable --cmd 'bun run build' --cmd-url-env-var-name VITE_CONVEX_URL"
 	},
 	"dependencies": {
 		"@base-ui-components/react": "^1.0.0-beta.2",

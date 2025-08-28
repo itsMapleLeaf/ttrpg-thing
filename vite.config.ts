@@ -8,6 +8,10 @@ export default defineConfig({
 		tailwindcss(),
 		tanstackStart({
 			customViteReactPlugin: true,
+			target: "netlify",
+			tsr: {
+				quoteStyle: "double",
+			},
 		}),
 		react(),
 	],

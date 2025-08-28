@@ -8,80 +8,80 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createServerRootRoute } from '@tanstack/react-start/server'
+import { createServerRootRoute } from "@tanstack/react-start/server"
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as DsRouteImport } from './routes/ds'
-import { Route as ProtectedRouteImport } from './routes/_protected'
-import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
-import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
-import { Route as ProtectedRoomsSlugRouteImport } from './routes/_protected/rooms.$slug'
-import { ServerRoute as ApiImagesOptimizeServerRouteImport } from './routes/api/images/optimize'
+import { Route as rootRouteImport } from "./routes/__root"
+import { Route as DsRouteImport } from "./routes/ds"
+import { Route as ProtectedRouteImport } from "./routes/_protected"
+import { Route as ProtectedIndexRouteImport } from "./routes/_protected/index"
+import { Route as ProtectedAccountRouteImport } from "./routes/_protected/account"
+import { Route as ProtectedRoomsSlugRouteImport } from "./routes/_protected/rooms.$slug"
+import { ServerRoute as ApiImagesOptimizeServerRouteImport } from "./routes/api/images/optimize"
 
 const rootServerRouteImport = createServerRootRoute()
 
 const DsRoute = DsRouteImport.update({
-  id: '/ds',
-  path: '/ds',
+  id: "/ds",
+  path: "/ds",
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProtectedRoute = ProtectedRouteImport.update({
-  id: '/_protected',
+  id: "/_protected",
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProtectedIndexRoute = ProtectedIndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
+  id: "/account",
+  path: "/account",
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedRoomsSlugRoute = ProtectedRoomsSlugRouteImport.update({
-  id: '/rooms/$slug',
-  path: '/rooms/$slug',
+  id: "/rooms/$slug",
+  path: "/rooms/$slug",
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ApiImagesOptimizeServerRoute = ApiImagesOptimizeServerRouteImport.update({
-  id: '/api/images/optimize',
-  path: '/api/images/optimize',
+  id: "/api/images/optimize",
+  path: "/api/images/optimize",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/ds': typeof DsRoute
-  '/account': typeof ProtectedAccountRoute
-  '/': typeof ProtectedIndexRoute
-  '/rooms/$slug': typeof ProtectedRoomsSlugRoute
+  "/ds": typeof DsRoute
+  "/account": typeof ProtectedAccountRoute
+  "/": typeof ProtectedIndexRoute
+  "/rooms/$slug": typeof ProtectedRoomsSlugRoute
 }
 export interface FileRoutesByTo {
-  '/ds': typeof DsRoute
-  '/account': typeof ProtectedAccountRoute
-  '/': typeof ProtectedIndexRoute
-  '/rooms/$slug': typeof ProtectedRoomsSlugRoute
+  "/ds": typeof DsRoute
+  "/account": typeof ProtectedAccountRoute
+  "/": typeof ProtectedIndexRoute
+  "/rooms/$slug": typeof ProtectedRoomsSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_protected': typeof ProtectedRouteWithChildren
-  '/ds': typeof DsRoute
-  '/_protected/account': typeof ProtectedAccountRoute
-  '/_protected/': typeof ProtectedIndexRoute
-  '/_protected/rooms/$slug': typeof ProtectedRoomsSlugRoute
+  "/_protected": typeof ProtectedRouteWithChildren
+  "/ds": typeof DsRoute
+  "/_protected/account": typeof ProtectedAccountRoute
+  "/_protected/": typeof ProtectedIndexRoute
+  "/_protected/rooms/$slug": typeof ProtectedRoomsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/ds' | '/account' | '/' | '/rooms/$slug'
+  fullPaths: "/ds" | "/account" | "/" | "/rooms/$slug"
   fileRoutesByTo: FileRoutesByTo
-  to: '/ds' | '/account' | '/' | '/rooms/$slug'
+  to: "/ds" | "/account" | "/" | "/rooms/$slug"
   id:
-    | '__root__'
-    | '/_protected'
-    | '/ds'
-    | '/_protected/account'
-    | '/_protected/'
-    | '/_protected/rooms/$slug'
+    | "__root__"
+    | "/_protected"
+    | "/ds"
+    | "/_protected/account"
+    | "/_protected/"
+    | "/_protected/rooms/$slug"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -89,72 +89,72 @@ export interface RootRouteChildren {
   DsRoute: typeof DsRoute
 }
 export interface FileServerRoutesByFullPath {
-  '/api/images/optimize': typeof ApiImagesOptimizeServerRoute
+  "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
 }
 export interface FileServerRoutesByTo {
-  '/api/images/optimize': typeof ApiImagesOptimizeServerRoute
+  "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
-  '/api/images/optimize': typeof ApiImagesOptimizeServerRoute
+  "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
 }
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: '/api/images/optimize'
+  fullPaths: "/api/images/optimize"
   fileServerRoutesByTo: FileServerRoutesByTo
-  to: '/api/images/optimize'
-  id: '__root__' | '/api/images/optimize'
+  to: "/api/images/optimize"
+  id: "__root__" | "/api/images/optimize"
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
   ApiImagesOptimizeServerRoute: typeof ApiImagesOptimizeServerRoute
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/ds': {
-      id: '/ds'
-      path: '/ds'
-      fullPath: '/ds'
+    "/ds": {
+      id: "/ds"
+      path: "/ds"
+      fullPath: "/ds"
       preLoaderRoute: typeof DsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_protected': {
-      id: '/_protected'
-      path: ''
-      fullPath: ''
+    "/_protected": {
+      id: "/_protected"
+      path: ""
+      fullPath: ""
       preLoaderRoute: typeof ProtectedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_protected/': {
-      id: '/_protected/'
-      path: '/'
-      fullPath: '/'
+    "/_protected/": {
+      id: "/_protected/"
+      path: "/"
+      fullPath: "/"
       preLoaderRoute: typeof ProtectedIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/account': {
-      id: '/_protected/account'
-      path: '/account'
-      fullPath: '/account'
+    "/_protected/account": {
+      id: "/_protected/account"
+      path: "/account"
+      fullPath: "/account"
       preLoaderRoute: typeof ProtectedAccountRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/rooms/$slug': {
-      id: '/_protected/rooms/$slug'
-      path: '/rooms/$slug'
-      fullPath: '/rooms/$slug'
+    "/_protected/rooms/$slug": {
+      id: "/_protected/rooms/$slug"
+      path: "/rooms/$slug"
+      fullPath: "/rooms/$slug"
       preLoaderRoute: typeof ProtectedRoomsSlugRouteImport
       parentRoute: typeof ProtectedRoute
     }
   }
 }
-declare module '@tanstack/react-start/server' {
+declare module "@tanstack/react-start/server" {
   interface ServerFileRoutesByPath {
-    '/api/images/optimize': {
-      id: '/api/images/optimize'
-      path: '/api/images/optimize'
-      fullPath: '/api/images/optimize'
+    "/api/images/optimize": {
+      id: "/api/images/optimize"
+      path: "/api/images/optimize"
+      fullPath: "/api/images/optimize"
       preLoaderRoute: typeof ApiImagesOptimizeServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }

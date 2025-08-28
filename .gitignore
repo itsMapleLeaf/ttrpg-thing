@@ -15,6 +15,7 @@ yarn.lock
 .tanstack
 
 /build/
+/dist/
 /api/
 /server/build
 /public/build
@@ -30,3 +31,5 @@ yarn.lock
 app.config.timestamp_*.js
 
 *.tsbuildinfo
+
+.netlify
