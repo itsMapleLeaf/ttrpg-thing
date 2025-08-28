@@ -124,15 +124,13 @@ function SurfacePanel({ children }: { children: React.ReactNode }) {
 		<div
 			className="relative h-full overflow-clip bg-gray-950/25"
 			onPointerDown={(event) => {
-				if (event.button === 1 || event.button === 2) {
-					event.preventDefault()
-					setState((current) => ({
-						...current,
-						status: "down",
-						dragStart: { x: event.clientX, y: event.clientY },
-						dragEnd: { x: event.clientX, y: event.clientY },
-					}))
-				}
+				event.preventDefault()
+				setState((current) => ({
+					...current,
+					status: "down",
+					dragStart: { x: event.clientX, y: event.clientY },
+					dragEnd: { x: event.clientX, y: event.clientY },
+				}))
 			}}
 		>
 			<div
