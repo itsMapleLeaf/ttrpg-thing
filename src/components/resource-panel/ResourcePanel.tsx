@@ -55,7 +55,7 @@ export function ResourcePanel({ roomId }: { roomId: Id<"rooms"> }) {
 }
 
 function ResourcePanelToggle({ children }: { children: React.ReactNode }) {
-	const [expanded, setExpanded] = useState(false)
+	const [expanded, setExpanded] = useState(true)
 	return expanded ? (
 		<div className="pointer-events-children relative h-full">
 			{children}
