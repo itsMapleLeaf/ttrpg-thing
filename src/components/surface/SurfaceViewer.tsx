@@ -1,12 +1,13 @@
 import { type } from "arktype"
 import { useMutation, useQuery } from "convex/react"
-import { type RefObject, useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { api } from "../../../convex/_generated/api"
 import type { Id } from "../../../convex/_generated/dataModel"
 import type { ClientSurface } from "../../../convex/surfaces.ts"
+import { useDrag } from "../../hooks/useDrag.ts"
 import { useSelection } from "../../hooks/useSelection.ts"
 import { getOptimizedImageUrl } from "../../lib/helpers.ts"
-import { type Vec, vec } from "../../lib/vec.ts"
+import { vec } from "../../lib/vec.ts"
 import { useToastContext } from "../../ui/Toast.tsx"
 
 export function SurfaceViewer({ surfaceId }: { surfaceId: Id<"surfaces"> }) {
@@ -51,7 +52,7 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 	const drag = useDrag({
 		onDragEnd(state) {
 			const tilesById = new Map(tiles?.map((it) => [it._id, it]))
-			const moved = vec.subtract(state.dragEnd, state.dragStart)
+			const moved = vec.subtract(state.end, state.start)
 
 			updateTiles({
 				updates: [...selectedTileIds].flatMap((id) => {
@@ -74,11 +75,6 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 		},
 	})
 
-	const selectedTileDragOffset =
-		drag.state.status === "dragging"
-			? vec.subtract(drag.state.dragEnd, drag.state.dragStart)
-			: vec(0)
-
 	return (
 		<div
 			className="relative size-full"
@@ -93,7 +89,7 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 
 				const position = vec.add(
 					vec(tile.left, tile.top),
-					selected ? selectedTileDragOffset : vec(0),
+					selected ? drag.state.delta : vec(0),
 				)
 
 				return (
@@ -112,7 +108,7 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 							backgroundPosition: "center",
 							backgroundSize: "cover",
 						}}
-						{...drag.handleProps({
+						{...drag.getHandleProps({
 							onPointerDown: (event) => {
 								if (event.ctrlKey || event.shiftKey) {
 									selection.toggleSelected(tile._id)
@@ -146,44 +142,33 @@ function SurfacePanel({
 	children: React.ReactNode
 	surface: ClientSurface
 }) {
-	type SurfaceState = {
-		offset: Vec
-	}
-
 	const surfaceWidth = 1000
 	const surfaceHeight = 1000
 
-	const toast = useToastContext()
+	const [offset, setOffset] = useState(vec.zero)
 	const createTile = useMutation(api.tiles.create)
-
-	const [state, setState] = useState<SurfaceState>({
-		offset: { x: 0, y: 0 },
-	})
+	const toast = useToastContext()
 
 	const drag = useDrag({
 		onDragEnd(state) {
-			setState((current) => ({
-				...current,
-				offset: vec.add(
-					current.offset,
-					vec.subtract(state.dragEnd, state.dragStart),
-				),
-			}))
+			setOffset((current) =>
+				vec.add(current, vec.subtract(state.end, state.start)),
+			)
 		},
 	})
 
-	let renderedOffset = state.offset
+	let renderedOffset = offset
 	if (drag.state.status === "dragging") {
 		renderedOffset = vec.add(
-			state.offset,
-			vec.subtract(drag.state.dragEnd, drag.state.dragStart),
+			offset,
+			vec.subtract(drag.state.end, drag.state.start),
 		)
 	}
 
 	return (
 		<div
 			className="relative h-full touch-none overflow-clip bg-gray-950/25"
-			{...drag.handleProps()}
+			{...drag.getHandleProps()}
 			onDragEnter={(event) => {
 				event.preventDefault()
 				event.dataTransfer.dropEffect = "copy"
@@ -204,8 +189,8 @@ function SurfacePanel({
 
 					await createTile({
 						surfaceId: surface._id,
-						left: event.clientX - rect.left - state.offset.x - 50,
-						top: event.clientY - rect.top - state.offset.y - 50,
+						left: event.clientX - rect.left - offset.x - 50,
+						top: event.clientY - rect.top - offset.y - 50,
 						width: 100,
 						height: 100,
 						assetId: data.assetId,
@@ -227,126 +212,4 @@ function SurfacePanel({
 			</div>
 		</div>
 	)
-}
-
-type DragState = {
-	status: "idle" | "down" | "dragging"
-	dragStart: Vec
-	dragEnd: Vec
-}
-
-function useDrag({ onDragEnd }: { onDragEnd: (state: DragState) => void }) {
-	const [state, setState] = useState<DragState>({
-		status: "idle",
-		dragStart: { x: 0, y: 0 },
-		dragEnd: { x: 0, y: 0 },
-	})
-
-	const stateRef = useLatestRef(state)
-	const onDragEndRef = useLatestRef(onDragEnd)
-
-	useEffect(() => {
-		const controller = new AbortController()
-
-		window.addEventListener(
-			"pointermove",
-			(event) => {
-				if (state.status === "down") {
-					event.preventDefault()
-					setState((current) => {
-						const dragEnd = { x: event.clientX, y: event.clientY }
-						const distance = vec.distance(current.dragStart, dragEnd)
-						return {
-							...current,
-							dragEnd,
-							status:
-								current.status === "down" && distance > 8
-									? "dragging"
-									: current.status,
-						}
-					})
-				}
-
-				if (state.status === "dragging") {
-					event.preventDefault()
-					setState((current) => ({
-						...current,
-						dragEnd: { x: event.clientX, y: event.clientY },
-					}))
-				}
-			},
-			{ signal: controller.signal },
-		)
-
-		window.addEventListener(
-			"pointerup",
-			() => {
-				if (state.status === "down") {
-					setState((current) => ({
-						...current,
-						status: "idle",
-					}))
-				}
-
-				if (state.status === "dragging") {
-					setState((current) => ({ ...current, status: "idle" }))
-
-					onDragEndRef.current(stateRef.current)
-
-					window.addEventListener(
-						"contextmenu",
-						(event) => event.preventDefault(),
-						{ once: true },
-					)
-				}
-			},
-			{ signal: controller.signal },
-		)
-
-		window.addEventListener(
-			"pointercancel",
-			() => {
-				setState((current) => ({
-					...current,
-					status: "idle",
-				}))
-			},
-			{ signal: controller.signal },
-		)
-
-		return () => controller.abort()
-	}, [state.status, onDragEndRef, stateRef])
-
-	return {
-		state,
-		handleProps: (overrides?: {
-			onPointerDown?: (event: React.PointerEvent) => void
-		}) => ({
-			onPointerDown: (event: React.PointerEvent) => {
-				overrides?.onPointerDown?.(event)
-
-				if (event.isDefaultPrevented()) {
-					return
-				}
-
-				event.preventDefault()
-				event.stopPropagation()
-
-				setState((current) => ({
-					...current,
-					status: "down",
-					dragStart: { x: event.clientX, y: event.clientY },
-					dragEnd: { x: event.clientX, y: event.clientY },
-				}))
-			},
-		}),
-	}
-}
-
-function useLatestRef<T>(state: T): RefObject<T> {
-	const stateRef = useRef(state)
-	useEffect(() => {
-		stateRef.current = state
-	})
-	return stateRef
 }
