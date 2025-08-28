@@ -73,14 +73,13 @@ export function useDrag(args: {
 				(event) => event.preventDefault(),
 				{ once: true },
 			)
+			args?.onEnd?.(getDerivedDragState(state))
 		}
 
 		setState((current) => ({
 			...current,
 			status: "idle",
 		}))
-
-		args?.onEnd?.(getDerivedDragState(state))
 	})
 
 	useEffect(() => {
