@@ -190,7 +190,7 @@ function SurfaceCard({
 						/>
 					</div>
 				</div>
-				<div className="flex-1 leading-tight">
+				<div className="grid flex-1 leading-tight">
 					<p className="line-clamp-2">{surface.name}</p>
 					{surface.isCurrent && (
 						<p className="line-clamp-1 text-sm/tight font-semibold text-primary-400/75">
