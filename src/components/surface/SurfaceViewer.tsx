@@ -1,28 +1,47 @@
 import { type } from "arktype"
 import { useMutation, useQuery } from "convex/react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { api } from "../../../convex/_generated/api"
 import type { Id } from "../../../convex/_generated/dataModel"
 import type { ClientSurface } from "../../../convex/surfaces.ts"
 import { useDrag } from "../../hooks/useDrag.ts"
+import { useLocalStorage } from "../../hooks/useLocalStorage.ts"
 import { useSelection } from "../../hooks/useSelection.ts"
+import { useStable } from "../../hooks/useStable.ts"
 import { getOptimizedImageUrl } from "../../lib/helpers.ts"
-import { vec } from "../../lib/vec.ts"
+import { type Vec, vec } from "../../lib/vec.ts"
 import { useToastContext } from "../../ui/Toast.tsx"
 
 export function SurfaceViewer({ surfaceId }: { surfaceId: Id<"surfaces"> }) {
-	const surface = useQuery(api.surfaces.get, { id: surfaceId })
+	const surface = useStable(useQuery(api.surfaces.get, { id: surfaceId }))
+
+	const [viewportOffset, setViewportOffset] = useLocalStorage({
+		key: "SurfaceViewer:viewportOffset",
+		fallback: vec(50),
+		schema: type({ x: "number", y: "number" }),
+	})
+
 	return (
 		surface && (
-			<SurfacePanel surface={surface}>
-				<SurfaceTiles surface={surface} />
+			<SurfacePanel
+				surface={surface}
+				viewportOffset={viewportOffset}
+				onChangeViewportOffset={setViewportOffset}
+			>
+				<SurfaceTiles surface={surface} viewportOffset={viewportOffset} />
 			</SurfacePanel>
 		)
 	)
 }
 
-function SurfaceTiles({ surface }: { surface: ClientSurface }) {
-	const tiles = useQuery(api.tiles.list, { surfaceId: surface._id })
+function SurfaceTiles({
+	surface,
+	viewportOffset,
+}: {
+	surface: ClientSurface
+	viewportOffset: Vec
+}) {
+	const tiles = useQuery(api.tiles.list, { surfaceId: surface._id }) ?? []
 	const toast = useToastContext()
 
 	const updateTiles = useMutation(api.tiles.updateMany).withOptimisticUpdate(
@@ -41,17 +60,31 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 		},
 	)
 
+	const [containerRect, setRect] = useState({
+		left: 0,
+		top: 0,
+		width: 0,
+		height: 0,
+	})
+	const containerRef = useRef<HTMLDivElement>(null)
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: recalculate the container top-left when the viewport offset changes
+	useEffect(() => {
+		setRect((containerRef.current as HTMLDivElement).getBoundingClientRect())
+	}, [viewportOffset])
+
 	const {
 		selection: selectedTileIds,
 		isSelected,
 		setSelection,
 		clearSelection,
 		...selection
-	} = useSelection(tiles?.map((t) => t._id) ?? [])
+	} = useSelection(tiles.map((t) => t._id) ?? [])
 
-	const drag = useDrag({
-		onDragEnd(state) {
-			const tilesById = new Map(tiles?.map((it) => [it._id, it]))
+	const tileDrag = useDrag({
+		buttons: ["left"],
+		onEnd: (state) => {
+			const tilesById = new Map(tiles.map((it) => [it._id, it]))
 			const moved = vec.subtract(state.end, state.start)
 
 			updateTiles({
@@ -59,7 +92,10 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 					const tile = tilesById.get(id)
 					if (!tile) return []
 
-					const newPosition = vec.add(vec(tile.left, tile.top), moved)
+					const newPosition = vec.roundTo(
+						vec.add(vec(tile.left, tile.top), moved),
+						20,
+					)
 
 					return {
 						id,
@@ -75,27 +111,57 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 		},
 	})
 
+	const backgroundDrag = useDrag({
+		buttons: ["left"],
+		onMove: (state) => {
+			const containerOffset = vec(containerRect.left, containerRect.top)
+
+			const [selectStart, selectEnd] = vec.corners(state.start, state.end)
+
+			const selectRect = [
+				vec.subtract(selectStart, containerOffset),
+				vec.subtract(selectEnd, containerOffset),
+			] as const
+
+			const overlappingTiles = tiles.filter((tile) => {
+				const tileTopLeft = vec(tile.left, tile.top)
+
+				const tileBottomRight = vec.add(
+					tileTopLeft,
+					vec(tile.width, tile.height),
+				)
+
+				return vec.intersects(...selectRect, tileTopLeft, tileBottomRight)
+			})
+
+			setSelection(overlappingTiles.map((it) => it._id))
+		},
+	})
+
 	return (
 		<div
-			className="relative size-full"
-			onPointerDown={(event) => {
-				if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
-					clearSelection()
-				}
-			}}
+			className="relative size-full touch-none"
+			ref={containerRef}
+			{...backgroundDrag.getHandleProps({
+				onPointerDown: (event) => {
+					if (!event.ctrlKey && !event.shiftKey) {
+						clearSelection()
+					}
+				},
+			})}
 		>
-			{tiles?.map((tile) => {
+			{tiles.map((tile) => {
 				const selected = isSelected(tile._id)
 
 				const position = vec.add(
 					vec(tile.left, tile.top),
-					selected ? drag.state.delta : vec(0),
+					selected ? tileDrag.state.delta : vec(0),
 				)
 
 				return (
 					<div
 						key={tile._id}
-						className="absolute panel data-selected:border-primary-400"
+						className="absolute touch-none panel data-selected:border-primary-400"
 						data-selected={selected || undefined}
 						style={{
 							translate: `${position.x}px ${position.y}px`,
@@ -108,7 +174,7 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 							backgroundPosition: "center",
 							backgroundSize: "cover",
 						}}
-						{...drag.getHandleProps({
+						{...tileDrag.getHandleProps({
 							onPointerDown: (event) => {
 								if (event.ctrlKey || event.shiftKey) {
 									selection.toggleSelected(tile._id)
@@ -120,9 +186,38 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 								}
 							},
 						})}
-					></div>
+					>
+						{selected && (
+							<div className="relative size-full bg-primary-900/25"></div>
+						)}
+					</div>
 				)
 			})}
+
+			{(() => {
+				if (backgroundDrag.state.status !== "dragging") return
+
+				const containerOffset = vec(containerRect.left, containerRect.top)
+
+				const [start, end] = vec.corners(
+					vec.subtract(backgroundDrag.state.start, containerOffset),
+					vec.subtract(backgroundDrag.state.end, containerOffset),
+				)
+
+				const width = end.x - start.x
+				const height = end.y - start.y
+
+				return (
+					<div
+						className="pointer-events-none fixed top-0 left-0 border border-primary-700 bg-primary-950/25"
+						style={{
+							translate: `${start.x}px ${start.y}px`,
+							width,
+							height,
+						}}
+					></div>
+				)
+			})()}
 		</div>
 	)
 }
@@ -136,31 +231,35 @@ export const SurfaceAssetDropData = type({
 })
 
 function SurfacePanel({
-	children,
 	surface,
+	viewportOffset,
+	onChangeViewportOffset,
+	children,
 }: {
-	children: React.ReactNode
 	surface: ClientSurface
+	viewportOffset: Vec
+	onChangeViewportOffset: (offset: Vec) => void
+	children: React.ReactNode
 }) {
 	const surfaceWidth = 1000
 	const surfaceHeight = 1000
 
-	const [offset, setOffset] = useState(vec.zero)
 	const createTile = useMutation(api.tiles.create)
 	const toast = useToastContext()
 
 	const drag = useDrag({
-		onDragEnd(state) {
-			setOffset((current) =>
-				vec.add(current, vec.subtract(state.end, state.start)),
+		buttons: ["middle", "right"],
+		onEnd: (state) => {
+			onChangeViewportOffset(
+				vec.add(viewportOffset, vec.subtract(state.end, state.start)),
 			)
 		},
 	})
 
-	let renderedOffset = offset
+	let renderedOffset = viewportOffset
 	if (drag.state.status === "dragging") {
 		renderedOffset = vec.add(
-			offset,
+			viewportOffset,
 			vec.subtract(drag.state.end, drag.state.start),
 		)
 	}
@@ -189,8 +288,8 @@ function SurfacePanel({
 
 					await createTile({
 						surfaceId: surface._id,
-						left: event.clientX - rect.left - offset.x - 50,
-						top: event.clientY - rect.top - offset.y - 50,
+						left: event.clientX - rect.left - viewportOffset.x - 50,
+						top: event.clientY - rect.top - viewportOffset.y - 50,
 						width: 100,
 						height: 100,
 						assetId: data.assetId,
@@ -201,7 +300,7 @@ function SurfacePanel({
 			}}
 		>
 			<div
-				className="absolute top-0 left-0 origin-top-left panel border-gray-700/50 bg-gray-900"
+				className="pointer-events-children absolute top-0 left-0 origin-top-left panel border-gray-700/50 bg-gray-900"
 				style={{
 					width: surfaceWidth,
 					height: surfaceHeight,

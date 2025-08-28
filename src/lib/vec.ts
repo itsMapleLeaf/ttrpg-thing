@@ -18,3 +18,26 @@ vec.divide = (a: Vec, b: Vec): Vec => ({ x: a.x / b.x, y: a.y / b.y })
 
 vec.distance = (a: Vec, b: Vec): number =>
 	Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2)
+
+vec.intersects = (
+	firstTopLeft: Vec,
+	firstBottomRight: Vec,
+	secondTopLeft: Vec,
+	secondBottomRight: Vec,
+) =>
+	firstTopLeft.x < secondBottomRight.x &&
+	firstBottomRight.x > secondTopLeft.x &&
+	firstTopLeft.y < secondBottomRight.y &&
+	firstBottomRight.y > secondTopLeft.y
+
+vec.corners = (a: Vec, b: Vec) =>
+	[
+		vec(Math.min(a.x, b.x), Math.min(a.y, b.y)),
+		vec(Math.max(a.x, b.x), Math.max(a.y, b.y)),
+	] as const
+
+vec.roundTo = (input: Vec, multiple: number) =>
+	vec(
+		Math.round(input.x / multiple) * multiple,
+		Math.round(input.y / multiple) * multiple,
+	)
