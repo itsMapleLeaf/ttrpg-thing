@@ -17,7 +17,7 @@ export default defineSchema({
 		name: v.string(),
 		slug: v.string(),
 		ownerId: v.id("users"),
-		currentSceneKey: v.optional(nullable(v.string())),
+		currentSurfaceId: v.optional(nullable(v.id("surfaces"))),
 	})
 		.index("by_owner", ["ownerId"])
 		.index("by_slug", ["slug"]),
@@ -48,14 +48,13 @@ export default defineSchema({
 			filterFields: ["roomId", "ownerId"],
 		}),
 
-	surfaceArtifacts: defineTable({
+	tiles: defineTable({
 		surfaceId: v.id("surfaces"),
-		artifactId: v.id("artifacts"),
 		left: v.number(),
 		top: v.number(),
 		width: v.number(),
 		height: v.number(),
-		roomId: v.id("rooms"),
+		assetId: v.optional(nullable(v.id("assets"))),
 		ownerId: v.id("users"),
-	}).index("roomId_surfaceId", ["roomId", "surfaceId"]),
+	}).index("by_surface", ["surfaceId"]),
 })
