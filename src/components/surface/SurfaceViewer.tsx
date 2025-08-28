@@ -1,10 +1,11 @@
 import { type } from "arktype"
 import { useMutation, useQuery } from "convex/react"
-import { useEffect, useRef, useState } from "react"
+import { type ComponentProps, useRef, useState } from "react"
 import { api } from "../../../convex/_generated/api"
 import type { Id } from "../../../convex/_generated/dataModel"
 import type { ClientSurface } from "../../../convex/surfaces.ts"
-import { useDrag } from "../../hooks/useDrag.ts"
+import type { ClientTile } from "../../../convex/tiles.ts"
+import { type DerivedDragState, useDrag } from "../../hooks/useDrag.ts"
 import { useLocalStorage } from "../../hooks/useLocalStorage.ts"
 import { useSelection } from "../../hooks/useSelection.ts"
 import { useStable } from "../../hooks/useStable.ts"
@@ -15,32 +16,16 @@ import { useToastContext } from "../../ui/Toast.tsx"
 export function SurfaceViewer({ surfaceId }: { surfaceId: Id<"surfaces"> }) {
 	const surface = useStable(useQuery(api.surfaces.get, { id: surfaceId }))
 
-	const [viewportOffset, setViewportOffset] = useLocalStorage({
-		key: "SurfaceViewer:viewportOffset",
-		fallback: vec(50),
-		schema: type({ x: "number", y: "number" }),
-	})
-
 	return (
 		surface && (
-			<SurfacePanel
-				surface={surface}
-				viewportOffset={viewportOffset}
-				onChangeViewportOffset={setViewportOffset}
-			>
-				<SurfaceTiles surface={surface} viewportOffset={viewportOffset} />
+			<SurfacePanel surface={surface}>
+				<SurfaceTiles surface={surface} />
 			</SurfacePanel>
 		)
 	)
 }
 
-function SurfaceTiles({
-	surface,
-	viewportOffset,
-}: {
-	surface: ClientSurface
-	viewportOffset: Vec
-}) {
+function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 	const tiles = useQuery(api.tiles.list, { surfaceId: surface._id }) ?? []
 	const toast = useToastContext()
 
@@ -60,19 +45,6 @@ function SurfaceTiles({
 		},
 	)
 
-	const [containerRect, setRect] = useState({
-		left: 0,
-		top: 0,
-		width: 0,
-		height: 0,
-	})
-	const containerRef = useRef<HTMLDivElement>(null)
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: recalculate the container top-left when the viewport offset changes
-	useEffect(() => {
-		setRect((containerRef.current as HTMLDivElement).getBoundingClientRect())
-	}, [viewportOffset])
-
 	const {
 		selection: selectedTileIds,
 		isSelected,
@@ -80,6 +52,29 @@ function SurfaceTiles({
 		clearSelection,
 		...selection
 	} = useSelection(tiles.map((t) => t._id) ?? [])
+
+	const containerRef = useRef<HTMLDivElement>(null)
+
+	// we only want to calculate this as-needed
+	// to avoid too many layout calcs from getBoundingClientRef
+	const containerOffsetRef = useRef<Vec>(vec(0))
+	function updateContainerOffset() {
+		const containerRect = containerRef.current?.getBoundingClientRect()
+		containerOffsetRef.current = vec(
+			containerRect?.left ?? 0,
+			containerRect?.top,
+		)
+	}
+
+	const [selectionArea, setSelectionArea] = useState<{ start: Vec; end: Vec }>()
+	function updateSelectionArea(state: DerivedDragState) {
+		const [start, end] = vec.corners(
+			vec.subtract(state.start, containerOffsetRef.current),
+			vec.subtract(state.end, containerOffsetRef.current),
+		)
+		setSelectionArea({ start, end })
+		return { start, end }
+	}
 
 	const tileDrag = useDrag({
 		buttons: ["left"],
@@ -113,15 +108,12 @@ function SurfaceTiles({
 
 	const backgroundDrag = useDrag({
 		buttons: ["left"],
+		onStart: (state) => {
+			updateContainerOffset()
+			updateSelectionArea(state)
+		},
 		onMove: (state) => {
-			const containerOffset = vec(containerRect.left, containerRect.top)
-
-			const [selectStart, selectEnd] = vec.corners(state.start, state.end)
-
-			const selectRect = [
-				vec.subtract(selectStart, containerOffset),
-				vec.subtract(selectEnd, containerOffset),
-			] as const
+			const area = updateSelectionArea(state)
 
 			const overlappingTiles = tiles.filter((tile) => {
 				const tileTopLeft = vec(tile.left, tile.top)
@@ -131,10 +123,18 @@ function SurfaceTiles({
 					vec(tile.width, tile.height),
 				)
 
-				return vec.intersects(...selectRect, tileTopLeft, tileBottomRight)
+				return vec.intersects(
+					area.start,
+					area.end,
+					tileTopLeft,
+					tileBottomRight,
+				)
 			})
 
 			setSelection(overlappingTiles.map((it) => it._id))
+		},
+		onEnd: () => {
+			setSelectionArea(undefined)
 		},
 	})
 
@@ -159,21 +159,11 @@ function SurfaceTiles({
 				)
 
 				return (
-					<div
+					<SurfaceTileCard
 						key={tile._id}
-						className="absolute touch-none panel data-selected:border-primary-400"
-						data-selected={selected || undefined}
-						style={{
-							translate: `${position.x}px ${position.y}px`,
-							width: tile.width,
-							height: tile.height,
-							backgroundImage:
-								tile.assetUrl == null
-									? undefined
-									: `url(${getOptimizedImageUrl(tile.assetUrl, ceilToNearest(tile.width, 100))})`,
-							backgroundPosition: "center",
-							backgroundSize: "cover",
-						}}
+						tile={tile}
+						position={position}
+						selected={selected}
 						{...tileDrag.getHandleProps({
 							onPointerDown: (event) => {
 								if (event.ctrlKey || event.shiftKey) {
@@ -186,38 +176,53 @@ function SurfaceTiles({
 								}
 							},
 						})}
-					>
-						{selected && (
-							<div className="relative size-full bg-primary-900/25"></div>
-						)}
-					</div>
+					/>
 				)
 			})}
 
-			{(() => {
-				if (backgroundDrag.state.status !== "dragging") return
+			{selectionArea && (
+				<div
+					className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-950/25"
+					style={{
+						translate: `${selectionArea.start.x}px ${selectionArea.start.y}px`,
+						width: selectionArea.end.x - selectionArea.start.x,
+						height: selectionArea.end.y - selectionArea.start.y,
+					}}
+				></div>
+			)}
+		</div>
+	)
+}
 
-				const containerOffset = vec(containerRect.left, containerRect.top)
-
-				const [start, end] = vec.corners(
-					vec.subtract(backgroundDrag.state.start, containerOffset),
-					vec.subtract(backgroundDrag.state.end, containerOffset),
-				)
-
-				const width = end.x - start.x
-				const height = end.y - start.y
-
-				return (
-					<div
-						className="pointer-events-none fixed top-0 left-0 border border-primary-700 bg-primary-950/25"
-						style={{
-							translate: `${start.x}px ${start.y}px`,
-							width,
-							height,
-						}}
-					></div>
-				)
-			})()}
+function SurfaceTileCard({
+	tile,
+	position,
+	selected,
+	...props
+}: {
+	tile: ClientTile
+	position: Vec
+	selected: boolean
+} & ComponentProps<"div">) {
+	return (
+		<div
+			key={tile._id}
+			{...props}
+			className="absolute touch-none panel data-selected:border-primary-400"
+			data-selected={selected || undefined}
+			style={{
+				translate: `${position.x}px ${position.y}px`,
+				width: tile.width,
+				height: tile.height,
+				backgroundImage:
+					tile.assetUrl == null
+						? undefined
+						: `url(${getOptimizedImageUrl(tile.assetUrl, ceilToNearest(tile.width, 100))})`,
+				backgroundPosition: "center top",
+				backgroundSize: "cover",
+			}}
+		>
+			{selected && <div className="relative size-full bg-primary-900/25"></div>}
 		</div>
 	)
 }
@@ -232,13 +237,9 @@ export const SurfaceAssetDropData = type({
 
 function SurfacePanel({
 	surface,
-	viewportOffset,
-	onChangeViewportOffset,
 	children,
 }: {
 	surface: ClientSurface
-	viewportOffset: Vec
-	onChangeViewportOffset: (offset: Vec) => void
 	children: React.ReactNode
 }) {
 	const surfaceWidth = 1000
@@ -247,11 +248,17 @@ function SurfacePanel({
 	const createTile = useMutation(api.tiles.create)
 	const toast = useToastContext()
 
+	const [viewportOffset, setViewportOffset] = useLocalStorage({
+		key: "SurfaceViewer:viewportOffset",
+		fallback: vec(50),
+		schema: type({ x: "number", y: "number" }),
+	})
+
 	const drag = useDrag({
 		buttons: ["middle", "right"],
 		onEnd: (state) => {
-			onChangeViewportOffset(
-				vec.add(viewportOffset, vec.subtract(state.end, state.start)),
+			setViewportOffset((current) =>
+				vec.add(current, vec.subtract(state.end, state.start)),
 			)
 		},
 	})

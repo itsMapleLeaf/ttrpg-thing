@@ -50,7 +50,7 @@ function ResourcePanelToggle({ children }: { children: React.ReactNode }) {
 		<div className="pointer-events-children relative flex h-full flex-col justify-end gap-2">
 			{expanded ? (
 				<>
-					<div className="flex-1">{children}</div>
+					<div className="min-h-0 flex-1">{children}</div>
 					<div className="pointer-events-children">
 						<Button
 							icon="mingcute:close-fill"

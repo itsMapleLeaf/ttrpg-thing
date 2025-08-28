@@ -135,7 +135,7 @@ export function SurfaceListSection({
 			]}
 		>
 			{surfaces.length === 0 ? (
-				<EmptyState icon="mingcute:layer-fill" message="No surfaces yet" />
+				<EmptyState icon="mingcute:table-2-fill" message="No surfaces yet" />
 			) : (
 				<div className="grid gap-1 p-1">
 					{surfaces.map((surface) => (
@@ -176,7 +176,10 @@ function SurfaceCard({
 							className="size-full object-cover"
 						/>
 					) : (
-						<Iconish icon="mingcute:layer-fill" className="size-6 opacity-75" />
+						<Iconish
+							icon="mingcute:table-2-fill"
+							className="size-6 opacity-75"
+						/>
 					)}
 					<div className="fade absolute inset-0 flex-center overflow-clip px-2 opacity-0 transition group-hover:fade-visible has-checked:fade-visible">
 						<input
