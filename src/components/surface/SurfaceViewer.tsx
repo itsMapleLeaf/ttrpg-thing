@@ -1,6 +1,8 @@
 import { type } from "arktype"
 import { useMutation, useQuery } from "convex/react"
+import { sortBy } from "es-toolkit"
 import { type ComponentProps, useRef, useState } from "react"
+import { twMerge } from "tailwind-merge"
 import { api } from "../../../convex/_generated/api"
 import type { Id } from "../../../convex/_generated/dataModel"
 import type { ClientSurface } from "../../../convex/surfaces.ts"
@@ -79,32 +81,60 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 	const tileDrag = useDrag({
 		buttons: ["left"],
 		onEnd: (state) => {
-			const tilesById = new Map(tiles.map((it) => [it._id, it]))
 			const moved = vec.subtract(state.end, state.start)
+			const now = Date.now()
 
 			updateTiles({
-				updates: [...selectedTileIds].flatMap((id) => {
-					const tile = tilesById.get(id)
-					if (!tile) return []
+				updates: orderedTiles
+					.filter((tile) => selectedTileIds.has(tile._id))
+					.flatMap((tile, index) => {
+						const newPosition = vec.roundTo(
+							vec.add(vec(tile.left, tile.top), moved),
+							20,
+						)
 
-					const newPosition = vec.roundTo(
-						vec.add(vec(tile.left, tile.top), moved),
-						20,
-					)
-
-					return {
-						id,
-						patch: {
-							left: newPosition.x,
-							top: newPosition.y,
-						},
-					}
-				}),
+						return {
+							id: tile._id,
+							patch: {
+								left: newPosition.x,
+								top: newPosition.y,
+								lastMovedAt: now,
+								order: index,
+							},
+						}
+					}),
 			}).catch((error) => {
 				toast.error(String(error))
 			})
 		},
 	})
+
+	const orderedTiles = sortBy(tiles, [
+		// put bigger tiles at the back
+		(it) => -Math.max(it.width, it.height),
+
+		// make dragged tiles appear at front,
+		// to reflect where they'll get placed while they're being dragged
+		(it) =>
+			isSelected(it._id) && tileDrag.state.status === "dragging" ? 1 : 0,
+
+		// sort by last moved, so newly moved tiles get placed on top
+		(it) => it.lastMovedAt ?? 0,
+
+		// manual order, which is set to
+		// preserve the order of several tiles moved at once,
+		// which would otherwise be clobbered when their `lastMovedAt`
+		// gets set to the value value
+		(it) => it.order ?? 0,
+	])
+
+	// map to indexes for later efficient use as z-indexes
+	// we use z-indexes instead of mapping over a sorted array
+	// because CSS transitions break when an item is re-ordered
+	// (even though it theoretically shouldn't with keys?? lol)
+	const tileOrder = new Map(
+		orderedTiles.map((tile, index) => [tile._id, index]),
+	)
 
 	const backgroundDrag = useDrag({
 		buttons: ["left"],
@@ -140,7 +170,7 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 
 	return (
 		<div
-			className="relative size-full touch-none"
+			className="relative isolate size-full touch-none"
 			ref={containerRef}
 			{...backgroundDrag.getHandleProps({
 				onPointerDown: (event) => {
@@ -152,18 +182,17 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 		>
 			{tiles.map((tile) => {
 				const selected = isSelected(tile._id)
-
-				const position = vec.add(
-					vec(tile.left, tile.top),
-					selected ? tileDrag.state.delta : vec(0),
-				)
-
 				return (
 					<SurfaceTileCard
 						key={tile._id}
 						tile={tile}
-						position={position}
+						position={vec.add(
+							vec(tile.left, tile.top),
+							selected ? tileDrag.state.delta : vec(0),
+						)}
 						selected={selected}
+						dragging={selected && tileDrag.state.status === "dragging"}
+						order={tileOrder.get(tile._id)}
 						{...tileDrag.getHandleProps({
 							onPointerDown: (event) => {
 								if (event.ctrlKey || event.shiftKey) {
@@ -198,17 +227,23 @@ function SurfaceTileCard({
 	tile,
 	position,
 	selected,
+	dragging,
+	order,
 	...props
 }: {
 	tile: ClientTile
 	position: Vec
 	selected: boolean
+	dragging: boolean
+	order: number | undefined
 } & ComponentProps<"div">) {
 	return (
 		<div
-			key={tile._id}
 			{...props}
-			className="absolute touch-none panel data-selected:border-primary-400"
+			className={twMerge(
+				"absolute touch-none panel transition ease-out data-selected:border-primary-400",
+				dragging ? "opacity-75 transition-opacity" : "",
+			)}
 			data-selected={selected || undefined}
 			style={{
 				translate: `${position.x}px ${position.y}px`,
@@ -220,9 +255,13 @@ function SurfaceTileCard({
 						: `url(${getOptimizedImageUrl(tile.assetUrl, ceilToNearest(tile.width, 100))})`,
 				backgroundPosition: "center top",
 				backgroundSize: "cover",
+				zIndex: order,
 			}}
 		>
-			{selected && <div className="relative size-full bg-primary-900/25"></div>}
+			<div
+				className="relative size-full bg-primary-900/25 opacity-0 transition data-visible:opacity-100"
+				data-visible={selected || undefined}
+			></div>
 		</div>
 	)
 }
@@ -307,7 +346,7 @@ function SurfacePanel({
 			}}
 		>
 			<div
-				className="pointer-events-children absolute top-0 left-0 origin-top-left panel border-gray-700/50 bg-gray-900"
+				className="pointer-events-children absolute top-0 left-0 origin-top-left panel overflow-visible border-gray-700/50 bg-gray-900"
 				style={{
 					width: surfaceWidth,
 					height: surfaceHeight,

@@ -50,11 +50,13 @@ export default defineSchema({
 
 	tiles: defineTable({
 		surfaceId: v.id("surfaces"),
+		ownerId: v.id("users"),
 		left: v.number(),
 		top: v.number(),
 		width: v.number(),
 		height: v.number(),
 		assetId: v.optional(nullable(v.id("assets"))),
-		ownerId: v.id("users"),
+		lastMovedAt: v.optional(v.number()),
+		order: v.optional(v.number()),
 	}).index("by_surface", ["surfaceId"]),
 })
