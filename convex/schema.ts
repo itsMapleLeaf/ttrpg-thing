@@ -35,20 +35,6 @@ export default defineSchema({
 			filterFields: ["roomId"],
 		}),
 
-	artifacts: defineTable({
-		name: v.string(),
-		type: v.string(),
-		data: v.optional(v.record(v.string(), v.any())),
-		roomId: v.id("rooms"),
-		ownerId: v.id("users"),
-	})
-		.index("by_room", ["roomId"])
-		.index("by_room_and_name", ["roomId", "name"])
-		.searchIndex("search_by_name", {
-			searchField: "name",
-			filterFields: ["roomId", "type", "ownerId"],
-		}),
-
 	surfaces: defineTable({
 		name: v.string(),
 		backgroundId: v.optional(nullable(v.id("assets"))),
