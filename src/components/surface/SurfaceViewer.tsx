@@ -122,7 +122,7 @@ function SurfacePanel({ children }: { children: React.ReactNode }) {
 
 	return (
 		<div
-			className="relative h-full overflow-clip bg-gray-950/25"
+			className="relative h-full touch-none overflow-clip bg-gray-950/25"
 			onPointerDown={(event) => {
 				event.preventDefault()
 				setState((current) => ({

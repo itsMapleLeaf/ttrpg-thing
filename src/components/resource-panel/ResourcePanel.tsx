@@ -33,7 +33,7 @@ export function ResourcePanel({ roomId }: { roomId: Id<"rooms"> }) {
 
 	return (
 		<ResourcePanelToggle>
-			<nav className="flex h-full w-72 flex-col panel border-gray-700 bg-gray-800">
+			<nav className="flex h-full w-full max-w-72 flex-col panel border-gray-700 bg-gray-800">
 				<ResourcePanelFilter {...filterState} />
 				<ScrollArea className="min-h-0 flex-1 bg-gray-900/75">
 					<AssetListSection roomId={roomId} assets={assets ?? []} />
@@ -46,28 +46,30 @@ export function ResourcePanel({ roomId }: { roomId: Id<"rooms"> }) {
 
 function ResourcePanelToggle({ children }: { children: React.ReactNode }) {
 	const [expanded, setExpanded] = useState(true)
-	return expanded ? (
-		<div className="pointer-events-children relative h-full">
-			{children}
-			<div className="pointer-events-children absolute top-0 left-full pl-2">
+	return (
+		<div className="pointer-events-children relative flex h-full flex-col justify-end gap-2">
+			{expanded ? (
+				<>
+					<div className="flex-1">{children}</div>
+					<div className="pointer-events-children">
+						<Button
+							icon="mingcute:close-fill"
+							shape="square"
+							onClick={() => setExpanded(false)}
+						>
+							Close menu
+						</Button>
+					</div>
+				</>
+			) : (
 				<Button
-					icon="mingcute:close-fill"
+					icon="mingcute:menu-fill"
 					shape="square"
-					tooltipProps={{ positionerProps: { side: "right" } }}
-					onClick={() => setExpanded(false)}
+					onClick={() => setExpanded(true)}
 				>
-					Close menu
+					Open menu
 				</Button>
-			</div>
+			)}
 		</div>
-	) : (
-		<Button
-			icon="mingcute:menu-fill"
-			shape="square"
-			tooltipProps={{ positionerProps: { side: "right" } }}
-			onClick={() => setExpanded(true)}
-		>
-			Open menu
-		</Button>
 	)
 }
