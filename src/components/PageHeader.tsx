@@ -23,7 +23,8 @@ export function PageHeader({
 						navigate({ to: "/ds" })
 					}}
 				>
-					TTRPG Thing
+					<span className="font-medium text-primary-400">tabletop</span>
+					<span className="text-gray-200">thing</span>
 				</Link>
 				<h1 className="text-2xl">{heading}</h1>
 			</div>
