@@ -26,7 +26,7 @@ export function PageHeader({
 					<span className="font-medium text-primary-400">tabletop</span>
 					<span className="text-gray-200">thing</span>
 				</Link>
-				<h1 className="text-2xl">{heading}</h1>
+				<h1 className="truncate text-2xl">{heading}</h1>
 			</div>
 			<div className="flex items-center gap-2">
 				{actions}
