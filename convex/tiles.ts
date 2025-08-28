@@ -1,4 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
+import type { WithoutSystemFields } from "convex/server"
 import { ConvexError, type Infer, v } from "convex/values"
 import { omit } from "convex-helpers"
 import { literals, partial } from "convex-helpers/validators"
@@ -88,21 +89,24 @@ export const update = mutation({
 		id: v.id("tiles"),
 		patch: v.object(partial(schema.tables.tiles.validator.fields)),
 	},
-	handler: async (ctx, args) => {
-		const userId = await ensureAuthUserId(ctx)
+	handler: async (ctx, { id, patch }) => {
+		await updateTile(ctx, id, patch)
+	},
+})
 
-		const tile = await ctx.db.get(args.id)
-		if (!tile) {
-			throw new Error("Tile not found")
+export const updateMany = mutation({
+	args: {
+		updates: v.array(
+			v.object({
+				id: v.id("tiles"),
+				patch: v.object(partial(schema.tables.tiles.validator.fields)),
+			}),
+		),
+	},
+	handler: async (ctx, { updates }) => {
+		for (const { id, patch } of updates) {
+			await updateTile(ctx, id, patch)
 		}
-
-		if (tile.ownerId !== userId) {
-			throw new Error("You don't have permission to update this tile")
-		}
-
-		await ctx.db.patch(args.id, args.patch)
-
-		return args.id
 	},
 })
 
@@ -142,6 +146,25 @@ async function makeClientTile(
 		isOwner: tile.ownerId === userId,
 		assetUrl: tile.assetId && (await getAssetImageUrl(ctx, tile.assetId)),
 	}
+}
+
+async function updateTile(
+	ctx: MutationCtx,
+	id: Id<"tiles">,
+	patch: WithoutSystemFields<Partial<Doc<"tiles">>>,
+) {
+	const userId = await ensureAuthUserId(ctx)
+
+	const tile = await ctx.db.get(id)
+	if (!tile) {
+		throw new Error("Tile not found")
+	}
+
+	if (tile.ownerId !== userId) {
+		throw new Error("You don't have permission to update this tile")
+	}
+
+	await ctx.db.patch(id, patch)
 }
 
 async function removeTile(ctx: MutationCtx, id: Id<"tiles">) {
