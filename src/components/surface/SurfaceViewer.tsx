@@ -170,7 +170,7 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 
 	return (
 		<div
-			className="relative isolate size-full touch-none"
+			className="relative size-full touch-none"
 			ref={containerRef}
 			{...backgroundDrag.getHandleProps({
 				onPointerDown: (event) => {
@@ -180,38 +180,40 @@ function SurfaceTiles({ surface }: { surface: ClientSurface }) {
 				},
 			})}
 		>
-			{tiles.map((tile) => {
-				const selected = isSelected(tile._id)
-				return (
-					<SurfaceTileCard
-						key={tile._id}
-						tile={tile}
-						position={vec.add(
-							vec(tile.left, tile.top),
-							selected ? tileDrag.state.delta : vec(0),
-						)}
-						selected={selected}
-						dragging={selected && tileDrag.state.status === "dragging"}
-						order={tileOrder.get(tile._id)}
-						{...tileDrag.getHandleProps({
-							onPointerDown: (event) => {
-								if (event.ctrlKey || event.shiftKey) {
-									selection.toggleSelected(tile._id)
-									return
-								}
+			<div className="isolate">
+				{tiles.map((tile) => {
+					const selected = isSelected(tile._id)
+					return (
+						<SurfaceTileCard
+							key={tile._id}
+							tile={tile}
+							position={vec.add(
+								vec(tile.left, tile.top),
+								selected ? tileDrag.state.delta : vec(0),
+							)}
+							selected={selected}
+							dragging={selected && tileDrag.state.status === "dragging"}
+							order={tileOrder.get(tile._id)}
+							{...tileDrag.getHandleProps({
+								onPointerDown: (event) => {
+									if (event.ctrlKey || event.shiftKey) {
+										selection.toggleSelected(tile._id)
+										return
+									}
 
-								if (!selected) {
-									setSelection([tile._id])
-								}
-							},
-						})}
-					/>
-				)
-			})}
+									if (!selected) {
+										setSelection([tile._id])
+									}
+								},
+							})}
+						/>
+					)
+				})}
+			</div>
 
 			{selectionArea && (
 				<div
-					className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-950/25"
+					className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-800/25"
 					style={{
 						translate: `${selectionArea.start.x}px ${selectionArea.start.y}px`,
 						width: selectionArea.end.x - selectionArea.start.x,

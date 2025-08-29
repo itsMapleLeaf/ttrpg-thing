@@ -1,7 +1,8 @@
 import { useAuthActions } from "@convex-dev/auth/react"
 import { createFileRoute, Outlet } from "@tanstack/react-router"
 import { Suspense } from "react"
-import { PageHeader } from "../components/PageHeader.tsx"
+import { LogoLink } from "../components/LogoLink.tsx"
+import { Button } from "../ui/Button.tsx"
 import { Loading } from "../ui/Loading.tsx"
 import { useOptionalUser } from "../user-context.tsx"
 
@@ -11,28 +12,13 @@ export const Route = createFileRoute("/_protected")({
 
 function Protected() {
 	const user = useOptionalUser()
-	return (
-		<div className="bg-base-300 min-h-dvh">
-			{user ? (
-				<Suspense
-					fallback={
-						<>
-							<PageHeader heading="Loading..." />
-							<Loading />
-						</>
-					}
-				>
-					<Outlet />
-				</Suspense>
-			) : (
-				<div className="flex min-h-dvh items-center justify-center px-4 py-8">
-					<div className="card border-base-300 card-md w-full max-w-md border bg-gray-700 shadow backdrop-blur">
-						<div className="card-body gap-6">
-							<SignInMessage />
-						</div>
-					</div>
-				</div>
-			)}
+	return user ? (
+		<Suspense fallback={<Loading />}>
+			<Outlet />
+		</Suspense>
+	) : (
+		<div className="container mx-auto grid h-dvh max-w-2xl content-center p-6">
+			<SignInMessage />
 		</div>
 	)
 }
@@ -40,19 +26,20 @@ function Protected() {
 function SignInMessage() {
 	const { signIn } = useAuthActions()
 	return (
-		<div className="flex flex-col gap-6">
-			<header className="space-y-1">
-				<h1 className="text-xl font-semibold">Sign in to continue</h1>
+		<div className="grid content-center justify-center gap-4 text-center">
+			<header>
+				<LogoLink />
 			</header>
-			<footer className="card-actions justify-end">
-				<button
-					type="button"
-					className="button button-primary w-full"
+			<main className="grid content-center justify-center gap-4 panel p-4 text-center">
+				<h1 className="text-xl font-semibold">Sign in to continue</h1>
+				<Button
+					icon="simple-icons:discord"
+					appearance="solid"
 					onClick={() => signIn("discord")}
 				>
 					Sign in with Discord
-				</button>
-			</footer>
+				</Button>
+			</main>
 		</div>
 	)
 }

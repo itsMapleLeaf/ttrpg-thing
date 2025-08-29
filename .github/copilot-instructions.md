@@ -1,3 +1,12 @@
+## Technologies
+
+- [React](https://react.dev)
+- [Convex](https://docs.convex.dev)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [TanStack Start](https://tanstack.com/start/latest/docs/framework/react/overview)
+- [Bun](https://bun.sh/)
+- [Base UI](https://base-ui.com/react/overview/quick-start)
+
 ## Comments
 
 - Do not add any comments to the code, especially if they only say what the code does.
@@ -69,8 +78,3 @@
 - Use `size-*` for setting the same width and height of an element, e.g. `size-6` instead of `w-6 h-6`
 - Use `twMerge` from `tailwind-merge` to combine Tailwind CSS classes.
 - Avoid using `space-*` classes, and prefer grid or flex with gap instead
-
-## Technologies
-
-- [Bun](https://bun.sh/)
-- [TanStack Start](https://tanstack.com/start/latest/docs/framework/react/overview)

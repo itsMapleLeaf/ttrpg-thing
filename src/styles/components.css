@@ -58,3 +58,7 @@
 @utility callout-error {
 	@apply callout-base border-red-800/50 bg-red-900/25 text-red-200;
 }
+
+@utility sidebar-link {
+	@apply flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition hover:bg-gray-700/50 active:bg-gray-700 active:duration-0;
+}

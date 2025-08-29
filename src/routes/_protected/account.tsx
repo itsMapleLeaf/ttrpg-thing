@@ -3,7 +3,10 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useMutation } from "convex/react"
 import { useActionState, useId, useMemo, useRef, useState } from "react"
 import { api } from "../../../convex/_generated/api.js"
-import { PageHeader } from "../../components/PageHeader.tsx"
+import {
+	CommonSidebarContent,
+	SidebarLayout,
+} from "../../components/SidebarLayout.tsx"
 import { useUploadImage } from "../../hooks/useUploadImage.ts"
 import { Label } from "../../ui/Label.tsx"
 import { useUser } from "../../user-context.tsx"
@@ -14,12 +17,11 @@ export const Route = createFileRoute("/_protected/account")({
 
 function Account() {
 	return (
-		<>
-			<PageHeader heading="Account Settings" />
-			<div className="container mx-auto max-w-2xl p-6">
+		<SidebarLayout sidebar={<CommonSidebarContent />}>
+			<div className="container mx-auto grid h-full max-w-2xl content-center p-6">
 				<UpdateProfileForm />
 			</div>
-		</>
+		</SidebarLayout>
 	)
 }
 

@@ -11,7 +11,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 	const auth = useConvexAuth()
 	return (
 		<div className="bg-base-300 min-h-dvh">
-			{auth.isLoading ? (
+			{auth.isLoading || (auth.isAuthenticated && user == null) ? (
 				<Loading />
 			) : (
 				<UserContext value={user}>{children}</UserContext>

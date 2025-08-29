@@ -9,9 +9,8 @@ export function UserMenu({ user }: { user: ClientUser }) {
 	const { signOut } = useAuthActions()
 	return (
 		<Menu>
-			<MenuButton className="button-clear h-[unset] px-3.5 py-2.5">
-				<div className="flex items-center gap-2">
-					<span className="font-semibold">{user.name}</span>
+			<MenuButton className="button-clear h-[unset] justify-start px-3.5 py-2.5">
+				<div className="flex items-center justify-start gap-4">
 					<div className="relative flex-center size-8 rounded-full outline-2 outline-black/25">
 						{user.imageUrl ? (
 							<SmartImage
@@ -23,6 +22,7 @@ export function UserMenu({ user }: { user: ClientUser }) {
 							<Icon icon="mingcute:user-3-fill" className="size-5" />
 						)}
 					</div>
+					<span className="font-semibold">{user.name}</span>
 				</div>
 			</MenuButton>
 

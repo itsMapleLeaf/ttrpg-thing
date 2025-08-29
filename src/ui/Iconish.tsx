@@ -1,12 +1,18 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
 import type { ComponentProps, ReactElement } from "react"
-import type { OverrideProperties } from "type-fest"
+import { twMerge } from "tailwind-merge"
 
 export type IconishIcon = string | ReactElement
 
 export function Iconish({
 	icon,
 	...props
-}: OverrideProperties<ComponentProps<typeof Icon>, { icon: IconishIcon }>) {
-	return typeof icon === "string" ? <Icon {...props} icon={icon} /> : icon
+}: ComponentProps<"span"> & {
+	icon: IconishIcon
+}) {
+	return (
+		<span {...props} className={twMerge("size-5 *:size-full", props.className)}>
+			{typeof icon === "string" ? <Icon icon={icon} /> : icon}
+		</span>
+	)
 }

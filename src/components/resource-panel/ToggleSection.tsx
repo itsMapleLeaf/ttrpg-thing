@@ -47,7 +47,7 @@ export function ToggleSection({
 			<div className="sticky top-0 z-10 flex items-center">
 				<button
 					type="button"
-					className="flex w-full items-center gap-2 bg-gray-900/75 p-3 text-left backdrop-blur transition-colors hover:bg-gray-800/75"
+					className={`flex w-full items-center gap-2 bg-gray-900/75 p-3 text-left backdrop-blur transition-colors hover:bg-gray-800/75`}
 					onClick={() => {
 						setIsCollapsed((prev) => !prev)
 					}}
