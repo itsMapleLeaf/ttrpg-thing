@@ -1,15 +1,15 @@
-import { Icon } from "@iconify/react/dist/iconify.js"
+import { Collapsible } from "@base-ui-components/react"
 import { type } from "arktype"
 import type { ReactNode } from "react"
 import { useLocalStorage } from "../../hooks/useLocalStorage.ts"
 import type { Falsy } from "../../lib/types.ts"
 import { Button } from "../../ui/Button.tsx"
-import { Iconish, type IconishIcon } from "../../ui/Iconish.tsx"
+import { Icon, type Iconish } from "../../ui/Icon.tsx"
 import { Menu, MenuButton, MenuItem, MenuPanel } from "../../ui/Menu.tsx"
 
 type ToggleSectionAction = {
 	name: string
-	icon: IconishIcon
+	icon: Iconish
 } & (
 	| {
 			callback: () => unknown
@@ -17,7 +17,7 @@ type ToggleSectionAction = {
 	| {
 			options: {
 				name: string
-				icon: IconishIcon
+				icon: Iconish
 				callback: () => unknown
 			}[]
 	  }
@@ -36,26 +36,19 @@ export function ToggleSection({
 	children,
 	actions,
 }: ToggleSectionProps) {
-	const [isCollapsed, setIsCollapsed] = useLocalStorage({
-		key: `AssetListToggleSection:${name}:collapsed`,
+	const [open, setOpen] = useLocalStorage({
+		key: `AssetListToggleSection:${name}:open`,
 		fallback: false,
 		schema: type("boolean"),
 	})
 
 	return (
-		<div className="isolate">
+		<Collapsible.Root className="isolate" open={open} onOpenChange={setOpen}>
 			<div className="sticky top-0 z-10 flex items-center">
-				<button
-					type="button"
-					className={`flex w-full items-center gap-2 bg-gray-900/75 p-3 text-left backdrop-blur transition-colors hover:bg-gray-800/75`}
-					onClick={() => {
-						setIsCollapsed((prev) => !prev)
-					}}
-				>
+				<Collapsible.Trigger className="group flex w-full items-center gap-2 bg-gray-900/75 p-3 text-left backdrop-blur transition-colors hover:bg-gray-800/75">
 					<Icon
-						icon="mingcute:down-fill"
-						data-collapsed={isCollapsed || undefined}
-						className="size-4 opacity-70 transition-transform data-collapsed:-rotate-90"
+						icon="mingcute:right-fill"
+						className="size-4 opacity-70 transition-transform group-data-panel-open:rotate-90"
 					/>
 					<div className="flex-1">
 						<span className="text-sm font-medium">{name}</span>
@@ -63,7 +56,7 @@ export function ToggleSection({
 							<span className="ml-2 text-xs opacity-50">{subtext}</span>
 						)}
 					</div>
-				</button>
+				</Collapsible.Trigger>
 
 				{actions && actions.length > 0 && (
 					<div className="absolute right-0 z-20 flex gap-1 px-1.5 *:size-8">
@@ -71,8 +64,9 @@ export function ToggleSection({
 							"callback" in action ? (
 								<Button
 									key={action.name}
-									icon={<Iconish icon={action.icon} className="size-4" />}
+									icon={action.icon}
 									shape="square"
+									size="sm"
 									onClick={action.callback}
 								>
 									{action.name}
@@ -81,10 +75,7 @@ export function ToggleSection({
 								<Menu key={action.name}>
 									<MenuButton
 										render={
-											<Button
-												icon={<Iconish icon={action.icon} className="size-4" />}
-												shape="square"
-											>
+											<Button icon={action.icon} shape="square" size="sm">
 												{action.name}
 											</Button>
 										}
@@ -93,7 +84,7 @@ export function ToggleSection({
 										{action.options.map((option) => (
 											<MenuItem
 												key={option.name}
-												icon={<Iconish icon={option.icon} className="size-4" />}
+												icon={option.icon}
 												onClick={option.callback}
 											>
 												{option.name}
@@ -106,7 +97,8 @@ export function ToggleSection({
 					</div>
 				)}
 			</div>
-			{!isCollapsed && children}
-		</div>
+
+			<Collapsible.Panel>{children}</Collapsible.Panel>
+		</Collapsible.Root>
 	)
 }

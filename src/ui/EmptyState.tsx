@@ -1,17 +1,15 @@
-import { Iconish, type IconishIcon } from "./Iconish.tsx"
+import { Icon, type Iconish } from "./Icon.tsx"
 
 export function EmptyState({
 	icon,
 	message,
 }: {
-	icon: IconishIcon
+	icon: Iconish
 	message: string
 }) {
 	return (
 		<div className="flex flex-col items-center justify-center gap-2 p-6 text-center">
-			<div className="size-12 opacity-50">
-				<Iconish icon={icon} className="size-full" />
-			</div>
+			<Icon icon={icon} className="size-12 opacity-50" />
 			<p className="text-lg font-medium text-gray-500">{message}</p>
 		</div>
 	)

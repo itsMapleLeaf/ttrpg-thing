@@ -7,7 +7,7 @@ import { useUploadImage } from "../../hooks/useUploadImage.ts"
 import { getOptimizedImageUrl, titleifyFileName } from "../../lib/helpers.ts"
 import { Button } from "../../ui/Button.tsx"
 import { EmptyState } from "../../ui/EmptyState.tsx"
-import { Iconish } from "../../ui/Iconish.tsx"
+import { Icon } from "../../ui/Icon.tsx"
 import { Menu, MenuButton, MenuItem, MenuPanel } from "../../ui/Menu.tsx"
 import { SmartImage } from "../../ui/SmartImage.tsx"
 import { useToastContext } from "../../ui/Toast.tsx"
@@ -176,10 +176,7 @@ function SurfaceCard({
 							className="size-full object-cover"
 						/>
 					) : (
-						<Iconish
-							icon="mingcute:table-2-fill"
-							className="size-6 opacity-75"
-						/>
+						<Icon icon="mingcute:table-2-fill" className="size-6 opacity-75" />
 					)}
 					<div className="fade absolute inset-0 flex-center overflow-clip px-2 opacity-0 transition group-hover:fade-visible has-checked:fade-visible">
 						<input

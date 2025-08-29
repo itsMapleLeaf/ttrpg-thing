@@ -1,9 +1,9 @@
 import { Collapsible } from "@base-ui-components/react"
-import { Icon } from "@iconify/react"
 import { Link } from "@tanstack/react-router"
 import { useQuery } from "convex/react"
 import { formatDistanceToNow } from "date-fns"
-import { api } from "../../convex/_generated/api.js"
+import { api } from "../../convex/_generated/api"
+import { Icon } from "../ui/Icon.tsx"
 
 export function RoomsSection() {
 	const rooms = useQuery(api.rooms.list) ?? []
@@ -30,7 +30,7 @@ export function RoomsSection() {
 									params={{ slug: room.slug }}
 									className="sidebar-link flex py-1"
 								>
-									<Icon icon="mingcute:open-door-fill" />
+									<Icon icon="mingcute:open-door-fill" className="size-4" />
 									<div>
 										<div className="text-sm">{room.name}</div>
 										<div className="text-xs opacity-70">

@@ -1,12 +1,12 @@
 import { Dialog } from "@base-ui-components/react"
-import { Icon } from "@iconify/react/dist/iconify.js"
 import { Link } from "@tanstack/react-router"
 import { type ReactNode, Suspense } from "react"
 import { Button } from "../ui/Button.tsx"
+import { Icon } from "../ui/Icon.tsx"
 import { Loading } from "../ui/Loading.tsx"
 import { useOptionalUser } from "../user-context.tsx"
 import { LogoLink } from "./LogoLink.tsx"
-import { RoomsSection } from "./RoomsSection.tsx"
+import { RoomsSection } from "./SidebarRoomLinks.tsx"
 import { UserMenu } from "./UserMenu.tsx"
 
 export function SidebarLayout({

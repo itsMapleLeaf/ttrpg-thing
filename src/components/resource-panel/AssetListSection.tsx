@@ -57,20 +57,6 @@ export function AssetListSection({
 			name="Assets"
 			subtext={selectedCount > 0 && `${selectedCount} selected`}
 			actions={[
-				selectedCount < assets.length && {
-					name: "Select all",
-					icon: "mingcute:checks-fill",
-					callback: () => {
-						selectAll()
-					},
-				},
-				selectedCount > 0 && {
-					name: "Clear selection",
-					icon: "mingcute:minus-square-fill",
-					callback: () => {
-						clearSelection()
-					},
-				},
 				selectedCount > 0 && {
 					name: "Delete selected",
 					icon: "mingcute:delete-2-fill",
@@ -100,6 +86,20 @@ export function AssetListSection({
 							}
 						}
 						input.click()
+					},
+				},
+				selectedCount < assets.length && {
+					name: "Select all",
+					icon: "mingcute:checks-fill",
+					callback: () => {
+						selectAll()
+					},
+				},
+				selectedCount > 0 && {
+					name: "Clear selection",
+					icon: "mingcute:minus-square-fill",
+					callback: () => {
+						clearSelection()
 					},
 				},
 			]}
