@@ -16,6 +16,7 @@ import { Route as ProtectedRouteImport } from "./routes/_protected"
 import { Route as ProtectedIndexRouteImport } from "./routes/_protected/index"
 import { Route as ProtectedAccountRouteImport } from "./routes/_protected/account"
 import { Route as ProtectedRoomsSlugRouteImport } from "./routes/_protected/rooms.$slug"
+import { ServerRoute as FaviconDotsvgServerRouteImport } from "./routes/favicon[.]svg"
 import { ServerRoute as ApiImagesOptimizeServerRouteImport } from "./routes/api/images/optimize"
 
 const rootServerRouteImport = createServerRootRoute()
@@ -43,6 +44,11 @@ const ProtectedRoomsSlugRoute = ProtectedRoomsSlugRouteImport.update({
   id: "/rooms/$slug",
   path: "/rooms/$slug",
   getParentRoute: () => ProtectedRoute,
+} as any)
+const FaviconDotsvgServerRoute = FaviconDotsvgServerRouteImport.update({
+  id: "/favicon.svg",
+  path: "/favicon.svg",
+  getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiImagesOptimizeServerRoute = ApiImagesOptimizeServerRouteImport.update({
   id: "/api/images/optimize",
@@ -89,24 +95,28 @@ export interface RootRouteChildren {
   DsRoute: typeof DsRoute
 }
 export interface FileServerRoutesByFullPath {
+  "/favicon.svg": typeof FaviconDotsvgServerRoute
   "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
 }
 export interface FileServerRoutesByTo {
+  "/favicon.svg": typeof FaviconDotsvgServerRoute
   "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
+  "/favicon.svg": typeof FaviconDotsvgServerRoute
   "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
 }
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: "/api/images/optimize"
+  fullPaths: "/favicon.svg" | "/api/images/optimize"
   fileServerRoutesByTo: FileServerRoutesByTo
-  to: "/api/images/optimize"
-  id: "__root__" | "/api/images/optimize"
+  to: "/favicon.svg" | "/api/images/optimize"
+  id: "__root__" | "/favicon.svg" | "/api/images/optimize"
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
+  FaviconDotsvgServerRoute: typeof FaviconDotsvgServerRoute
   ApiImagesOptimizeServerRoute: typeof ApiImagesOptimizeServerRoute
 }
 
@@ -151,6 +161,13 @@ declare module "@tanstack/react-router" {
 }
 declare module "@tanstack/react-start/server" {
   interface ServerFileRoutesByPath {
+    "/favicon.svg": {
+      id: "/favicon.svg"
+      path: "/favicon.svg"
+      fullPath: "/favicon.svg"
+      preLoaderRoute: typeof FaviconDotsvgServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
     "/api/images/optimize": {
       id: "/api/images/optimize"
       path: "/api/images/optimize"
@@ -185,6 +202,7 @@ export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 const rootServerRouteChildren: RootServerRouteChildren = {
+  FaviconDotsvgServerRoute: FaviconDotsvgServerRoute,
   ApiImagesOptimizeServerRoute: ApiImagesOptimizeServerRoute,
 }
 export const serverRouteTree = rootServerRouteImport
