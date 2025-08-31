@@ -248,7 +248,7 @@ function SurfaceTileCard({
 			)}
 			data-selected={selected || undefined}
 			style={{
-				translate: `${position.x}px ${position.y}px`,
+				translate: `${Math.round(position.x)}px ${Math.round(position.y)}px`,
 				width: tile.width,
 				height: tile.height,
 				backgroundImage:
@@ -311,6 +311,7 @@ function SurfacePanel({
 			vec.subtract(drag.state.end, drag.state.start),
 		)
 	}
+	renderedOffset = vec.roundTo(renderedOffset, 1)
 
 	return (
 		<div
