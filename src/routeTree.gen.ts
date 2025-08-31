@@ -14,6 +14,7 @@ import { Route as rootRouteImport } from "./routes/__root"
 import { Route as DsRouteImport } from "./routes/ds"
 import { Route as ProtectedRouteImport } from "./routes/_protected"
 import { Route as ProtectedIndexRouteImport } from "./routes/_protected/index"
+import { Route as ProtectedSheetBuilderRouteImport } from "./routes/_protected/sheet-builder"
 import { Route as ProtectedAccountRouteImport } from "./routes/_protected/account"
 import { Route as ProtectedRoomsSlugRouteImport } from "./routes/_protected/rooms.$slug"
 import { ServerRoute as FaviconDotsvgServerRouteImport } from "./routes/favicon[.]svg"
@@ -33,6 +34,11 @@ const ProtectedRoute = ProtectedRouteImport.update({
 const ProtectedIndexRoute = ProtectedIndexRouteImport.update({
   id: "/",
   path: "/",
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedSheetBuilderRoute = ProtectedSheetBuilderRouteImport.update({
+  id: "/sheet-builder",
+  path: "/sheet-builder",
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
@@ -59,12 +65,14 @@ const ApiImagesOptimizeServerRoute = ApiImagesOptimizeServerRouteImport.update({
 export interface FileRoutesByFullPath {
   "/ds": typeof DsRoute
   "/account": typeof ProtectedAccountRoute
+  "/sheet-builder": typeof ProtectedSheetBuilderRoute
   "/": typeof ProtectedIndexRoute
   "/rooms/$slug": typeof ProtectedRoomsSlugRoute
 }
 export interface FileRoutesByTo {
   "/ds": typeof DsRoute
   "/account": typeof ProtectedAccountRoute
+  "/sheet-builder": typeof ProtectedSheetBuilderRoute
   "/": typeof ProtectedIndexRoute
   "/rooms/$slug": typeof ProtectedRoomsSlugRoute
 }
@@ -73,19 +81,21 @@ export interface FileRoutesById {
   "/_protected": typeof ProtectedRouteWithChildren
   "/ds": typeof DsRoute
   "/_protected/account": typeof ProtectedAccountRoute
+  "/_protected/sheet-builder": typeof ProtectedSheetBuilderRoute
   "/_protected/": typeof ProtectedIndexRoute
   "/_protected/rooms/$slug": typeof ProtectedRoomsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/ds" | "/account" | "/" | "/rooms/$slug"
+  fullPaths: "/ds" | "/account" | "/sheet-builder" | "/" | "/rooms/$slug"
   fileRoutesByTo: FileRoutesByTo
-  to: "/ds" | "/account" | "/" | "/rooms/$slug"
+  to: "/ds" | "/account" | "/sheet-builder" | "/" | "/rooms/$slug"
   id:
     | "__root__"
     | "/_protected"
     | "/ds"
     | "/_protected/account"
+    | "/_protected/sheet-builder"
     | "/_protected/"
     | "/_protected/rooms/$slug"
   fileRoutesById: FileRoutesById
@@ -143,6 +153,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ProtectedIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    "/_protected/sheet-builder": {
+      id: "/_protected/sheet-builder"
+      path: "/sheet-builder"
+      fullPath: "/sheet-builder"
+      preLoaderRoute: typeof ProtectedSheetBuilderRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     "/_protected/account": {
       id: "/_protected/account"
       path: "/account"
@@ -180,12 +197,14 @@ declare module "@tanstack/react-start/server" {
 
 interface ProtectedRouteChildren {
   ProtectedAccountRoute: typeof ProtectedAccountRoute
+  ProtectedSheetBuilderRoute: typeof ProtectedSheetBuilderRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
   ProtectedRoomsSlugRoute: typeof ProtectedRoomsSlugRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountRoute: ProtectedAccountRoute,
+  ProtectedSheetBuilderRoute: ProtectedSheetBuilderRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
   ProtectedRoomsSlugRoute: ProtectedRoomsSlugRoute,
 }

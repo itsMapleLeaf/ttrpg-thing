@@ -100,7 +100,11 @@ export function CommonSidebarContent() {
 			<div className="grid content-start gap-2 p-2">
 				<Link to="/" className="sidebar-link">
 					<Icon icon="mingcute:add-fill" className="size-4" />
-					<span>Create new room</span>
+					<span>New room</span>
+				</Link>
+				<Link to="/sheet-builder" className="sidebar-link">
+					<Icon icon="mingcute:tool-fill" className="size-4" />
+					<span>Sheet builder</span>
 				</Link>
 				<RoomsSection />
 			</div>
