@@ -4,7 +4,7 @@ import {
 	SidebarLayout,
 } from "../../components/SidebarLayout.tsx"
 
-export const Route = createFileRoute("/_protected/sheet-builder")({
+export const Route = createFileRoute("/_protected/template-builder")({
 	component: SheetBuilder,
 })
 

@@ -1,13 +1,16 @@
 import { Dialog } from "@base-ui-components/react"
-import { Link } from "@tanstack/react-router"
+import { useQuery } from "convex/react"
 import { type ReactNode, Suspense } from "react"
+import { api } from "../../convex/_generated/api"
 import { Button } from "../ui/Button.tsx"
-import { Icon } from "../ui/Icon.tsx"
 import { Loading } from "../ui/Loading.tsx"
 import { ScrollArea } from "../ui/ScrollArea.tsx"
 import { useOptionalUser } from "../user-context.tsx"
 import { LogoLink } from "./LogoLink.tsx"
-import { RoomsSection } from "./SidebarRoomLinks.tsx"
+import {
+	SidebarToggleLink,
+	SidebarToggleSection,
+} from "./SidebarToggleSection.tsx"
 import { UserMenu } from "./UserMenu.tsx"
 
 export function SidebarLayout({
@@ -95,18 +98,52 @@ function Sidebar({
 }
 
 export function CommonSidebarContent() {
+	const rooms = useQuery(api.rooms.list) ?? []
+
+	const mockSheets = [
+		{ id: "1", name: "Aspects of Nature", updatedAt: Date.now() - 86400000 },
+		{ id: "2", name: "Defining Traits", updatedAt: Date.now() - 172800000 },
+		{ id: "3", name: "Forevermore", updatedAt: Date.now() - 259200000 },
+	]
+
 	return (
 		<ScrollArea className="h-full">
 			<div className="grid content-start gap-2 p-2">
-				<Link to="/" className="sidebar-link">
-					<Icon icon="mingcute:add-fill" className="size-4" />
-					<span>New room</span>
-				</Link>
-				<Link to="/sheet-builder" className="sidebar-link">
-					<Icon icon="mingcute:tool-fill" className="size-4" />
-					<span>Sheet builder</span>
-				</Link>
-				<RoomsSection />
+				<SidebarToggleSection title="Rooms" addButtonLink="/">
+					{rooms.length === 0 ? (
+						<p className="px-2 py-1 text-sm opacity-70">No rooms yet</p>
+					) : (
+						rooms.map((room) => (
+							<SidebarToggleLink
+								key={room._id}
+								to="/rooms/$slug"
+								params={{ slug: room.slug }}
+								icon="mingcute:open-door-fill"
+								name={room.name}
+								createdAt={room._creationTime}
+							/>
+						))
+					)}
+				</SidebarToggleSection>
+
+				<SidebarToggleSection
+					title="Templates"
+					addButtonLink="/template-builder"
+				>
+					{mockSheets.length === 0 ? (
+						<p className="px-2 py-1 text-sm opacity-70">No templates yet</p>
+					) : (
+						mockSheets.map((sheet) => (
+							<SidebarToggleLink
+								key={sheet.id}
+								to="/template-builder"
+								icon="mingcute:file-fill"
+								name={sheet.name}
+								createdAt={sheet.updatedAt}
+							/>
+						))
+					)}
+				</SidebarToggleSection>
 			</div>
 		</ScrollArea>
 	)

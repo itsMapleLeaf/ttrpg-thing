@@ -9,7 +9,7 @@
 
 ## Comments
 
-- Do not add any comments to the code, especially if they only say what the code does.
+- Do not add any comments to the code, especially if they only say what the code is or does.
 
   Example (**avoid this**):
 
