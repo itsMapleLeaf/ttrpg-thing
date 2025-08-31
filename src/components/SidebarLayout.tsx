@@ -4,6 +4,7 @@ import { type ReactNode, Suspense } from "react"
 import { Button } from "../ui/Button.tsx"
 import { Icon } from "../ui/Icon.tsx"
 import { Loading } from "../ui/Loading.tsx"
+import { ScrollArea } from "../ui/ScrollArea.tsx"
 import { useOptionalUser } from "../user-context.tsx"
 import { LogoLink } from "./LogoLink.tsx"
 import { RoomsSection } from "./SidebarRoomLinks.tsx"
@@ -95,12 +96,14 @@ function Sidebar({
 
 export function CommonSidebarContent() {
 	return (
-		<div className="grid gap-2 p-2">
-			<Link to="/" className="sidebar-link">
-				<Icon icon="mingcute:add-fill" className="size-4" />
-				<span>Create new room</span>
-			</Link>
-			<RoomsSection />
-		</div>
+		<ScrollArea className="h-full">
+			<div className="grid content-start gap-2 p-2">
+				<Link to="/" className="sidebar-link">
+					<Icon icon="mingcute:add-fill" className="size-4" />
+					<span>Create new room</span>
+				</Link>
+				<RoomsSection />
+			</div>
+		</ScrollArea>
 	)
 }
