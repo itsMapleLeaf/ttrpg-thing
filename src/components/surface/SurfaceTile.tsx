@@ -11,9 +11,7 @@ export function SurfaceTile({ tile, selected, ...props }: SurfaceTileProps) {
 	return (
 		<div
 			{...props}
-			className={twMerge(
-				"absolute touch-none panel transition ease-out data-selected:border-primary-400",
-			)}
+			className={twMerge("panel transition data-selected:border-primary-400")}
 			data-selected={selected || undefined}
 			style={{
 				width: tile.width,

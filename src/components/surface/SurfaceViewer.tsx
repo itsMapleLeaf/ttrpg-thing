@@ -234,59 +234,59 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 						translate: `${renderedOffset.x}px ${renderedOffset.y}px`,
 					}}
 				>
-					<div className="relative size-full touch-none" ref={containerRef}>
-						<div className="isolate">
-							{tiles.map((tile) => {
-								const selected = tileSelection.has(tile._id)
-								const dragging =
-									selected && tileDrag.state.status === "dragging"
-								const position = vec.add(
-									vec(tile.left, tile.top),
-									selected ? tileDrag.state.delta : vec(0),
-								)
-								return (
-									<div
-										key={tile._id}
-										style={{
-											zIndex: tileOrder.get(tile._id),
-											translate: `${Math.round(position.x)}px ${Math.round(position.y)}px`,
-										}}
-										className={twMerge(
-											"transition ease-out",
-											dragging ? "opacity-75 duration-50" : "",
-										)}
-										onPointerDown={(event) => {
-											tileDrag.handlePointerDown(event)
+					<div
+						className="relative isolate size-full touch-none"
+						ref={containerRef}
+					>
+						{tiles.map((tile) => {
+							const selected = tileSelection.has(tile._id)
+							const dragging = selected && tileDrag.state.status === "dragging"
+							const position = vec.add(
+								vec(tile.left, tile.top),
+								selected ? tileDrag.state.delta : vec(0),
+							)
+							return (
+								<div
+									key={tile._id}
+									style={{
+										zIndex: tileOrder.get(tile._id),
+										translate: `${Math.round(position.x)}px ${Math.round(position.y)}px`,
+									}}
+									className={twMerge(
+										"absolute touch-none transition ease-out",
+										dragging ? "opacity-75 duration-50" : "",
+									)}
+									onPointerDown={(event) => {
+										tileDrag.handlePointerDown(event)
 
-											if (event.ctrlKey || event.shiftKey) {
-												tileSelection.toggleItemSelected(tile._id)
-												return
-											}
+										if (event.ctrlKey || event.shiftKey) {
+											tileSelection.toggleItemSelected(tile._id)
+											return
+										}
 
-											if (!selected) {
-												tileSelection.setSelectedItems([tile._id])
-											}
-										}}
-									>
-										<SurfaceTile tile={tile} selected={selected} />
-									</div>
-								)
-							})}
-						</div>
-
-						{selectionArea && (
-							<div
-								className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-800/25"
-								style={{
-									translate: `${selectionArea.start.x}px ${selectionArea.start.y}px`,
-									width: selectionArea.end.x - selectionArea.start.x,
-									height: selectionArea.end.y - selectionArea.start.y,
-								}}
-							></div>
-						)}
+										if (!selected) {
+											tileSelection.setSelectedItems([tile._id])
+										}
+									}}
+								>
+									<SurfaceTile tile={tile} selected={selected} />
+								</div>
+							)
+						})}
 					</div>
 				</div>
 			</div>
+
+			{selectionArea && (
+				<div
+					className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-800/25"
+					style={{
+						translate: `${selectionArea.start.x}px ${selectionArea.start.y}px`,
+						width: selectionArea.end.x - selectionArea.start.x,
+						height: selectionArea.end.y - selectionArea.start.y,
+					}}
+				></div>
+			)}
 		</div>
 	)
 }
