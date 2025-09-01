@@ -30,7 +30,9 @@ function RoomDetail() {
 
 	return room ? (
 		<SidebarLayout sidebar={<ResourcePanel roomId={room._id} />}>
-			{surface && <SurfaceViewer surface={surface} />}
+			<div className="h-full bg-gray-950/25">
+				{surface && <SurfaceViewer surface={surface} />}
+			</div>
 		</SidebarLayout>
 	) : (
 		<SidebarLayout>

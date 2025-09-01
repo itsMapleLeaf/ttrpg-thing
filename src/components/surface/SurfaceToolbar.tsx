@@ -4,6 +4,7 @@ import { Icon } from "../../ui/Icon.tsx"
 import { ScrollArea } from "../../ui/ScrollArea.tsx"
 import { WithTooltip } from "../../ui/Tooltip.tsx"
 
+export type ToolId = keyof typeof toolbarTools
 const toolbarTools = {
 	select: {
 		name: "Select",
@@ -13,12 +14,15 @@ const toolbarTools = {
 		name: "Pan",
 		icon: "mingcute:hand-fill",
 	},
+	newLabel: {
+		name: "New Label",
+		icon: "mingcute:text-fill",
+	},
 }
 
 type ToolbarState = ReturnType<typeof useToolbarState>
 export function useToolbarState() {
-	const [selectedToolId, setSelectedToolId] =
-		useState<keyof typeof toolbarTools>("select")
+	const [selectedToolId, setSelectedToolId] = useState<ToolId>("select")
 	return { selectedToolId, setSelectedToolId }
 }
 

@@ -1,7 +1,7 @@
 import { type } from "arktype"
 import { useMutation, useQuery } from "convex/react"
 import { sortBy } from "es-toolkit"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { twMerge } from "tailwind-merge"
 import { api } from "../../../convex/_generated/api"
 import type { Id } from "../../../convex/_generated/dataModel"
@@ -53,9 +53,11 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 
 	const viewportDrag = useDrag({
 		buttons:
-			toolbar.selectedToolId === "pan"
-				? ["left", "middle", "right"]
-				: ["middle", "right"],
+			toolbar.selectedToolId === "select"
+				? ["middle", "right"]
+				: toolbar.selectedToolId === "pan"
+					? ["left", "middle", "right"]
+					: [],
 		onEnd: (state) => {
 			setViewportOffset((current) =>
 				vec.add(current, vec.subtract(state.end, state.start)),
@@ -72,33 +74,30 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 	}
 	renderedOffset = vec.roundTo(renderedOffset, 1)
 
-	const containerRef = useRef<HTMLDivElement>(null)
+	const surfacePanelRef = useRef<HTMLDivElement>(null)
 
 	// we only want to calculate this as-needed
 	// to avoid too many layout calcs from getBoundingClientRef
-	const containerOffsetRef = useRef<Vec>(vec(0))
-	function updateContainerOffset() {
-		const containerRect = containerRef.current?.getBoundingClientRect()
-		containerOffsetRef.current = vec(
-			containerRect?.left ?? 0,
-			containerRect?.top,
-		)
+	const surfaceOffsetRef = useRef<Vec>(vec(0))
+	function updateSurfaceOffset() {
+		const rect = surfacePanelRef.current?.getBoundingClientRect()
+		surfaceOffsetRef.current = vec(rect?.left ?? 0, rect?.top)
 	}
 
 	const [selectionArea, setSelectionArea] = useState<{ start: Vec; end: Vec }>()
 	function updateSelectionArea(state: DerivedDragState) {
 		const [start, end] = vec.corners(
-			vec.subtract(state.start, containerOffsetRef.current),
-			vec.subtract(state.end, containerOffsetRef.current),
+			vec.subtract(state.start, surfaceOffsetRef.current),
+			vec.subtract(state.end, surfaceOffsetRef.current),
 		)
 		setSelectionArea({ start, end })
 		return { start, end }
 	}
 
 	const areaSelectDrag = useDrag({
-		buttons: toolbar.selectedToolId === "pan" ? [] : ["left"],
+		buttons: toolbar.selectedToolId === "select" ? ["left"] : [],
 		onStart: (state) => {
-			updateContainerOffset()
+			updateSurfaceOffset()
 			updateSelectionArea(state)
 		},
 		onMove: (state) => {
@@ -125,7 +124,7 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 	})
 
 	const tileDrag = useDrag({
-		buttons: toolbar.selectedToolId === "pan" ? [] : ["left"],
+		buttons: toolbar.selectedToolId === "select" ? ["left"] : [],
 		onEnd: (state) => {
 			const moved = vec.subtract(state.end, state.start)
 			const now = Date.now()
@@ -183,117 +182,182 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 	)
 
 	return (
-		<div
-			className="relative h-full touch-none overflow-clip bg-gray-950/25"
-			onPointerDown={viewportDrag.handlePointerDown}
-			onDragEnter={(event) => {
-				event.preventDefault()
-				event.dataTransfer.dropEffect = "copy"
-			}}
-			onDragOver={(event) => {
-				event.preventDefault()
-			}}
-			onDrop={async (event) => {
-				try {
-					const DropDataFromJson =
-						type("string.json.parse").to(SurfaceAssetDropData)
-
-					const data = DropDataFromJson.assert(
-						event.dataTransfer.getData("application/json"),
-					)
-
-					const rect = event.currentTarget.getBoundingClientRect()
-
-					await createTile({
-						surfaceId: surface._id,
-						type: "image",
-						left: event.clientX - rect.left - viewportOffset.x - 50,
-						top: event.clientY - rect.top - viewportOffset.y - 50,
-						width: 100,
-						height: 100,
-						assetId: data.assetId,
-					})
-				} catch (error) {
-					toast.error(String(error))
-				}
-			}}
-		>
+		<div className="relative isolate h-full overflow-clip">
 			<div
 				className="relative h-full touch-none"
-				onPointerDown={(event) => {
-					if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
-						tileSelection.clear()
+				onPointerDown={async (event) => {
+					if (toolbar.selectedToolId === "newLabel") {
+						updateSurfaceOffset()
+						toolbar.setSelectedToolId("select")
+						await createTile({
+							surfaceId: surface._id,
+							type: "label",
+							left: event.clientX - surfaceOffsetRef.current.x,
+							top: event.clientY - surfaceOffsetRef.current.y,
+							width: 200,
+							height: 50,
+							text: "Sample Text",
+						})
+						return
 					}
-					areaSelectDrag.handlePointerDown(event)
+					viewportDrag.handlePointerDown(event)
+				}}
+				onDragEnter={(event) => {
+					event.preventDefault()
+					event.dataTransfer.dropEffect = "copy"
+				}}
+				onDragOver={(event) => {
+					event.preventDefault()
+				}}
+				onDrop={async (event) => {
+					try {
+						const DropDataFromJson =
+							type("string.json.parse").to(SurfaceAssetDropData)
+
+						const data = DropDataFromJson.assert(
+							event.dataTransfer.getData("application/json"),
+						)
+
+						const rect = event.currentTarget.getBoundingClientRect()
+
+						await createTile({
+							surfaceId: surface._id,
+							type: "image",
+							left: event.clientX - rect.left - viewportOffset.x - 50,
+							top: event.clientY - rect.top - viewportOffset.y - 50,
+							width: 100,
+							height: 100,
+							assetId: data.assetId,
+						})
+					} catch (error) {
+						toast.error(String(error))
+					}
 				}}
 			>
 				<div
-					className="pointer-events-children absolute top-0 left-0 origin-top-left panel overflow-visible border-gray-700/50 bg-gray-900"
-					style={{
-						width: surfaceWidth,
-						height: surfaceHeight,
-						translate: `${renderedOffset.x}px ${renderedOffset.y}px`,
+					className="relative h-full touch-none"
+					onPointerDown={(event) => {
+						if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
+							tileSelection.clear()
+						}
+						areaSelectDrag.handlePointerDown(event)
 					}}
 				>
 					<div
-						className="relative isolate size-full touch-none"
-						ref={containerRef}
+						className="pointer-events-children absolute top-0 left-0 origin-top-left panel overflow-visible border-gray-700/50 bg-gray-900"
+						style={{
+							width: surfaceWidth,
+							height: surfaceHeight,
+							translate: `${renderedOffset.x}px ${renderedOffset.y}px`,
+						}}
 					>
-						{tiles.map((tile) => {
-							const selected = tileSelection.has(tile._id)
-
-							const position = vec.add(
-								vec(tile.left, tile.top),
-								selected ? tileDrag.state.delta : vec(0),
-							)
-
-							return (
-								<div
-									key={tile._id}
-									style={{
-										zIndex: tileOrder.get(tile._id),
-										translate: `${Math.round(position.x)}px ${Math.round(position.y)}px`,
-									}}
-									className={twMerge(
-										"absolute touch-none transition ease-out",
-										selected && tileDrag.state.isDragging
-											? "opacity-75 duration-50"
-											: "",
-									)}
-									onPointerDown={(event) => {
-										tileDrag.handlePointerDown(event)
-
-										if (event.button === 0) {
-											if (event.ctrlKey || event.shiftKey) {
-												tileSelection.toggleItemSelected(tile._id)
-											} else if (!selected) {
-												tileSelection.setSelectedItems([tile._id])
-											}
-										}
-									}}
-								>
-									<SurfaceTile tile={tile} selected={selected} />
-								</div>
-							)
-						})}
-					</div>
-
-					{selectionArea && areaSelectDrag.state.isDragging && (
 						<div
-							className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-800/25"
-							style={{
-								translate: `${selectionArea.start.x}px ${selectionArea.start.y}px`,
-								width: selectionArea.end.x - selectionArea.start.x,
-								height: selectionArea.end.y - selectionArea.start.y,
-							}}
-						></div>
-					)}
+							className="relative isolate size-full touch-none"
+							ref={surfacePanelRef}
+						>
+							{tiles.map((tile) => {
+								const selected = tileSelection.has(tile._id)
+
+								const position = vec.add(
+									vec(tile.left, tile.top),
+									selected ? tileDrag.state.delta : vec(0),
+								)
+
+								return (
+									<div
+										key={tile._id}
+										style={{
+											zIndex: tileOrder.get(tile._id),
+											translate: `${Math.round(position.x)}px ${Math.round(position.y)}px`,
+										}}
+										className={twMerge(
+											"absolute touch-none transition ease-out",
+											selected && tileDrag.state.isDragging
+												? "opacity-75 duration-50"
+												: "",
+										)}
+										onPointerDown={(event) => {
+											tileDrag.handlePointerDown(event)
+
+											if (event.button === 0) {
+												if (event.ctrlKey || event.shiftKey) {
+													tileSelection.toggleItemSelected(tile._id)
+												} else if (!selected) {
+													tileSelection.setSelectedItems([tile._id])
+												}
+											}
+										}}
+									>
+										<SurfaceTile tile={tile} selected={selected} />
+									</div>
+								)
+							})}
+						</div>
+
+						{selectionArea && areaSelectDrag.state.isDragging && (
+							<div
+								className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-800/25"
+								style={{
+									translate: `${selectionArea.start.x}px ${selectionArea.start.y}px`,
+									width: selectionArea.end.x - selectionArea.start.x,
+									height: selectionArea.end.y - selectionArea.start.y,
+								}}
+							></div>
+						)}
+					</div>
 				</div>
 			</div>
+
+			{toolbar.selectedToolId === "newLabel" && <NewLabelPreview />}
 
 			<div className="pointer-events-children absolute inset-x-0 bottom-0 flex-center p-2 opacity-75 transition-opacity hover:opacity-100">
 				<SurfaceToolbar {...toolbar} />
 			</div>
 		</div>
 	)
+}
+
+function NewLabelPreview() {
+	const cursor = useCursor()
+	return (
+		<div
+			className="pointer-events-none fixed top-0 left-0"
+			style={{
+				translate: `${cursor.x}px ${cursor.y}px`,
+			}}
+		>
+			<SurfaceTile
+				tile={{
+					type: "label",
+					width: 200,
+					height: 50,
+					text: "Sample Text",
+					assetUrl: undefined,
+				}}
+				selected={false}
+			/>
+		</div>
+	)
+}
+
+function useCursor() {
+	const [cursor, setCursor] = useState(vec.zero)
+
+	useWindowEvent("mousemove", (event) => {
+		setCursor(vec(event.clientX, event.clientY))
+	})
+
+	return cursor
+}
+
+function useWindowEvent<T extends keyof WindowEventMap>(
+	eventName: T,
+	handler: (event: WindowEventMap[T]) => void,
+) {
+	useEffect(() => {
+		window.addEventListener(eventName, handler)
+		return () => {
+			window.removeEventListener(eventName, handler)
+		}
+	}, [eventName, handler])
 }
