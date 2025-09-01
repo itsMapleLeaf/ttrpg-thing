@@ -274,19 +274,19 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 							)
 						})}
 					</div>
+
+					{selectionArea && (
+						<div
+							className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-800/25"
+							style={{
+								translate: `${selectionArea.start.x}px ${selectionArea.start.y}px`,
+								width: selectionArea.end.x - selectionArea.start.x,
+								height: selectionArea.end.y - selectionArea.start.y,
+							}}
+						></div>
+					)}
 				</div>
 			</div>
-
-			{selectionArea && (
-				<div
-					className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-800/25"
-					style={{
-						translate: `${selectionArea.start.x}px ${selectionArea.start.y}px`,
-						width: selectionArea.end.x - selectionArea.start.x,
-						height: selectionArea.end.y - selectionArea.start.y,
-					}}
-				></div>
-			)}
 		</div>
 	)
 }
