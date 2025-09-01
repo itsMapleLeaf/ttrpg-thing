@@ -18,8 +18,8 @@ export function SidebarLayout({
 	children: React.ReactNode
 }) {
 	return (
-		<div className="flex min-h-dvh flex-col md:flex-row">
-			<header className="flex items-center gap-3 border-b border-gray-700 bg-gray-800 px-3 py-2 md:hidden">
+		<div className="isolate flex min-h-dvh flex-col md:flex-row">
+			<header className="sticky top-0 z-10 flex items-center gap-3 border-b border-gray-700 bg-gray-800 px-3 py-2 md:hidden">
 				<Dialog.Root>
 					<Dialog.Trigger
 						render={
@@ -59,7 +59,7 @@ export function SidebarLayout({
 				<LogoLink />
 			</header>
 
-			<div className="sticky top-0 hidden h-dvh self-stretch md:block">
+			<div className="sticky top-0 z-10 hidden h-dvh self-stretch md:block">
 				<Sidebar>{sidebar}</Sidebar>
 			</div>
 
