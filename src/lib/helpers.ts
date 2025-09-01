@@ -13,6 +13,10 @@ export function counted(
 	return `${count} ${count === 1 ? singluarWord : pluralWord}`
 }
 
+export function roundToNearest(input: number, multiple: number) {
+	return Math.round(input / multiple) * multiple
+}
+
 export function ceilToNearest(input: number, multiple: number) {
 	return Math.ceil(input / multiple) * multiple
 }
