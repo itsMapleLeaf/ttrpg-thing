@@ -13,6 +13,10 @@ export function counted(
 	return `${count} ${count === 1 ? singluarWord : pluralWord}`
 }
 
+export function ceilToNearest(input: number, multiple: number) {
+	return Math.ceil(input / multiple) * multiple
+}
+
 /**
  * Convert a file name into a human-readable title:
  * - Removes the file extension
