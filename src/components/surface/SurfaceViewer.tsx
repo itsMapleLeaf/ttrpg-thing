@@ -205,6 +205,7 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 
 					await createTile({
 						surfaceId: surface._id,
+						type: "image",
 						left: event.clientX - rect.left - viewportOffset.x - 50,
 						top: event.clientY - rect.top - viewportOffset.y - 50,
 						width: 100,
