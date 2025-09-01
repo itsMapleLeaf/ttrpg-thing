@@ -56,3 +56,9 @@ export function getOptimizedImageUrl(url: string, width: number) {
 	imageUrl.searchParams.set("width", String(width))
 	return imageUrl
 }
+
+export function typedEntries<T extends Record<string, unknown>>(
+	obj: T,
+): Array<[keyof T, T[keyof T]]> {
+	return Object.entries(obj) as Array<[keyof T, T[keyof T]]>
+}
