@@ -196,6 +196,7 @@ function SurfaceCard({
 
 function SurfaceCardMenu({ surface }: { surface: ClientSurface }) {
 	const updateSurface = useMutation(api.surfaces.update)
+	const removeSurface = useMutation(api.surfaces.remove)
 	const updateRoom = useMutation(api.rooms.update)
 
 	return (
@@ -232,6 +233,16 @@ function SurfaceCardMenu({ surface }: { surface: ClientSurface }) {
 					}}
 				>
 					Rename
+				</MenuItem>
+				<MenuItem
+					icon="mingcute:delete-fill"
+					onClick={async () => {
+						if (confirm("Are you sure you want to delete this surface?")) {
+							await removeSurface({ id: surface._id })
+						}
+					}}
+				>
+					Delete
 				</MenuItem>
 			</MenuPanel>
 		</Menu>
