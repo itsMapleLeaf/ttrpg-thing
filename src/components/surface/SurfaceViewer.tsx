@@ -118,9 +118,6 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 
 			tileSelection.setSelectedItems(overlappingTiles.map((it) => it._id))
 		},
-		onEnd: () => {
-			setSelectionArea(undefined)
-		},
 	})
 
 	const tileDrag = useDrag({
@@ -220,7 +217,7 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 			<div
 				className="relative h-full touch-none"
 				onPointerDown={(event) => {
-					if (!event.ctrlKey && !event.shiftKey) {
+					if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
 						tileSelection.clear()
 					}
 					areaSelectDrag.handlePointerDown(event)
@@ -275,7 +272,7 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 						})}
 					</div>
 
-					{selectionArea && (
+					{selectionArea && areaSelectDrag.state.status === "dragging" && (
 						<div
 							className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-800/25"
 							style={{
