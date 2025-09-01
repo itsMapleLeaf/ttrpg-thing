@@ -12,6 +12,7 @@ import { useSelection } from "../../hooks/useSelection.ts"
 import { type Vec, vec } from "../../lib/vec.ts"
 import { useToastContext } from "../../ui/Toast.tsx"
 import { SurfaceTile } from "./SurfaceTile.tsx"
+import { SurfaceToolbar, useToolbarState } from "./SurfaceToolbar.tsx"
 
 const surfaceWidth = 1000
 const surfaceHeight = 1000
@@ -22,6 +23,7 @@ export const SurfaceAssetDropData = type({
 
 export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 	const toast = useToastContext()
+	const toolbar = useToolbarState()
 
 	const tiles = useQuery(api.tiles.list, { surfaceId: surface._id }) ?? []
 	const createTile = useMutation(api.tiles.create)
@@ -50,7 +52,10 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 	})
 
 	const viewportDrag = useDrag({
-		buttons: ["middle", "right"],
+		buttons:
+			toolbar.selectedToolId === "pan"
+				? ["left", "middle", "right"]
+				: ["middle", "right"],
 		onEnd: (state) => {
 			setViewportOffset((current) =>
 				vec.add(current, vec.subtract(state.end, state.start)),
@@ -91,7 +96,7 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 	}
 
 	const areaSelectDrag = useDrag({
-		buttons: ["left"],
+		buttons: toolbar.selectedToolId === "pan" ? [] : ["left"],
 		onStart: (state) => {
 			updateContainerOffset()
 			updateSelectionArea(state)
@@ -120,7 +125,7 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 	})
 
 	const tileDrag = useDrag({
-		buttons: ["left"],
+		buttons: toolbar.selectedToolId === "pan" ? [] : ["left"],
 		onEnd: (state) => {
 			const moved = vec.subtract(state.end, state.start)
 			const now = Date.now()
@@ -284,6 +289,10 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 						></div>
 					)}
 				</div>
+			</div>
+
+			<div className="pointer-events-children absolute inset-x-0 bottom-0 flex-center p-2 opacity-75 transition-opacity hover:opacity-100">
+				<SurfaceToolbar {...toolbar} />
 			</div>
 		</div>
 	)
