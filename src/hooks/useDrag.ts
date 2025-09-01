@@ -10,12 +10,14 @@ export type DragState = {
 
 export type DerivedDragState = DragState & {
 	delta: Vec
+	isDragging: boolean
 }
 
 const getDerivedDragState = (state: DragState): DerivedDragState => ({
 	...state,
 	delta:
 		state.status === "dragging" ? vec.subtract(state.end, state.start) : vec(0),
+	isDragging: state.status === "dragging",
 })
 
 const buttonValues = {

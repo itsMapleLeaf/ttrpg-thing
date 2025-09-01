@@ -236,11 +236,12 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 					>
 						{tiles.map((tile) => {
 							const selected = tileSelection.has(tile._id)
-							const dragging = selected && tileDrag.state.status === "dragging"
+
 							const position = vec.add(
 								vec(tile.left, tile.top),
 								selected ? tileDrag.state.delta : vec(0),
 							)
+
 							return (
 								<div
 									key={tile._id}
@@ -250,7 +251,9 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 									}}
 									className={twMerge(
 										"absolute touch-none transition ease-out",
-										dragging ? "opacity-75 duration-50" : "",
+										selected && tileDrag.state.isDragging
+											? "opacity-75 duration-50"
+											: "",
 									)}
 									onPointerDown={(event) => {
 										tileDrag.handlePointerDown(event)
@@ -271,7 +274,7 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 						})}
 					</div>
 
-					{selectionArea && areaSelectDrag.state.status === "dragging" && (
+					{selectionArea && areaSelectDrag.state.isDragging && (
 						<div
 							className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-800/25"
 							style={{
