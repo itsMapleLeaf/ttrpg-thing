@@ -3,8 +3,8 @@ import { Link, type LinkProps } from "@tanstack/react-router"
 import { formatDistanceToNow } from "date-fns"
 import type { ReactNode } from "react"
 import { twMerge } from "tailwind-merge"
-import { Button } from "../ui/Button.tsx"
-import { Icon } from "../ui/Icon.tsx"
+import { Button } from "../../ui/Button.tsx"
+import { Icon } from "../../ui/Icon.tsx"
 
 interface SidebarSectionProps {
 	title: string
@@ -54,7 +54,7 @@ interface SidebarToggleLinkProps extends LinkProps {
 	className?: string
 }
 
-export function SidebarToggleLink({
+SidebarToggleSection.Link = function SidebarToggleSectionLink({
 	to,
 	params,
 	icon,

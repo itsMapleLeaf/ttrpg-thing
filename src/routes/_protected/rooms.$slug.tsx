@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api.js"
 import { ResourcePanel } from "../../components/resource-panel/ResourcePanel.tsx"
-import { SidebarLayout } from "../../components/SidebarLayout.tsx"
+import { SidebarLayout } from "../../components/sidebar/SidebarLayout.tsx"
 import { SurfaceViewer } from "../../components/surface/SurfaceViewer.tsx"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({

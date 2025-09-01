@@ -1,20 +1,17 @@
 import { Dialog } from "@base-ui-components/react"
 import { useQuery } from "convex/react"
 import { type ReactNode, Suspense } from "react"
-import { api } from "../../convex/_generated/api"
-import { Button } from "../ui/Button.tsx"
-import { Loading } from "../ui/Loading.tsx"
-import { ScrollArea } from "../ui/ScrollArea.tsx"
-import { useOptionalUser } from "../user-context.tsx"
-import { LogoLink } from "./LogoLink.tsx"
-import {
-	SidebarToggleLink,
-	SidebarToggleSection,
-} from "./SidebarToggleSection.tsx"
-import { UserMenu } from "./UserMenu.tsx"
+import { api } from "../../../convex/_generated/api"
+import { Button } from "../../ui/Button.tsx"
+import { Loading } from "../../ui/Loading.tsx"
+import { ScrollArea } from "../../ui/ScrollArea.tsx"
+import { useOptionalUser } from "../../user-context.tsx"
+import { LogoLink } from "../LogoLink.tsx"
+import { UserMenu } from "../UserMenu.tsx"
+import { SidebarToggleSection } from "./SidebarToggleSection.tsx"
 
 export function SidebarLayout({
-	sidebar,
+	sidebar = <DefaultSidebarContent />,
 	children,
 }: {
 	sidebar?: React.ReactNode
@@ -97,7 +94,7 @@ function Sidebar({
 	)
 }
 
-export function CommonSidebarContent() {
+function DefaultSidebarContent() {
 	const rooms = useQuery(api.rooms.list) ?? []
 
 	const mockSheets = [
@@ -114,7 +111,7 @@ export function CommonSidebarContent() {
 						<p className="px-2 py-1 text-sm opacity-70">No rooms yet</p>
 					) : (
 						rooms.map((room) => (
-							<SidebarToggleLink
+							<SidebarToggleSection.Link
 								key={room._id}
 								to="/rooms/$slug"
 								params={{ slug: room.slug }}
@@ -134,7 +131,7 @@ export function CommonSidebarContent() {
 						<p className="px-2 py-1 text-sm opacity-70">No templates yet</p>
 					) : (
 						mockSheets.map((sheet) => (
-							<SidebarToggleLink
+							<SidebarToggleSection.Link
 								key={sheet.id}
 								to="/template-builder"
 								icon="mingcute:file-fill"
