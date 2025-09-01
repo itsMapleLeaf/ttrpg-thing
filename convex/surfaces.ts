@@ -179,5 +179,11 @@ async function removeSurface(ctx: MutationCtx, id: Id<"surfaces">) {
 		})
 	}
 
+	for await (const tile of ctx.db
+		.query("tiles")
+		.withIndex("by_surface", (q) => q.eq("surfaceId", id))) {
+		await ctx.db.delete(tile._id)
+	}
+
 	await ctx.db.delete(id)
 }
