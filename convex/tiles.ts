@@ -156,16 +156,16 @@ async function updateTile(
 	id: Id<"tiles">,
 	patch: WithoutSystemFields<Partial<Doc<"tiles">>>,
 ) {
-	const userId = await ensureAuthUserId(ctx)
+	await ensureAuthUserId(ctx)
 
 	const tile = await ctx.db.get(id)
 	if (!tile) {
 		throw new Error("Tile not found")
 	}
 
-	if (tile.ownerId !== userId) {
-		throw new Error("You don't have permission to update this tile")
-	}
+	// if (tile.ownerId !== userId) {
+	// 	throw new Error("You don't have permission to update this tile")
+	// }
 
 	await ctx.db.patch(id, {
 		...patch,

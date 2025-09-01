@@ -42,7 +42,7 @@ export const getBySlug = query({
 			.withIndex("by_slug", (q) => q.eq("slug", args.slug))
 			.unique()
 
-		if (!room || room.ownerId !== userId) {
+		if (!room) {
 			return null
 		}
 
