@@ -97,12 +97,6 @@ function Sidebar({
 function DefaultSidebarContent() {
 	const rooms = useQuery(api.rooms.list) ?? []
 
-	const mockSheets = [
-		{ id: "1", name: "Aspects of Nature", updatedAt: Date.now() - 86400000 },
-		{ id: "2", name: "Defining Traits", updatedAt: Date.now() - 172800000 },
-		{ id: "3", name: "Forevermore", updatedAt: Date.now() - 259200000 },
-	]
-
 	return (
 		<ScrollArea className="h-full">
 			<div className="grid content-start gap-2 p-2">
@@ -118,25 +112,6 @@ function DefaultSidebarContent() {
 								icon="mingcute:open-door-fill"
 								name={room.name}
 								createdAt={room._creationTime}
-							/>
-						))
-					)}
-				</SidebarToggleSection>
-
-				<SidebarToggleSection
-					title="Templates"
-					addButtonLink="/template-builder"
-				>
-					{mockSheets.length === 0 ? (
-						<p className="px-2 py-1 text-sm opacity-70">No templates yet</p>
-					) : (
-						mockSheets.map((sheet) => (
-							<SidebarToggleSection.Link
-								key={sheet.id}
-								to="/template-builder"
-								icon="mingcute:file-fill"
-								name={sheet.name}
-								createdAt={sheet.updatedAt}
 							/>
 						))
 					)}
