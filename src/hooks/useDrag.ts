@@ -24,7 +24,7 @@ const buttonValues = {
 	right: 2,
 }
 
-const buttonMaskValues = {
+const _buttonMaskValues = {
 	left: 1,
 	middle: 2,
 	right: 4,
@@ -98,35 +98,31 @@ export function useDrag(args: {
 		return () => controller.abort()
 	}, [state.status, handlePointerMove, handlePointerUp])
 
+	const handlePointerDown = (event: React.PointerEvent) => {
+		const shouldHandle = args.buttons.some(
+			(name) => event.button === buttonValues[name],
+		)
+		if (!shouldHandle) {
+			return
+		}
+
+		if (event.isDefaultPrevented()) {
+			return
+		}
+
+		event.preventDefault()
+		event.stopPropagation()
+
+		setState((current) => ({
+			...current,
+			status: "down",
+			start: { x: event.clientX, y: event.clientY },
+			end: { x: event.clientX, y: event.clientY },
+		}))
+	}
+
 	return {
 		state: getDerivedDragState(state),
-		getHandleProps: (overrides?: {
-			onPointerDown?: (event: React.PointerEvent) => void
-		}) => ({
-			onPointerDown: (event: React.PointerEvent) => {
-				const shouldHandle = args.buttons.some(
-					(name) => event.button === buttonValues[name],
-				)
-				if (!shouldHandle) {
-					return
-				}
-
-				overrides?.onPointerDown?.(event)
-
-				if (event.isDefaultPrevented()) {
-					return
-				}
-
-				event.preventDefault()
-				event.stopPropagation()
-
-				setState((current) => ({
-					...current,
-					status: "down",
-					start: { x: event.clientX, y: event.clientY },
-					end: { x: event.clientX, y: event.clientY },
-				}))
-			},
-		}),
+		handlePointerDown,
 	}
 }

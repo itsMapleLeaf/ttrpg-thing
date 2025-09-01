@@ -26,9 +26,10 @@ import { useState } from "react"
  * selectAll();
  */
 export function useSelection<T>(library: T[]) {
-	const [selection, setSelection] = useState<ReadonlySet<T>>(new Set())
+	const [items, setSelection] = useState<ReadonlySet<T>>(new Set())
+	const isSelected = (item: T) => items.has(item)
 
-	const clearSelection = () => {
+	const clear = () => {
 		setSelection(new Set())
 	}
 
@@ -48,7 +49,7 @@ export function useSelection<T>(library: T[]) {
 		})
 	}
 
-	const toggleSelected = (item: T) => {
+	const toggleItemSelected = (item: T) => {
 		setSelection((selection) => {
 			const newSelection = new Set(selection)
 			if (newSelection.has(item)) {
@@ -60,27 +61,23 @@ export function useSelection<T>(library: T[]) {
 		})
 	}
 
-	const isSelected = (item: T) => selection.has(item)
-
-	const selectedCount = selection.size
-
 	return {
 		/** ReadonlySet of currently selected items */
-		selection,
+		items,
 		/** Number of currently selected items */
-		selectedCount,
+		count: items.size,
 		/** Check if an item is selected */
-		isSelected,
+		has: isSelected,
 		/** Clear all selections */
-		clearSelection,
+		clear,
 		/** Select all items in the library */
 		selectAll,
 		/** Set the selection state of a specific item */
-		setSelected: setItemSelected,
+		setItemSelected,
 		/** Toggle the selection state of a specific item */
-		toggleSelected,
+		toggleItemSelected,
 		/** Replace the entire selection with a new set of items */
-		setSelection: (selection: Iterable<T>) => {
+		setSelectedItems: (selection: Iterable<T>) => {
 			setSelection(new Set(selection))
 		},
 	}

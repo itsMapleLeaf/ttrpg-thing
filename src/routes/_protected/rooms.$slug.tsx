@@ -5,6 +5,7 @@ import { api } from "../../../convex/_generated/api.js"
 import { ResourcePanel } from "../../components/resource-panel/ResourcePanel.tsx"
 import { SidebarLayout } from "../../components/sidebar/SidebarLayout.tsx"
 import { SurfaceViewer } from "../../components/surface/SurfaceViewer.tsx"
+import { useStable } from "../../hooks/useStable.ts"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({
 	component: RoomDetail,
@@ -20,11 +21,16 @@ function RoomDetail() {
 	const { slug } = Route.useParams()
 	const room = useQuery(api.rooms.getBySlug, { slug }) ?? loaderData
 
+	const surface = useStable(
+		useQuery(
+			api.surfaces.get,
+			room?.currentSurfaceId ? { id: room.currentSurfaceId } : "skip",
+		),
+	)
+
 	return room ? (
 		<SidebarLayout sidebar={<ResourcePanel roomId={room._id} />}>
-			{room.currentSurfaceId && (
-				<SurfaceViewer surfaceId={room.currentSurfaceId} />
-			)}
+			{surface && <SurfaceViewer surface={surface} />}
 		</SidebarLayout>
 	) : (
 		<SidebarLayout>

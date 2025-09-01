@@ -21,9 +21,7 @@ export function AssetListSection({
 	const removeAssets = useMutation(api.assets.removeMany)
 	const toast = useToastContext()
 	const uploadImage = useUploadImage()
-
-	const { selection, selectedCount, clearSelection, selectAll, setSelected } =
-		useSelection(assets?.map((asset) => asset._id) ?? [])
+	const selection = useSelection(assets?.map((asset) => asset._id) ?? [])
 
 	const uploadAssets = async (files: File[]) => {
 		const results = await Promise.all(
@@ -55,23 +53,23 @@ export function AssetListSection({
 	return (
 		<ToggleSection
 			name="Assets"
-			subtext={selectedCount > 0 && `${selectedCount} selected`}
+			subtext={selection.count > 0 && `${selection.count} selected`}
 			actions={[
-				selectedCount > 0 && {
+				selection.count > 0 && {
 					name: "Delete selected",
 					icon: "mingcute:delete-2-fill",
 					callback: async () => {
 						if (
 							confirm(
-								`Are you sure you want to delete ${selectedCount} assets?`,
+								`Are you sure you want to delete ${selection.count} assets?`,
 							)
 						) {
-							await removeAssets({ ids: [...selection] })
-							clearSelection()
+							await removeAssets({ ids: [...selection.items] })
+							selection.clear()
 						}
 					},
 				},
-				selectedCount === 0 && {
+				selection.count === 0 && {
 					name: "Upload",
 					icon: "mingcute:upload-2-fill",
 					callback: () => {
@@ -88,18 +86,18 @@ export function AssetListSection({
 						input.click()
 					},
 				},
-				selectedCount < assets.length && {
+				selection.count < assets.length && {
 					name: "Select all",
 					icon: "mingcute:checks-fill",
 					callback: () => {
-						selectAll()
+						selection.selectAll()
 					},
 				},
-				selectedCount > 0 && {
+				selection.count > 0 && {
 					name: "Clear selection",
 					icon: "mingcute:minus-square-fill",
 					callback: () => {
-						clearSelection()
+						selection.clear()
 					},
 				},
 			]}
@@ -113,7 +111,9 @@ export function AssetListSection({
 							key={asset._id}
 							asset={asset}
 							selected={selection.has(asset._id)}
-							onChangeSelected={(selected) => setSelected(asset._id, selected)}
+							onChangeSelected={(selected) =>
+								selection.setItemSelected(asset._id, selected)
+							}
 						/>
 					))}
 				</div>

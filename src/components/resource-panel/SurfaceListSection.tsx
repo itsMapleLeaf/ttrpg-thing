@@ -26,14 +26,7 @@ export function SurfaceListSection({
 	const toast = useToastContext()
 	const uploadImage = useUploadImage()
 
-	const {
-		selection,
-		selectedCount,
-		isSelected,
-		clearSelection,
-		selectAll,
-		setSelected,
-	} = useSelection(surfaces?.map((surface) => surface._id) ?? [])
+	const selection = useSelection(surfaces?.map((surface) => surface._id) ?? [])
 
 	const createSurfacesFromImages = async (files: File[]) => {
 		const results = await Promise.all(
@@ -73,23 +66,23 @@ export function SurfaceListSection({
 	return (
 		<ToggleSection
 			name="Surfaces"
-			subtext={selectedCount > 0 && `${selectedCount} selected`}
+			subtext={selection.count > 0 && `${selection.count} selected`}
 			actions={[
-				selectedCount > 0 && {
+				selection.count > 0 && {
 					name: "Delete selected",
 					icon: "mingcute:delete-2-fill",
 					callback: async () => {
 						if (
 							confirm(
-								`Are you sure you want to delete ${selectedCount} surfaces?`,
+								`Are you sure you want to delete ${selection.count} surfaces?`,
 							)
 						) {
-							await removeSurfaces({ ids: [...selection] })
-							clearSelection()
+							await removeSurfaces({ ids: [...selection.items] })
+							selection.clear()
 						}
 					},
 				},
-				selectedCount === 0 && {
+				selection.count === 0 && {
 					name: "New surface",
 					icon: "mingcute:add-fill",
 					callback: async () => {
@@ -101,7 +94,7 @@ export function SurfaceListSection({
 						await createSurface({ name, roomId })
 					},
 				},
-				selectedCount === 0 && {
+				selection.count === 0 && {
 					name: "New surface(s) from background(s)",
 					icon: "mingcute:upload-2-fill",
 					callback: () => {
@@ -118,18 +111,18 @@ export function SurfaceListSection({
 						input.click()
 					},
 				},
-				selectedCount < surfaces.length && {
+				selection.count < surfaces.length && {
 					name: "Select all",
 					icon: "mingcute:checks-fill",
 					callback: () => {
-						selectAll()
+						selection.selectAll()
 					},
 				},
-				selectedCount > 0 && {
+				selection.count > 0 && {
 					name: "Clear selection",
 					icon: "mingcute:minus-square-fill",
 					callback: () => {
-						clearSelection()
+						selection.clear()
 					},
 				},
 			]}
@@ -142,9 +135,9 @@ export function SurfaceListSection({
 						<SurfaceCard
 							key={surface._id}
 							surface={surface}
-							selected={isSelected(surface._id)}
+							selected={selection.has(surface._id)}
 							onChangeSelected={(selected) =>
-								setSelected(surface._id, selected)
+								selection.setItemSelected(surface._id, selected)
 							}
 						/>
 					))}
