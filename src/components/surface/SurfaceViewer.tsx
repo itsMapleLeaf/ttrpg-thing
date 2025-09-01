@@ -25,6 +25,7 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 
 	const tiles = useQuery(api.tiles.list, { surfaceId: surface._id }) ?? []
 	const createTile = useMutation(api.tiles.create)
+	const tileSelection = useSelection(tiles.map((t) => t._id) ?? [])
 
 	const updateTiles = useMutation(api.tiles.updateMany).withOptimisticUpdate(
 		(store, args) => {
@@ -65,8 +66,6 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 		)
 	}
 	renderedOffset = vec.roundTo(renderedOffset, 1)
-
-	const tileSelection = useSelection(tiles.map((t) => t._id) ?? [])
 
 	const containerRef = useRef<HTMLDivElement>(null)
 
