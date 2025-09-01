@@ -3,6 +3,7 @@ import type { WithoutSystemFields } from "convex/server"
 import { ConvexError, type Infer, v } from "convex/values"
 import { omit } from "convex-helpers"
 import { literals, partial } from "convex-helpers/validators"
+import { roundToNearest } from "../src/lib/helpers.ts"
 import type { Doc, Id } from "./_generated/dataModel"
 import {
 	type MutationCtx,
@@ -78,6 +79,8 @@ export const create = mutation({
 		const tileId = await ctx.db.insert("tiles", {
 			...args,
 			ownerId: userId,
+			left: roundToNearest(args.left, 20),
+			top: roundToNearest(args.top, 20),
 		})
 
 		return tileId
@@ -164,7 +167,11 @@ async function updateTile(
 		throw new Error("You don't have permission to update this tile")
 	}
 
-	await ctx.db.patch(id, patch)
+	await ctx.db.patch(id, {
+		...patch,
+		left: roundToNearest(patch.left ?? tile.left, 20),
+		top: roundToNearest(patch.top ?? tile.top, 20),
+	})
 }
 
 async function removeTile(ctx: MutationCtx, id: Id<"tiles">) {
