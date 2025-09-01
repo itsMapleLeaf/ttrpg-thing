@@ -258,13 +258,12 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 									onPointerDown={(event) => {
 										tileDrag.handlePointerDown(event)
 
-										if (event.ctrlKey || event.shiftKey) {
-											tileSelection.toggleItemSelected(tile._id)
-											return
-										}
-
-										if (!selected) {
-											tileSelection.setSelectedItems([tile._id])
+										if (event.button === 0) {
+											if (event.ctrlKey || event.shiftKey) {
+												tileSelection.toggleItemSelected(tile._id)
+											} else if (!selected) {
+												tileSelection.setSelectedItems([tile._id])
+											}
 										}
 									}}
 								>
