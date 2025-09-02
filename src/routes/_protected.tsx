@@ -1,5 +1,5 @@
 import { useAuthActions } from "@convex-dev/auth/react"
-import { createFileRoute, Outlet } from "@tanstack/react-router"
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { LogoLink } from "../components/LogoLink.tsx"
 import { Button } from "../ui/Button.tsx"
@@ -25,6 +25,8 @@ function Protected() {
 
 function SignInMessage() {
 	const { signIn } = useAuthActions()
+	const location = useLocation()
+
 	return (
 		<div className="grid content-center justify-center gap-4 text-center">
 			<header>
@@ -35,7 +37,7 @@ function SignInMessage() {
 				<Button
 					icon="simple-icons:discord"
 					appearance="solid"
-					onClick={() => signIn("discord")}
+					onClick={() => signIn("discord", { redirectTo: location.href })}
 				>
 					Sign in with Discord
 				</Button>

@@ -17,6 +17,14 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 				image: args.profile.image as string | undefined,
 			})
 		},
+
+		async redirect(params) {
+			const url = new URL(params.redirectTo, process.env.SITE_URL)
+			if (url.hostname === "localhost") return url.href
+			if (url.hostname === "tabletopthing.netlify.app") return url.href
+			if (url.hostname === "tabletop.mapleleaf.dev") return url.href
+			return process.env.SITE_URL as string
+		},
 	},
 })
 
