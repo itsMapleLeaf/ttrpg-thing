@@ -1,4 +1,16 @@
 {
+	"files.readonlyInclude": {
+		"**/routeTree.gen.ts": true,
+		"convex/_generated/**": true
+	},
+	"files.watcherExclude": {
+		"**/routeTree.gen.ts": true,
+		"convex/_generated/**": true
+	},
+	"search.exclude": {
+		"**/routeTree.gen.ts": true,
+		"convex/_generated/**": true
+	},
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
 	"[javascript]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
