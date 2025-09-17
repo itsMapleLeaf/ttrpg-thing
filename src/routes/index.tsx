@@ -183,7 +183,7 @@ function GameView({
 	return (
 		<div className="flex h-dvh w-full items-center gap-4 p-4">
 			<HistoryPanel>
-				{historyItems.map((entry, index) => (
+				{historyItems.slice(0, 100).map((entry, index) => (
 					<HistoryPanelItem
 						key={entry.key}
 						entry={entry}
@@ -275,11 +275,15 @@ function CardsPanel({
 
 function HistoryPanel({ children }: { children: React.ReactNode }) {
 	return (
-		<div className="flex h-full max-h-128 min-h-0 w-48 flex-col gap-2 panel p-2">
-			<h2 className="px-2 text-lg font-light">Log</h2>
-			<ul className="-mx-2 grid min-h-0 flex-1 content-start gap-1 overflow-y-auto px-2">
-				{children}
-			</ul>
+		<div className="w-48 panel">
+			<section className="isolate grid h-full max-h-128 min-h-0 overflow-y-auto">
+				<h2 className="sticky top-0 z-10 bg-gray-800 px-4 pt-2.5 pb-1.5 text-lg font-light">
+					Log
+				</h2>
+				<ul className="grid min-h-0 flex-1 content-start gap-1 p-2">
+					{children}
+				</ul>
+			</section>
 		</div>
 	)
 }
