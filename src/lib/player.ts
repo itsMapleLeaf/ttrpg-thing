@@ -26,7 +26,7 @@ export function newGame(cardCounts: CardCounts): PlayerState {
 
 export function play(
 	state: PlayerState,
-	cardIndex: number,
+	cardKey: string,
 ): {
 	state: PlayerState
 	playedCard?: CardInstance
@@ -37,16 +37,16 @@ export function play(
 		return { state, errors: ["No cards in hand to play"] }
 	}
 
-	const card = state.hand[cardIndex]
+	const card = state.hand.find((c) => c.key === cardKey)
 	if (!card) {
-		console.warn("Invalid card index", { cardIndex, hand: state.hand })
+		console.warn("Invalid card index", { cardIndex: cardKey, hand: state.hand })
 		return { state, errors: ["Invalid card index"] }
 	}
 
 	return {
 		state: {
 			...state,
-			hand: state.hand.filter((_, index) => index !== cardIndex),
+			hand: state.hand.filter((c) => c.key !== cardKey),
 			discard: [card, ...state.discard],
 		},
 		playedCard: card,

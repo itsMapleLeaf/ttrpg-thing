@@ -43,6 +43,10 @@ export function getCard(cardId: CardId): Card {
 	return CARDS[cardId] as Card
 }
 
+export function getCardOrder(card: Card): number {
+	return listCards().findIndex((c) => c.id === card.id)
+}
+
 export interface CardInstance extends Card {
 	key: string
 }

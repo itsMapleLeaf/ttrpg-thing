@@ -4,7 +4,13 @@ import { mapValues, sum } from "es-toolkit"
 import { Fragment, useState } from "react"
 import { twMerge } from "tailwind-merge"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
-import { type Card, type CardCounts, listCards } from "../lib/cards.ts"
+import {
+	type Card,
+	type CardCounts,
+	type CardInstance,
+	getCardOrder,
+	listCards,
+} from "../lib/cards.ts"
 import { DECK_SIZE, Player } from "../lib/player.ts"
 import type { NonEmptyArray } from "../lib/types.ts"
 import { Button } from "../ui/Button.tsx"
@@ -99,14 +105,14 @@ function DeckEditor({
 	)
 }
 
-type Action = { type: "play"; cardIndex: number } | { type: "refresh" }
+type Action = { type: "play"; cardKey: string } | { type: "refresh" }
 
 type HistoryEntry = {
 	key: string
 	state: Player.PlayerState
 } & (
 	| { type: "initial" }
-	| { type: "play"; playedCard: Card; playedCardIndex: number }
+	| { type: "play"; playedCard: Card }
 	| { type: "refresh"; refreshedCount: number }
 )
 
@@ -133,7 +139,7 @@ function GameView({
 			let newEntry: HistoryEntry
 
 			if (action.type === "play") {
-				const result = Player.play(currentEntry.state, action.cardIndex)
+				const result = Player.play(currentEntry.state, action.cardKey)
 				if (!result.playedCard) {
 					console.warn("Invalid play action", result)
 					return history
@@ -144,7 +150,6 @@ function GameView({
 					state: result.state,
 					type: "play",
 					playedCard: result.playedCard,
-					playedCardIndex: action.cardIndex,
 				}
 			} else if (action.type === "refresh") {
 				newEntry = {
@@ -192,7 +197,7 @@ function GameView({
 
 				<CardsPanel
 					state={state}
-					onPlayCard={(cardIndex) => act({ type: "play", cardIndex })}
+					onPlayCard={(cardKey) => act({ type: "play", cardKey })}
 				/>
 
 				<div className="flex-center gap-2">
@@ -222,32 +227,34 @@ function CardsPanel({
 	onPlayCard,
 }: {
 	state: Player.PlayerState
-	onPlayCard: (cardIndex: number) => void
+	onPlayCard: (key: CardInstance["key"]) => void
 }) {
 	return (
 		<div className="flex h-52 panel overflow-visible p-2">
 			{state.hand.length === 0 ? (
 				<EmptyState icon="mingcute:pentagon-line" message="No cards in hand" />
 			) : (
-				state.hand.map((card, index) => (
-					<Fragment key={card.key}>
-						<WithTooltip content={`Play ${card.name}`}>
-							<button
-								type="button"
-								className="w-32 items-center drop-shadow-black/50 transition hover:-translate-y-1 hover:drop-shadow-lg focus-visible:-translate-y-1 focus-visible:drop-shadow-lg"
-								onClick={() => {
-									onPlayCard(index)
-								}}
-							>
-								<img
-									src={card.imageUrl.href}
-									alt={card.id}
-									className="size-full"
-								/>
-							</button>
-						</WithTooltip>
-					</Fragment>
-				))
+				state.hand
+					.sort((a, b) => getCardOrder(a) - getCardOrder(b))
+					.map((card) => (
+						<Fragment key={card.key}>
+							<WithTooltip content={`Play ${card.name}`}>
+								<button
+									type="button"
+									className="w-32 items-center drop-shadow-black/50 transition hover:-translate-y-1 hover:drop-shadow-lg focus-visible:-translate-y-1 focus-visible:drop-shadow-lg"
+									onClick={() => {
+										onPlayCard(card.key)
+									}}
+								>
+									<img
+										src={card.imageUrl.href}
+										alt={card.id}
+										className="size-full"
+									/>
+								</button>
+							</WithTooltip>
+						</Fragment>
+					))
 			)}
 		</div>
 	)
@@ -286,12 +293,7 @@ function HistoryPanelItem({
 				onClick={onClick}
 			>
 				{entry.type === "play" ? (
-					<>
-						<div className="leading-snug">Played {entry.playedCard.name}</div>
-						<div className="text-sm leading-tight font-medium opacity-75">
-							Card {entry.playedCardIndex + 1}
-						</div>
-					</>
+					<>Played {entry.playedCard.name}</>
 				) : (
 					"Refreshed hand"
 				)}
