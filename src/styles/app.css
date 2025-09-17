@@ -34,6 +34,7 @@
 @layer base {
 	:root {
 		scrollbar-gutter: auto;
+		scrollbar-color: var(--color-gray-700) var(--color-gray-800);
 	}
 
 	strong {
