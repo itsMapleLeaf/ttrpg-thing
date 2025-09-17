@@ -126,19 +126,21 @@ function GameView({
 	cardCounts: CardCounts
 	onEdit: () => void
 }) {
-	const [items, setItems] = useState<NonEmptyArray<HistoryEntry>>(() => [
-		{
-			key: "initial",
-			state: Player.newGame(cardCounts),
-			type: "initial",
-		},
-	])
-	const [offset, setOffset] = useState(0)
-	const state = items[offset]?.state as Player.PlayerState
+	const [historyItems, setHistoryItems] = useState<NonEmptyArray<HistoryEntry>>(
+		() => [
+			{
+				key: "initial",
+				state: Player.newGame(cardCounts),
+				type: "initial",
+			},
+		],
+	)
+	const [historyOffset, setHistoryOffset] = useState(0)
+	const state = historyItems[historyOffset]?.state as Player.PlayerState
 
 	const act = (action: Action) => {
-		setItems((history) => {
-			const currentEntry = history[offset] as HistoryEntry
+		setHistoryItems((history) => {
+			const currentEntry = history[historyOffset] as HistoryEntry
 			let newEntry: HistoryEntry
 
 			if (action.type === "play") {
@@ -165,28 +167,28 @@ function GameView({
 				throw new Error("Unknown action", { cause: action })
 			}
 
-			return [newEntry, ...history.slice(offset)]
+			return [newEntry, ...history.slice(historyOffset)]
 		})
-		setOffset(0)
+		setHistoryOffset(0)
 	}
 
 	const back = () => {
-		setOffset((offset) => Math.min(offset + 1, items.length - 1))
+		setHistoryOffset((offset) => Math.min(offset + 1, historyItems.length - 1))
 	}
 
 	const forward = () => {
-		setOffset((offset) => Math.max(offset - 1, 0))
+		setHistoryOffset((offset) => Math.max(offset - 1, 0))
 	}
 
 	return (
 		<div className="flex h-dvh w-full items-center gap-4 p-4">
 			<HistoryPanel>
-				{items.map((entry, index) => (
+				{historyItems.map((entry, index) => (
 					<HistoryPanelItem
 						key={entry.key}
 						entry={entry}
-						isCurrent={index === offset}
-						onClick={() => setOffset(index)}
+						isCurrent={index === historyOffset}
+						onClick={() => setHistoryOffset(index)}
 					/>
 				))}
 			</HistoryPanel>
