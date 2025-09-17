@@ -66,3 +66,23 @@ export function typedEntries<T extends Record<string, unknown>>(
 ): Array<[keyof T, T[keyof T]]> {
 	return Object.entries(obj) as Array<[keyof T, T[keyof T]]>
 }
+
+/**
+ * Constrains a given value to a type
+ *
+ * @example
+ * const state = {
+ * 	items: [], // ❌ inferred as never[]
+ * }
+ *
+ * const state = {
+ *   items: [] as string[], // ❌ works, but is unsafe
+ * }
+ *
+ * const state = {
+ * 	items: typed<string[]>([]), // ✅ items is string[]
+ * }
+ */
+export function typed<T>(value: T): T {
+	return value
+}

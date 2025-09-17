@@ -13,8 +13,9 @@ import { createServerRootRoute } from "@tanstack/react-start/server"
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as DsRouteImport } from "./routes/ds"
 import { Route as ProtectedRouteImport } from "./routes/_protected"
-import { Route as ProtectedIndexRouteImport } from "./routes/_protected/index"
+import { Route as IndexRouteImport } from "./routes/index"
 import { Route as ProtectedAccountRouteImport } from "./routes/_protected/account"
+import { Route as ProtectedRoomsNewRouteImport } from "./routes/_protected/rooms.new"
 import { Route as ProtectedRoomsSlugRouteImport } from "./routes/_protected/rooms.$slug"
 import { ServerRoute as FaviconDotsvgServerRouteImport } from "./routes/favicon[.]svg"
 import { ServerRoute as ApiImagesOptimizeServerRouteImport } from "./routes/api/images/optimize"
@@ -30,14 +31,19 @@ const ProtectedRoute = ProtectedRouteImport.update({
   id: "/_protected",
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProtectedIndexRoute = ProtectedIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
-  getParentRoute: () => ProtectedRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
   id: "/account",
   path: "/account",
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedRoomsNewRoute = ProtectedRoomsNewRouteImport.update({
+  id: "/rooms/new",
+  path: "/rooms/new",
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedRoomsSlugRoute = ProtectedRoomsSlugRouteImport.update({
@@ -57,40 +63,45 @@ const ApiImagesOptimizeServerRoute = ApiImagesOptimizeServerRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  "/": typeof IndexRoute
   "/ds": typeof DsRoute
   "/account": typeof ProtectedAccountRoute
-  "/": typeof ProtectedIndexRoute
   "/rooms/$slug": typeof ProtectedRoomsSlugRoute
+  "/rooms/new": typeof ProtectedRoomsNewRoute
 }
 export interface FileRoutesByTo {
+  "/": typeof IndexRoute
   "/ds": typeof DsRoute
   "/account": typeof ProtectedAccountRoute
-  "/": typeof ProtectedIndexRoute
   "/rooms/$slug": typeof ProtectedRoomsSlugRoute
+  "/rooms/new": typeof ProtectedRoomsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  "/": typeof IndexRoute
   "/_protected": typeof ProtectedRouteWithChildren
   "/ds": typeof DsRoute
   "/_protected/account": typeof ProtectedAccountRoute
-  "/_protected/": typeof ProtectedIndexRoute
   "/_protected/rooms/$slug": typeof ProtectedRoomsSlugRoute
+  "/_protected/rooms/new": typeof ProtectedRoomsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/ds" | "/account" | "/" | "/rooms/$slug"
+  fullPaths: "/" | "/ds" | "/account" | "/rooms/$slug" | "/rooms/new"
   fileRoutesByTo: FileRoutesByTo
-  to: "/ds" | "/account" | "/" | "/rooms/$slug"
+  to: "/" | "/ds" | "/account" | "/rooms/$slug" | "/rooms/new"
   id:
     | "__root__"
+    | "/"
     | "/_protected"
     | "/ds"
     | "/_protected/account"
-    | "/_protected/"
     | "/_protected/rooms/$slug"
+    | "/_protected/rooms/new"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   ProtectedRoute: typeof ProtectedRouteWithChildren
   DsRoute: typeof DsRoute
 }
@@ -136,18 +147,25 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ProtectedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    "/_protected/": {
-      id: "/_protected/"
+    "/": {
+      id: "/"
       path: "/"
       fullPath: "/"
-      preLoaderRoute: typeof ProtectedIndexRouteImport
-      parentRoute: typeof ProtectedRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     "/_protected/account": {
       id: "/_protected/account"
       path: "/account"
       fullPath: "/account"
       preLoaderRoute: typeof ProtectedAccountRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    "/_protected/rooms/new": {
+      id: "/_protected/rooms/new"
+      path: "/rooms/new"
+      fullPath: "/rooms/new"
+      preLoaderRoute: typeof ProtectedRoomsNewRouteImport
       parentRoute: typeof ProtectedRoute
     }
     "/_protected/rooms/$slug": {
@@ -180,14 +198,14 @@ declare module "@tanstack/react-start/server" {
 
 interface ProtectedRouteChildren {
   ProtectedAccountRoute: typeof ProtectedAccountRoute
-  ProtectedIndexRoute: typeof ProtectedIndexRoute
   ProtectedRoomsSlugRoute: typeof ProtectedRoomsSlugRoute
+  ProtectedRoomsNewRoute: typeof ProtectedRoomsNewRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountRoute: ProtectedAccountRoute,
-  ProtectedIndexRoute: ProtectedIndexRoute,
   ProtectedRoomsSlugRoute: ProtectedRoomsSlugRoute,
+  ProtectedRoomsNewRoute: ProtectedRoomsNewRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
@@ -195,6 +213,7 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
   DsRoute: DsRoute,
 }
