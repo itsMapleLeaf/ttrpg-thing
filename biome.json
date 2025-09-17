@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
@@ -15,7 +15,8 @@
 		"rules": {
 			"suspicious": {
 				"noUnknownAtRules": "off",
-				"noImplicitAnyLet": "off"
+				"noImplicitAnyLet": "off",
+				"noArrayIndexKey": "off"
 			},
 			"style": {
 				"useConsistentObjectDefinitions": "warn"
