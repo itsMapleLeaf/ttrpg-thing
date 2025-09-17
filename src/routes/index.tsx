@@ -15,6 +15,7 @@ import { DECK_SIZE, Player } from "../lib/player.ts"
 import type { NonEmptyArray } from "../lib/types.ts"
 import { Button } from "../ui/Button.tsx"
 import { EmptyState } from "../ui/EmptyState.tsx"
+import { Icon } from "../ui/Icon.tsx"
 import { WithTooltip } from "../ui/Tooltip.tsx"
 
 export const Route = createFileRoute("/")({
@@ -73,35 +74,37 @@ function DeckEditor({
 	}
 
 	return (
-		<form
-			className="grid w-full max-w-xs gap-3 panel p-3"
-			action={() => {
-				onSubmit(cardCounts)
-			}}
-		>
-			{listCards().map((card) => (
-				<div key={card.id} className="grid">
-					<label htmlFor="" className="text-sm font-medium">
-						{card.name}
-					</label>
-					<input
-						type="number"
-						className="input"
-						value={cardCounts[card.id]}
-						min={1}
-						onChange={(event) => {
-							setCardCountOf(card.id, event.currentTarget.valueAsNumber)
-						}}
-					/>
-				</div>
-			))}
-			<p className={getTotalDisplayClass()}>
-				Total: <strong>{sum(Object.values(cardCounts))} / 20</strong>
-			</p>
-			<Button type="submit" icon="mingcute:play-fill" appearance="solid">
-				Play
-			</Button>
-		</form>
+		<div className="flex h-dvh flex-col">
+			<form
+				className="m-auto grid w-full max-w-xs gap-3 panel p-3"
+				action={() => {
+					onSubmit(cardCounts)
+				}}
+			>
+				{listCards().map((card) => (
+					<div key={card.id} className="grid">
+						<label htmlFor="" className="text-sm font-medium">
+							{card.name}
+						</label>
+						<input
+							type="number"
+							className="input"
+							value={cardCounts[card.id]}
+							min={1}
+							onChange={(event) => {
+								setCardCountOf(card.id, event.currentTarget.valueAsNumber)
+							}}
+						/>
+					</div>
+				))}
+				<p className={getTotalDisplayClass()}>
+					Total: <strong>{sum(Object.values(cardCounts))} / 20</strong>
+				</p>
+				<Button type="submit" icon="mingcute:play-fill" appearance="solid">
+					Play
+				</Button>
+			</form>
+		</div>
 	)
 }
 
@@ -188,12 +191,23 @@ function GameView({
 				))}
 			</HistoryPanel>
 
-			<div className="flex flex-1 flex-col items-center gap-2">
-				<p className="flex items-center gap-1.5 font-semibold text-gray-400">
-					<span>Cards in deck: {state.deck.length}</span>
-					<span>&bull;</span>
-					<span>Discard pile: {state.discard.length}</span>
-				</p>
+			<div className="flex flex-1 flex-col items-center gap-3">
+				<div className="flex items-center gap-4 p-1">
+					<WithTooltip content={`${state.deck.length} cards in deck`}>
+						<p className="flex cursor-default items-center gap-1.5 font-semibold text-gray-400 select-none">
+							<Icon icon="streamline:cards-solid" className="size-5" />
+							<span>{state.deck.length}</span>
+						</p>
+					</WithTooltip>
+					<WithTooltip
+						content={`${state.discard.length} cards in discard pile`}
+					>
+						<p className="flex cursor-default items-center gap-1.5 font-semibold text-gray-400 select-none">
+							<Icon icon="streamline:cards" className="size-5" />
+							<span>{state.discard.length}</span>
+						</p>
+					</WithTooltip>
+				</div>
 
 				<CardsPanel
 					state={state}
@@ -201,11 +215,8 @@ function GameView({
 				/>
 
 				<div className="flex-center gap-2">
-					<Button
-						icon="mingcute:refresh-1-fill"
-						onClick={() => act({ type: "refresh" })}
-					>
-						Refresh
+					<Button icon="mdi:cards" onClick={() => act({ type: "refresh" })}>
+						New Hand
 					</Button>
 					<Button icon="mingcute:back-2-fill" onClick={back}>
 						Undo
