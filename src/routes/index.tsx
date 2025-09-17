@@ -159,9 +159,9 @@ function GameView({
 			} else if (action.type === "refresh") {
 				newEntry = {
 					key: crypto.randomUUID(),
-					state: Player.refresh(history[0].state),
+					state: Player.refresh(currentEntry.state),
 					type: "refresh",
-					refreshedCount: history[0].state.hand.length,
+					refreshedCount: currentEntry.state.hand.length,
 				}
 			} else {
 				throw new Error("Unknown action", { cause: action })
