@@ -29,6 +29,7 @@ export function play(
 	cardIndex: number,
 ): {
 	state: PlayerState
+	playedCard?: CardInstance
 	errors: string[]
 } {
 	if (state.hand.length === 0) {
@@ -48,6 +49,7 @@ export function play(
 			hand: state.hand.filter((_, index) => index !== cardIndex),
 			discard: [card, ...state.discard],
 		},
+		playedCard: card,
 		errors: [],
 	}
 }
