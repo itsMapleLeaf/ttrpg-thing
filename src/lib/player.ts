@@ -43,12 +43,19 @@ export function play(
 		return { state, errors: ["Invalid card index"] }
 	}
 
+	state = {
+		...state,
+		hand: state.hand.filter((c) => c.key !== cardKey),
+		discard: [card, ...state.discard],
+	}
+
+	// when playing the last card, draw a new hand
+	if (state.hand.length === 0) {
+		state = refresh(state)
+	}
+
 	return {
-		state: {
-			...state,
-			hand: state.hand.filter((c) => c.key !== cardKey),
-			discard: [card, ...state.discard],
-		},
+		state,
 		playedCard: card,
 		errors: [],
 	}
