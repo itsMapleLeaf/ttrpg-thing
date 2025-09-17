@@ -3,7 +3,7 @@ import { type } from "arktype"
 import { useState } from "react"
 import type { AssetListOrder } from "../../../convex/assets.ts"
 import { useLocalStorage } from "../../hooks/useLocalStorage.ts"
-import type { NonEmptyArray } from "../../types.ts"
+import type { NonEmptyArray } from "../../lib/types.ts"
 import { Button } from "../../ui/Button.tsx"
 
 type SortOption = {
