@@ -227,7 +227,7 @@ function GameView({
 						Redo
 					</Button>
 					<Button icon="mingcute:edit-2-fill" onClick={onEdit}>
-						Edit deck
+						Edit Deck
 					</Button>
 				</div>
 			</div>
