@@ -1,16 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { type } from "arktype"
-import { mapValues, shuffle, sum } from "es-toolkit"
+import { mapValues, sum } from "es-toolkit"
 import { Fragment, useState } from "react"
 import { twMerge } from "tailwind-merge"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
-import {
-	buildDeck,
-	type CardCounts,
-	type CardInstance,
-	listCards,
-} from "../lib/cards.ts"
-import { typed } from "../lib/helpers.ts"
+import { type CardCounts, listCards } from "../lib/cards.ts"
+import { Player } from "../lib/player.ts"
+import type { NonEmptyArray } from "../lib/types.ts"
 import { Button } from "../ui/Button.tsx"
 import { EmptyState } from "../ui/EmptyState.tsx"
 import { WithTooltip } from "../ui/Tooltip.tsx"
@@ -117,60 +113,39 @@ function PlayArea({
 	cardCounts: CardCounts
 	onEdit: () => void
 }) {
-	const [state, setState] = useState(() => {
-		const initialDeck = buildDeck(cardCounts)
-		const shuffled = shuffle(initialDeck)
-		return {
-			deck: shuffled.slice(5),
-			hand: shuffled.slice(0, 5),
-			discard: typed<CardInstance[]>([]),
-		}
-	})
+	const [history, setHistory] = useState<NonEmptyArray<Player.PlayerState>>(
+		() => [Player.newGame(cardCounts)],
+	)
+	const [historyOffset, setHistoryOffset] = useState(0)
+	const state = history[historyOffset] as Player.PlayerState
+
+	function act(action: (state: Player.PlayerState) => Player.PlayerState) {
+		setHistory((history) => [
+			action(history[0]),
+			...history.slice(historyOffset),
+		])
+	}
+
+	function back() {
+		setHistoryOffset((offset) => Math.min(offset + 1, history.length - 1))
+	}
+
+	function forward() {
+		setHistoryOffset((offset) => Math.max(offset - 1, 0))
+	}
 
 	function playCard(cardIndex: number) {
-		setState((state) => {
-			if (state.hand.length === 0) {
-				console.warn("No cards in hand to play")
-				return state
+		act((state) => {
+			const { state: newState, errors } = Player.play(state, cardIndex)
+			if (errors.length > 0) {
+				console.warn("Errors playing card:", errors)
 			}
-
-			const card = state.hand[cardIndex]
-			if (!card) {
-				console.warn("Invalid card index", {
-					cardIndex,
-					hand: state.hand,
-				})
-				return state
-			}
-
-			return {
-				...state,
-				hand: state.hand.toSpliced(cardIndex, 1),
-				discard: [card, ...state.discard],
-			}
+			return newState
 		})
 	}
 
 	function refreshHand() {
-		setState((previousState) => {
-			const state = { ...previousState }
-
-			// discard entire hand
-			state.discard = [...state.hand, ...state.discard]
-			state.hand = []
-
-			// if deck has less cards than hand size, reshuffle discard into deck
-			if (state.deck.length < HAND_SIZE) {
-				state.deck = shuffle([...state.deck, ...state.discard])
-				state.discard = []
-			}
-
-			// draw new hand
-			state.hand = state.deck.slice(0, HAND_SIZE)
-			state.deck = state.deck.slice(HAND_SIZE)
-
-			return state
-		})
+		act(Player.refresh)
 	}
 
 	return (
@@ -211,6 +186,12 @@ function PlayArea({
 			<div className="flex-center gap-2">
 				<Button icon="mingcute:refresh-1-fill" onClick={refreshHand}>
 					Refresh
+				</Button>
+				<Button icon="mingcute:back-2-fill" onClick={back}>
+					Undo
+				</Button>
+				<Button icon="mingcute:forward-2-fill" onClick={forward}>
+					Redo
 				</Button>
 				<Button icon="mingcute:edit-2-fill" onClick={onEdit}>
 					Edit deck
