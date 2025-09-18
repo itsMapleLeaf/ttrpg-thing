@@ -1,3 +1,4 @@
+import { DragDropProvider, useDraggable, useDroppable } from "@dnd-kit/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { type } from "arktype"
 import { mapValues, sum } from "es-toolkit"
@@ -23,21 +24,38 @@ export const Route = createFileRoute("/")({
 })
 
 function RouteComponent() {
-	const [view, setView] = useState<
-		{ type: "edit" } | { type: "play"; cardCounts: CardCounts }
-	>({ type: "edit" })
-
-	return view.type === "edit" ? (
-		<DeckEditor
-			onSubmit={(cardCounts) => {
-				setView({ type: "play", cardCounts })
+	const [isDropped, setIsDropped] = useState(false)
+	return (
+		<DragDropProvider
+			onDragEnd={(event) => {
+				if (event.canceled) return
+				setIsDropped(event.operation.target?.id === "droppable")
 			}}
-		/>
-	) : (
-		<GameView
-			cardCounts={view.cardCounts}
-			onEdit={() => setView({ type: "edit" })}
-		/>
+		>
+			<div className="flex h-dvh gap-4 p-4">
+				<Droppable>{isDropped && <Draggable />}</Droppable>
+				{!isDropped && <Draggable />}
+			</div>
+		</DragDropProvider>
+	)
+}
+
+function Draggable() {
+	const { ref } = useDraggable({ id: "draggable" })
+	return (
+		<div ref={ref} className="size-32 panel">
+			Drag me
+		</div>
+	)
+}
+
+function Droppable({ children }: { children: React.ReactNode }) {
+	const { ref } = useDroppable({ id: "droppable" })
+
+	return (
+		<div ref={ref} className="size-48 panel p-4">
+			{children}
+		</div>
 	)
 }
 
