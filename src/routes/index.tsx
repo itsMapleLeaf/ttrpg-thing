@@ -1,8 +1,7 @@
-import { type DragDropEvents, DragDropProvider } from "@dnd-kit/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { type } from "arktype"
 import { clamp, mapValues, sum } from "es-toolkit"
-import { Fragment, useEffect, useId, useReducer, useRef, useState } from "react"
+import { Fragment, useEffect, useId, useRef, useState } from "react"
 import { twMerge } from "tailwind-merge"
 import { useDrag } from "../hooks/useDrag.ts"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
@@ -31,6 +30,7 @@ export const Route = createFileRoute("/")({
 
 const SURFACE_WIDTH = 1600 * 4
 const SURFACE_HEIGHT = 900 * 4
+const SURFACE_SIZE = vec(SURFACE_WIDTH, SURFACE_HEIGHT)
 const GRID_SNAP = 20
 
 type Asset = {
@@ -45,22 +45,21 @@ function RouteComponent() {
 	const { assets, createAssetsFromFiles, updateAsset } = useAssets()
 	const assetSelection = useSelection(assets.map((a) => a.id))
 	const assetTileListElementId = useId()
-	const viewportZoom = useViewportZoom()
+	const viewport = useViewport()
 
 	const fileDrop = useWindowFileDrop((event) => {
 		createAssetsFromFiles(
-			vec(event.clientX, event.clientY),
+			vec
+				.with(event.clientX, event.clientY)
+				.subtract(viewport.offset)
+				.divide(viewport.scale)
+				.result(),
 			event.dataTransfer?.files ?? [],
 		)
 	})
 
-	// precompure asset rectangles once on drag start for performance
-	const assetElementRects = useRef<
-		{
-			id: string
-			rect: DOMRect
-		}[]
-	>([])
+	// precompute asset rectangles once on drag start for performance
+	const assetElementRects = useRef<{ id: string; rect: DOMRect }[]>([])
 
 	const areaSelect = useDrag({
 		buttons: ["left"],
@@ -97,10 +96,7 @@ function RouteComponent() {
 	})
 
 	const [baseAssetDragDelta, setBaseAssetDragDelta] = useState(vec.zero)
-	const assetDragDelta = vec.multiply(
-		baseAssetDragDelta,
-		1 / viewportZoom.scale,
-	)
+	const assetDragDelta = vec.multiply(baseAssetDragDelta, 1 / viewport.scale)
 
 	const assetDrag = useDrag({
 		buttons: ["left"],
@@ -120,11 +116,11 @@ function RouteComponent() {
 		},
 		onEnd() {
 			for (const id of assetSelection.items) {
-				updateAsset(id, (current) => ({
+				updateAsset(id, (asset) => ({
 					position: vec.clamp(
-						vec.add(current.position, assetDragDelta),
+						vec.add(asset.position, assetDragDelta),
 						vec.zero,
-						vec(SURFACE_WIDTH, SURFACE_HEIGHT),
+						vec.subtract(vec(SURFACE_WIDTH, SURFACE_HEIGHT), asset.size),
 					),
 				}))
 			}
@@ -142,70 +138,72 @@ function RouteComponent() {
 		return position
 	}
 
-	const handleDragEnd: DragDropEvents["dragend"] = (event) => {
-		if (event.canceled) return
-
-		const { source, position } = event.operation
-		if (source?.type === "asset") {
-			const delta = vec.subtract(position.current, position.initial)
-			updateAsset(String(source.id), (current) => ({
-				position: vec.add(current.position, delta),
-				order: Date.now(),
-			}))
-		}
-	}
-
 	return (
-		<DragDropProvider onDragEnd={handleDragEnd}>
+		<>
 			<div className="h-dvh" onPointerDown={areaSelect.handlePointerDown}>
-				<Viewport zoom={viewportZoom}>
+				<div
+					className="relative size-full touch-none overflow-clip"
+					onPointerDown={viewport.drag.handlePointerDown}
+					ref={viewport.ref}
+				>
 					<div
-						id={assetTileListElementId}
-						className="relative isolate size-full panel overflow-visible"
-						style={{ width: SURFACE_WIDTH, height: SURFACE_HEIGHT }}
-						onPointerDown={(event) => {
-							if (
-								event.button === 0 &&
-								event.target === event.currentTarget &&
-								!event.ctrlKey &&
-								!event.shiftKey
-							) {
-								assetSelection.clear()
-							}
+						className="absolute inset-0 origin-top-left transition-transform duration-150 ease-out data-dragging:duration-75"
+						data-dragging={viewport.drag.isDragging || undefined}
+						style={{
+							translate: vec.css.translate(
+								vec.add(viewport.offset, viewport.drag.delta),
+							),
+							scale: viewport.scale,
 						}}
 					>
-						{assets
-							.sort((a, b) => a.order - b.order)
-							.map((asset) => (
-								<AssetTile
-									key={asset.id}
-									id={asset.id}
-									url={
-										asset.url
-										// uncomment this when we're using remote URLs
-										// getOptimizedImageUrl(
-										// 	asset.url,
-										// 	ceilToNearest(asset.size.x, 100),
-										// ).href
-									}
-									position={getRenderedAssetPosition(asset)}
-									size={asset.size}
-									dragging={isDraggingAsset(asset.id)}
-									selected={assetSelection.has(asset.id)}
-									onPointerDown={(event) => {
-										if (event.button === 0) {
-											if (event.ctrlKey || event.shiftKey) {
-												assetSelection.toggleItemSelected(asset.id)
-											} else if (!assetSelection.has(asset.id)) {
-												assetSelection.setSelectedItems([asset.id])
-											}
+						<div
+							id={assetTileListElementId}
+							className="relative isolate size-full panel overflow-visible"
+							style={{ width: SURFACE_WIDTH, height: SURFACE_HEIGHT }}
+							onPointerDown={(event) => {
+								if (
+									event.button === 0 &&
+									event.target === event.currentTarget &&
+									!event.ctrlKey &&
+									!event.shiftKey
+								) {
+									assetSelection.clear()
+								}
+							}}
+						>
+							{assets
+								.sort((a, b) => a.order - b.order)
+								.map((asset) => (
+									<AssetTile
+										key={asset.id}
+										id={asset.id}
+										url={
+											asset.url
+											// uncomment this when we're using remote URLs
+											// getOptimizedImageUrl(
+											// 	asset.url,
+											// 	ceilToNearest(asset.size.x, 100),
+											// ).href
 										}
-										assetDrag.handlePointerDown(event)
-									}}
-								/>
-							))}
+										position={getRenderedAssetPosition(asset)}
+										size={asset.size}
+										dragging={isDraggingAsset(asset.id)}
+										selected={assetSelection.has(asset.id)}
+										onPointerDown={(event) => {
+											if (event.button === 0) {
+												if (event.ctrlKey || event.shiftKey) {
+													assetSelection.toggleItemSelected(asset.id)
+												} else if (!assetSelection.has(asset.id)) {
+													assetSelection.setSelectedItems([asset.id])
+												}
+											}
+											assetDrag.handlePointerDown(event)
+										}}
+									/>
+								))}
+						</div>
 					</div>
-				</Viewport>
+				</div>
 			</div>
 
 			{areaSelect.isDragging && (
@@ -223,113 +221,112 @@ function RouteComponent() {
 			)}
 
 			<FileDropOverlay isOver={fileDrop.isOver} />
-		</DragDropProvider>
+		</>
 	)
 }
 
 const MAX_ZOOM_TICK = 10
 const MIN_ZOOM_TICK = -10
 const ZOOM_COEFFICIENT = 1.2
-const ZOOM_CLAMP_MARGIN = 200
 
-function useViewportZoom() {
-	const [tick, setTick] = useState(0)
-	const scale = ZOOM_COEFFICIENT ** tick
-	return { scale, tick, setTick }
-}
-
-function Viewport({
-	children,
-	zoom,
-}: {
-	children: React.ReactNode
-	zoom: ReturnType<typeof useViewportZoom>
-}) {
+function useViewport() {
 	const [windowWidth, windowHeight] = useWindowSize()
 
-	const [offset, setOffset] = useReducer(
-		(current: Vec, update: (current: Vec) => Vec) => {
-			const newOffset = update(current)
+	function clampToWindow(offset: Vec, scale: number): Vec {
+		// clamp such that the corners don't go beyond the center of the window
+		return vec.clamp(
+			offset,
+			vec(
+				-SURFACE_WIDTH * scale + windowWidth / 2,
+				-SURFACE_HEIGHT * scale + windowHeight / 2,
+			),
+			vec(windowWidth / 2, windowHeight / 2),
+		)
+	}
 
-			// Keep viewport within bounds
-			return vec.clamp(
-				newOffset,
-				vec(
-					-SURFACE_WIDTH * zoom.scale + windowWidth - ZOOM_CLAMP_MARGIN,
-					-SURFACE_HEIGHT * zoom.scale + windowHeight - ZOOM_CLAMP_MARGIN,
-				),
-				vec(ZOOM_CLAMP_MARGIN),
-			)
-		},
-		vec.zero,
-	)
-
-	const viewportDrag = useDrag({
-		buttons: ["middle", "right"],
-		onEnd(state) {
-			setOffset((offset) => vec.add(offset, state.delta))
+	const [viewport, setViewport] = useLocalStorage({
+		key: "viewport",
+		schema: type({
+			offset: { x: "number", y: "number" },
+			zoom: "number",
+		}),
+		fallback: {
+			offset: vec.subtract(
+				vec(windowWidth / 2, windowHeight / 2),
+				vec(SURFACE_WIDTH / 2, SURFACE_HEIGHT / 2),
+			),
+			zoom: 0,
 		},
 	})
 
-	return (
-		<div
-			className="relative size-full touch-none overflow-clip"
-			onPointerDown={viewportDrag.handlePointerDown}
-			ref={(element) => {
-				if (!element) return
+	const drag = useDrag({
+		buttons: ["middle", "right"],
+		onEnd(state) {
+			setViewport((viewport) => ({
+				...viewport,
+				offset: clampToWindow(
+					vec.add(viewport.offset, state.delta),
+					ZOOM_COEFFICIENT ** viewport.zoom,
+				),
+			}))
+		},
+	})
 
-				const controller = new AbortController()
+	function ref(element: HTMLDivElement | null) {
+		if (!element) return
 
-				// use a direct event listener instead of onWheel so we can call preventDefault
-				window.addEventListener(
-					"wheel",
-					(event) => {
-						event.preventDefault()
+		const controller = new AbortController()
 
-						const delta = -Math.sign(event.deltaY)
-						if (delta === 0) return
+		// use a direct event listener instead of onWheel so we can call preventDefault
+		window.addEventListener(
+			"wheel",
+			(event) => {
+				event.preventDefault()
 
-						const newZoomTick = clamp(
-							zoom.tick + delta,
-							MIN_ZOOM_TICK,
-							MAX_ZOOM_TICK,
-						)
-						zoom.setTick(newZoomTick)
+				const delta = -Math.sign(event.deltaY)
+				if (delta === 0) return
 
-						// Adjust offset so that the point under the cursor stays in the same place
-						const newZoomScale = ZOOM_COEFFICIENT ** newZoomTick
-						const zoomFactor = newZoomScale / zoom.scale
-						const cursorPosition = vec(event.clientX, event.clientY)
+				setViewport((viewport) => {
+					const newZoomTick = clamp(
+						viewport.zoom + delta,
+						MIN_ZOOM_TICK,
+						MAX_ZOOM_TICK,
+					)
 
-						setOffset((offset) =>
+					// Adjust offset so that the point under the cursor stays in the same place
+					const currentScale = ZOOM_COEFFICIENT ** viewport.zoom
+					const newScale = ZOOM_COEFFICIENT ** newZoomTick
+					const zoomFactor = newScale / currentScale
+					const cursorPosition = vec(event.clientX, event.clientY)
+
+					return {
+						zoom: newZoomTick,
+						offset: clampToWindow(
 							vec
-								.with(offset)
+								.with(viewport.offset)
 								.subtract(cursorPosition)
 								.multiply(zoomFactor)
 								.add(cursorPosition)
 								.result(),
-						)
-					},
-					{ passive: false, signal: controller.signal },
-				)
+							newScale,
+						),
+					}
+				})
+			},
+			{ passive: false, signal: controller.signal },
+		)
 
-				return () => {
-					controller.abort()
-				}
-			}}
-		>
-			<div
-				className="absolute inset-0 origin-top-left transition-transform duration-150 ease-out data-dragging:duration-75"
-				data-dragging={viewportDrag.isDragging || undefined}
-				style={{
-					translate: vec.css.translate(vec.add(offset, viewportDrag.delta)),
-					scale: zoom.scale,
-				}}
-			>
-				{children}
-			</div>
-		</div>
-	)
+		return () => {
+			controller.abort()
+		}
+	}
+
+	return {
+		scale: ZOOM_COEFFICIENT ** viewport.zoom,
+		offset: clampToWindow(viewport.offset, ZOOM_COEFFICIENT ** viewport.zoom),
+		drag,
+		ref,
+	}
 }
 
 function useAssets() {
@@ -350,6 +347,7 @@ function useAssets() {
 					.with(basePosition)
 					.subtract(vec.divide(size, 2))
 					.add(index * GRID_SNAP)
+					.clamp(vec.zero, vec.subtract(SURFACE_SIZE, size))
 					.result()
 
 				setAssets((assets) => [
@@ -718,14 +716,8 @@ function HistoryPanelItem({
 }
 
 function useWindowSize(): readonly [number, number] {
-	const [width, setWidth] = useState(0)
-	const [height, setHeight] = useState(0)
-
-	// init from useEffect to support SSR
-	useEffect(() => {
-		setWidth(window.innerWidth)
-		setHeight(window.innerHeight)
-	}, [])
+	const [width, setWidth] = useState(window.innerWidth)
+	const [height, setHeight] = useState(window.innerHeight)
 
 	useEffect(() => {
 		const controller = new AbortController()
