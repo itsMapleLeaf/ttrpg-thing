@@ -2,7 +2,7 @@ import { type DragDropEvents, DragDropProvider } from "@dnd-kit/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { type } from "arktype"
 import { mapValues, sum } from "es-toolkit"
-import { Fragment, useState } from "react"
+import { Fragment, useId, useRef, useState } from "react"
 import { twMerge } from "tailwind-merge"
 import { useDrag } from "../hooks/useDrag.ts"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
@@ -29,6 +29,8 @@ export const Route = createFileRoute("/")({
 	component: RouteComponent,
 })
 
+const SURFACE_WIDTH = 5000
+const SURFACE_HEIGHT = 5000
 const GRID_SNAP = 20
 
 type Asset = {
@@ -42,6 +44,7 @@ type Asset = {
 function RouteComponent() {
 	const { assets, createAssetsFromFiles, updateAsset } = useAssets()
 	const assetSelection = useSelection(assets.map((a) => a.id))
+	const assetTileListElementId = useId()
 
 	const fileDrop = useWindowFileDrop((event) => {
 		createAssetsFromFiles(
@@ -50,19 +53,45 @@ function RouteComponent() {
 		)
 	})
 
+	// precompure asset rectangles once on drag start for performance
+	const assetElementRects = useRef<
+		{
+			id: string
+			rect: DOMRect
+		}[]
+	>([])
+
 	const areaSelect = useDrag({
 		buttons: ["left"],
+
+		onStart() {
+			assetElementRects.current = [
+				...document.querySelectorAll(
+					`#${assetTileListElementId} [data-asset-id]`,
+				),
+			].map((element) => ({
+				id: (element as HTMLElement).dataset.assetId as string,
+				rect: element.getBoundingClientRect(),
+			}))
+		},
+
 		onMove(state) {
-			const overlappedAssets = assets.filter((asset) => {
-				const corners = vec.corners(state.start, state.end)
-				return vec.intersects(
-					asset.position,
-					vec.add(asset.position, asset.size),
-					corners[0],
-					corners[1],
-				)
-			})
-			assetSelection.setSelectedItems(overlappedAssets.map((asset) => asset.id))
+			const [start, end] = vec.corners(state.start, state.end)
+
+			// find overlapping assets by checking element bounding boxes
+			const overlappedAssetElements = assetElementRects.current.filter(
+				({ rect }) =>
+					vec.intersects(
+						vec(rect.left, rect.top),
+						vec(rect.right, rect.bottom),
+						start,
+						end,
+					),
+			)
+
+			assetSelection.setSelectedItems(
+				overlappedAssetElements.map((entry) => entry.id),
+			)
 		},
 	})
 
@@ -86,7 +115,11 @@ function RouteComponent() {
 		onEnd() {
 			for (const id of assetSelection.items) {
 				updateAsset(id, (current) => ({
-					position: vec.add(current.position, assetDragDelta),
+					position: vec.clamp(
+						vec.add(current.position, assetDragDelta),
+						vec.zero,
+						vec(SURFACE_WIDTH, SURFACE_HEIGHT),
+					),
 				}))
 			}
 		},
@@ -118,37 +151,55 @@ function RouteComponent() {
 
 	return (
 		<DragDropProvider onDragEnd={handleDragEnd}>
-			<div
-				className="relative isolate h-dvh overflow-clip"
-				onPointerDown={(event) => {
-					if (event.button === 0 && event.target === event.currentTarget) {
-						assetSelection.clear()
-					}
-					areaSelect.handlePointerDown(event)
-				}}
-			>
-				{assets
-					.sort((a, b) => a.order - b.order)
-					.map((asset) => (
-						<AssetTile
-							key={asset.id}
-							url={asset.url}
-							position={getRenderedAssetPosition(asset)}
-							size={asset.size}
-							dragging={isDraggingAsset(asset.id)}
-							selected={assetSelection.has(asset.id)}
-							onPointerDown={(event) => {
-								if (event.button === 0) {
-									if (event.ctrlKey || event.shiftKey) {
-										assetSelection.toggleItemSelected(asset.id)
-									} else if (!assetSelection.has(asset.id)) {
-										assetSelection.setSelectedItems([asset.id])
+			<div className="h-dvh" onPointerDown={areaSelect.handlePointerDown}>
+				<Viewport>
+					<div
+						id={assetTileListElementId}
+						className="relative isolate size-full panel overflow-visible"
+						style={{ width: SURFACE_WIDTH, height: SURFACE_HEIGHT }}
+						onPointerDown={(event) => {
+							if (
+								event.button === 0 &&
+								event.target === event.currentTarget &&
+								!event.ctrlKey &&
+								!event.shiftKey
+							) {
+								assetSelection.clear()
+							}
+						}}
+					>
+						{assets
+							.sort((a, b) => a.order - b.order)
+							.map((asset) => (
+								<AssetTile
+									key={asset.id}
+									id={asset.id}
+									url={
+										asset.url
+										// uncomment this when we're using remote URLs
+										// getOptimizedImageUrl(
+										// 	asset.url,
+										// 	ceilToNearest(asset.size.x, 100),
+										// ).href
 									}
-								}
-								assetDrag.handlePointerDown(event)
-							}}
-						/>
-					))}
+									position={getRenderedAssetPosition(asset)}
+									size={asset.size}
+									dragging={isDraggingAsset(asset.id)}
+									selected={assetSelection.has(asset.id)}
+									onPointerDown={(event) => {
+										if (event.button === 0) {
+											if (event.ctrlKey || event.shiftKey) {
+												assetSelection.toggleItemSelected(asset.id)
+											} else if (!assetSelection.has(asset.id)) {
+												assetSelection.setSelectedItems([asset.id])
+											}
+										}
+										assetDrag.handlePointerDown(event)
+									}}
+								/>
+							))}
+					</div>
+				</Viewport>
 			</div>
 
 			{areaSelect.isDragging && (
@@ -167,6 +218,35 @@ function RouteComponent() {
 
 			<FileDropOverlay isOver={fileDrop.isOver} />
 		</DragDropProvider>
+	)
+}
+
+function Viewport({ children }: { children: React.ReactNode }) {
+	const [viewportOffset, setViewportOffset] = useState(vec.zero)
+
+	const viewportDrag = useDrag({
+		buttons: ["middle", "right"],
+		onEnd(state) {
+			setViewportOffset((offset) => vec.add(offset, state.delta))
+		},
+	})
+
+	return (
+		<div
+			className="relative size-full touch-none overflow-clip"
+			onPointerDown={viewportDrag.handlePointerDown}
+		>
+			<div
+				className="absolute inset-0"
+				style={{
+					translate: vec.css.translate(
+						vec.add(viewportOffset, viewportDrag.delta),
+					),
+				}}
+			>
+				{children}
+			</div>
+		</div>
 	)
 }
 
@@ -222,6 +302,7 @@ function useAssets() {
 }
 
 function AssetTile({
+	id,
 	position,
 	size,
 	url,
@@ -229,6 +310,7 @@ function AssetTile({
 	dragging,
 	onPointerDown,
 }: {
+	id: string
 	position: Vec
 	size: Vec
 	url: string
@@ -239,6 +321,7 @@ function AssetTile({
 	return (
 		<div
 			style={{ translate: vec.css.translate(position) }}
+			data-asset-id={id}
 			data-dragging={dragging}
 			className="absolute top-0 left-0 transition-transform duration-100 ease-out data-[dragging=true]:duration-25"
 			onPointerDown={onPointerDown}
