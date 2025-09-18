@@ -1,10 +1,16 @@
-import { DragDropProvider, useDraggable, useDroppable } from "@dnd-kit/react"
+import {
+	type DragDropEvents,
+	DragDropProvider,
+	useDraggable,
+	useDroppable,
+} from "@dnd-kit/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { type } from "arktype"
 import { mapValues, sum } from "es-toolkit"
-import { Fragment, useState } from "react"
+import { type ComponentProps, Fragment, useState } from "react"
 import { twMerge } from "tailwind-merge"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
+import { useWindowFileDrop } from "../hooks/useWindowFileDrop.ts"
 import {
 	type Card,
 	type CardCounts,
@@ -14,39 +20,166 @@ import {
 } from "../lib/cards.ts"
 import { DECK_SIZE, Player } from "../lib/player.ts"
 import type { NonEmptyArray } from "../lib/types.ts"
+import { type Vec, vec } from "../lib/vec.ts"
 import { Button } from "../ui/Button.tsx"
 import { EmptyState } from "../ui/EmptyState.tsx"
 import { Icon } from "../ui/Icon.tsx"
+import { Portal } from "../ui/Portal.tsx"
+import { useToastContext } from "../ui/Toast.tsx"
 import { WithTooltip } from "../ui/Tooltip.tsx"
 
 export const Route = createFileRoute("/")({
 	component: RouteComponent,
 })
 
+const GRID_SNAP = 20
+
+type Asset = {
+	id: string
+	url: string
+	position: Vec
+	size: Vec
+	order: number
+}
+
 function RouteComponent() {
-	const [isDropped, setIsDropped] = useState(false)
+	const { assets, createAssetsFromFiles, updateAsset } = useAssets()
+
+	const fileDrop = useWindowFileDrop((event) => {
+		createAssetsFromFiles(
+			vec(event.clientX, event.clientY),
+			event.dataTransfer?.files ?? [],
+		)
+	})
+
+	const handleDragEnd: DragDropEvents["dragend"] = (event) => {
+		if (event.canceled) return
+
+		const { source, position } = event.operation
+		if (source?.type === "asset") {
+			const delta = vec.subtract(position.current, position.initial)
+			updateAsset(String(source.id), (current) => ({
+				position: vec.add(current.position, delta),
+				order: Date.now(),
+			}))
+		}
+	}
+
 	return (
-		<DragDropProvider
-			onDragEnd={(event) => {
-				if (event.canceled) return
-				setIsDropped(event.operation.target?.id === "droppable")
-			}}
-		>
-			<div className="flex h-dvh gap-4 p-4">
-				<Droppable>{isDropped && <Draggable />}</Droppable>
-				{!isDropped && <Draggable />}
+		<DragDropProvider onDragEnd={handleDragEnd}>
+			<div className="relative isolate h-dvh overflow-clip">
+				{assets
+					.sort((a, b) => a.order - b.order)
+					.map((asset) => (
+						<AssetTile key={asset.id} asset={asset} />
+					))}
 			</div>
+			<FileDropOverlay isOver={fileDrop.isOver} />
 		</DragDropProvider>
 	)
 }
 
-function Draggable() {
-	const { ref } = useDraggable({ id: "draggable" })
+function useAssets() {
+	const toast = useToastContext()
+
+	const [assets, setAssets] = useState<Asset[]>([])
+
+	const createAssetsFromFiles = (basePosition: Vec, files: Iterable<File>) => {
+		const now = Date.now()
+		for (const [index, file] of [...files].entries()) {
+			try {
+				const id = crypto.randomUUID()
+				const url = URL.createObjectURL(file)
+				// const bitmap = await createImageBitmap(file)
+				const size = vec(500)
+
+				const position = vec
+					.with(basePosition)
+					.subtract(vec.divide(size, 2))
+					.add(index * GRID_SNAP)
+					.result()
+
+				setAssets((assets) => [
+					...assets,
+					{
+						id,
+						url,
+						position,
+						size,
+						order: now + index,
+					},
+				])
+			} catch (error) {
+				toast.error(`Failed to load image: ${(error as Error).message}`)
+			}
+		}
+	}
+
+	const updateAsset = (
+		id: string,
+		update: (current: Asset) => Partial<Asset>,
+	) => {
+		setAssets((assets) =>
+			assets.map((asset) => {
+				if (asset.id !== id) return asset
+				return { ...asset, ...update(asset) }
+			}),
+		)
+	}
+
+	return { assets, createAssetsFromFiles, updateAsset }
+}
+
+function AssetTile({ asset }: { asset: Asset }) {
 	return (
-		<div ref={ref} className="size-32 panel">
-			Drag me
-		</div>
+		<Draggable
+			key={asset.id}
+			draggableType="asset"
+			draggableId={asset.id}
+			className="group absolute top-0 left-0 transition-transform ease-out"
+			style={{
+				translate: vec.css.translate(vec.roundTo(asset.position, GRID_SNAP)),
+			}}
+		>
+			<div
+				className="panel opacity-100 transition group-aria-pressed:opacity-50 group-aria-pressed:drop-shadow-lg"
+				style={{
+					background: `url(${asset.url}) center / cover`,
+					...vec.asSize(asset.size),
+				}}
+			></div>
+		</Draggable>
 	)
+}
+
+function FileDropOverlay({ isOver }: { isOver: boolean }) {
+	return (
+		<Portal>
+			<div
+				className="pointer-events-none invisible fixed inset-0 flex-center bg-black/50 opacity-0 backdrop-blur transition-all transition-discrete data-[visible=true]:visible data-[visible=true]:opacity-100"
+				data-visible={isOver}
+			>
+				<p className="text-3xl font-light">Drop files to import assets</p>
+			</div>
+		</Portal>
+	)
+}
+
+function Draggable({
+	draggableType,
+	draggableId,
+	...props
+}: ComponentProps<"div"> & {
+	draggableId: string
+	draggableType: string
+}) {
+	const { ref } = useDraggable({
+		id: draggableId,
+		type: draggableType,
+		feedback: "move",
+	})
+
+	return <div {...props} ref={ref} /* className={twMerge(props.className)} */ />
 }
 
 function Droppable({ children }: { children: React.ReactNode }) {

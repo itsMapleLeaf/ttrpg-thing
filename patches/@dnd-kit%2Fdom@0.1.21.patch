@@ -1,0 +1,14 @@
+diff --git a/index.js b/index.js
+index c42129134fc872431c81763efbcb2bac4fe9d1ac..387c4d112d09c6226246623d23aff364d4a5528a 100644
+--- a/index.js
++++ b/index.js
+@@ -896,7 +896,8 @@ render_fn = function() {
+                 ]
+               }),
+               options: {
+-                duration: moved || feedbackElement !== element ? 250 : 0,
++                // duration: moved || feedbackElement !== element ? 250 : 0,
++                duration: 0,
+                 easing: "ease"
+               }
+             }).then(() => {
