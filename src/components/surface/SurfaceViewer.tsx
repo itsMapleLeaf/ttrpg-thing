@@ -1,363 +1,258 @@
-import { type } from "arktype"
-import { useMutation, useQuery } from "convex/react"
-import { sortBy } from "es-toolkit"
-import { useEffect, useRef, useState } from "react"
-import { twMerge } from "tailwind-merge"
-import { api } from "../../../convex/_generated/api"
-import type { Id } from "../../../convex/_generated/dataModel"
-import type { ClientSurface } from "../../../convex/surfaces.ts"
-import { type DerivedDragState, useDrag } from "../../hooks/useDrag.ts"
-import { useLocalStorage } from "../../hooks/useLocalStorage.ts"
+import { useEffect, useId, useRef, useState } from "react"
+import { useDrag } from "../../hooks/useDrag.ts"
 import { useSelection } from "../../hooks/useSelection.ts"
-import { type Vec, vec } from "../../lib/vec.ts"
+import { useWindowFileDrop } from "../../hooks/useWindowFileDrop.tsx"
+import { useWindowSize } from "../../hooks/useWindowSize.ts"
+import { vec } from "../../lib/vec.ts"
+import { Portal } from "../../ui/Portal.tsx"
 import { useToastContext } from "../../ui/Toast.tsx"
-import { SurfaceTile } from "./SurfaceTile.tsx"
-import { SurfaceToolbar, useToolbarState } from "./SurfaceToolbar.tsx"
+import { useAssetImportDialog } from "./assets.tsx"
+import {
+	ACCEPTED_FILE_TYPES,
+	GRID_SNAP,
+	SURFACE_HEIGHT,
+	SURFACE_WIDTH,
+} from "./constants.ts"
+import { SurfaceTile, type TileInstance, useTiles } from "./tiles.tsx"
+import { useViewport } from "./viewport.ts"
 
-const surfaceWidth = 1000
-const surfaceHeight = 1000
-
-export const SurfaceAssetDropData = type({
-	assetId: type.string.as<Id<"assets">>(),
-})
-
-export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
+export function SurfaceViewer() {
+	const { tiles, importAssetTiles, updateTile, removeTiles } = useTiles()
+	const assetSelection = useSelection(tiles.map((a) => a.id))
+	const assetTileListElementId = useId()
+	const viewport = useViewport()
 	const toast = useToastContext()
-	const toolbar = useToolbarState()
+	const [windowWidth, windowHeight] = useWindowSize()
 
-	const tiles = useQuery(api.tiles.list, { surfaceId: surface._id }) ?? []
-	const createTile = useMutation(api.tiles.create)
-	const tileSelection = useSelection(tiles.map((t) => t._id) ?? [])
-
-	const updateTiles = useMutation(api.tiles.updateMany).withOptimisticUpdate(
-		(store, args) => {
-			const patchesById = new Map(args.updates.map((it) => [it.id, it.patch]))
-			for (const query of store.getAllQueries(api.tiles.list)) {
-				store.setQuery(
-					api.tiles.list,
-					query.args,
-					query.value?.map((doc) => ({
-						...doc,
-						...patchesById.get(doc._id),
-					})),
-				)
-			}
-		},
-	)
-
-	const [viewportOffset, setViewportOffset] = useLocalStorage({
-		key: "SurfaceViewer:viewportOffset",
-		fallback: vec(50),
-		schema: type({ x: "number", y: "number" }),
+	const importDialog = useAssetImportDialog((preset, files) => {
+		importAssetTiles(
+			files,
+			vec
+				.with(vec(windowWidth / 2, windowHeight / 2))
+				.subtract(viewport.offset)
+				.multiply(1 / viewport.scale)
+				.result(),
+			preset.size,
+		)
 	})
 
-	const viewportDrag = useDrag({
-		buttons:
-			toolbar.selectedToolId === "select"
-				? ["middle", "right"]
-				: toolbar.selectedToolId === "pan"
-					? ["left", "middle", "right"]
-					: [],
-		onEnd: (state) => {
-			setViewportOffset((current) =>
-				vec.add(current, vec.subtract(state.end, state.start)),
+	const fileDrop = useWindowFileDrop((event) => {
+		const imageFiles = []
+		for (const item of event.dataTransfer?.items ?? []) {
+			const file = item.getAsFile()
+			if (!file) continue
+
+			if (!ACCEPTED_FILE_TYPES.has(item.type)) {
+				toast.error(`Unsupported file type: ${item.type}`)
+				continue
+			}
+
+			imageFiles.push(file)
+		}
+
+		if (imageFiles.length === 0) return
+
+		importDialog.show(imageFiles)
+	})
+
+	// precompute asset rectangles once on drag start for performance
+	const assetElementRects = useRef<{ id: string; rect: DOMRect }[]>([])
+
+	const areaSelect = useDrag({
+		buttons: ["left"],
+
+		onStart() {
+			assetElementRects.current = [
+				...document.querySelectorAll(
+					`#${assetTileListElementId} [data-asset-id]`,
+				),
+			].map((element) => ({
+				id: (element as HTMLElement).dataset.assetId as string,
+				rect: element.getBoundingClientRect(),
+			}))
+		},
+
+		onMove(state) {
+			const [start, end] = vec.corners(state.start, state.end)
+
+			// find overlapping assets by checking element bounding boxes
+			const overlappedAssetElements = assetElementRects.current.filter(
+				({ rect }) =>
+					vec.intersects(
+						vec(rect.left, rect.top),
+						vec(rect.right, rect.bottom),
+						start,
+						end,
+					),
+			)
+
+			assetSelection.setSelectedItems(
+				overlappedAssetElements.map((entry) => entry.id),
 			)
 		},
 	})
 
-	let renderedOffset = viewportOffset
-	if (viewportDrag.state.status === "dragging") {
-		renderedOffset = vec.add(
-			viewportOffset,
-			vec.subtract(viewportDrag.state.end, viewportDrag.state.start),
-		)
-	}
-	renderedOffset = vec.roundTo(renderedOffset, 1)
+	const [baseAssetDragDelta, setBaseAssetDragDelta] = useState(vec.zero)
+	const assetDragDelta = vec.multiply(baseAssetDragDelta, 1 / viewport.scale)
 
-	const surfacePanelRef = useRef<HTMLDivElement>(null)
-
-	// we only want to calculate this as-needed
-	// to avoid too many layout calcs from getBoundingClientRef
-	const surfaceOffsetRef = useRef<Vec>(vec(0))
-	function updateSurfaceOffset() {
-		const rect = surfacePanelRef.current?.getBoundingClientRect()
-		surfaceOffsetRef.current = vec(rect?.left ?? 0, rect?.top)
-	}
-
-	const [selectionArea, setSelectionArea] = useState<{ start: Vec; end: Vec }>()
-	function updateSelectionArea(state: DerivedDragState) {
-		const [start, end] = vec.corners(
-			vec.subtract(state.start, surfaceOffsetRef.current),
-			vec.subtract(state.end, surfaceOffsetRef.current),
-		)
-		setSelectionArea({ start, end })
-		return { start, end }
-	}
-
-	const areaSelectDrag = useDrag({
-		buttons: toolbar.selectedToolId === "select" ? ["left"] : [],
-		onStart: (state) => {
-			updateSurfaceOffset()
-			updateSelectionArea(state)
-		},
-		onMove: (state) => {
-			const area = updateSelectionArea(state)
-
-			const overlappingTiles = tiles.filter((tile) => {
-				const tileTopLeft = vec(tile.left, tile.top)
-
-				const tileBottomRight = vec.add(
-					tileTopLeft,
-					vec(tile.width, tile.height),
-				)
-
-				return vec.intersects(
-					area.start,
-					area.end,
-					tileTopLeft,
-					tileBottomRight,
-				)
-			})
-
-			tileSelection.setSelectedItems(overlappingTiles.map((it) => it._id))
-		},
-	})
-
-	const tileDrag = useDrag({
-		buttons: toolbar.selectedToolId === "select" ? ["left"] : [],
-		onEnd: (state) => {
-			const moved = vec.subtract(state.end, state.start)
+	const assetDrag = useDrag({
+		buttons: ["left"],
+		onStart() {
 			const now = Date.now()
-
-			updateTiles({
-				updates: orderedTiles
-					.filter((tile) => tileSelection.items.has(tile._id))
-					.flatMap((tile, index) => {
-						const newPosition = vec.roundTo(
-							vec.add(vec(tile.left, tile.top), moved),
-							20,
-						)
-
-						return {
-							id: tile._id,
-							patch: {
-								left: newPosition.x,
-								top: newPosition.y,
-								lastMovedAt: now,
-								order: index,
-							},
-						}
-					}),
-			}).catch((error) => {
-				toast.error(String(error))
-			})
+			for (const [index, id] of [...assetSelection.items].entries()) {
+				updateTile(id, (asset) => ({
+					// Bring selected assets to front
+					order: now + index,
+					// Snap to grid on drag start, so the ending position is also on grid
+					position: vec.roundTo(asset.position, GRID_SNAP),
+				}))
+			}
+		},
+		onMove(state) {
+			setBaseAssetDragDelta(state.delta)
+		},
+		onEnd() {
+			for (const id of assetSelection.items) {
+				updateTile(id, (asset) => ({
+					position: vec.clamp(
+						vec.add(asset.position, assetDragDelta),
+						vec.zero,
+						vec.subtract(vec(SURFACE_WIDTH, SURFACE_HEIGHT), asset.size),
+					),
+				}))
+			}
 		},
 	})
 
-	const orderedTiles = sortBy(tiles, [
-		// put bigger tiles at the back
-		(it) => -Math.max(it.width, it.height),
+	const isDraggingAsset = (assetId: string) =>
+		assetSelection.has(assetId) && assetDrag.isDragging
 
-		// make dragged tiles appear at front,
-		// to reflect where they'll get placed while they're being dragged
-		(it) =>
-			tileSelection.has(it._id) && tileDrag.state.status === "dragging" ? 1 : 0,
+	const getRenderedAssetPosition = (asset: TileInstance) => {
+		let position = vec.roundTo(asset.position, GRID_SNAP)
+		if (isDraggingAsset(asset.id)) {
+			position = vec.add(position, assetDragDelta)
+		}
+		return position
+	}
 
-		// sort by last moved, so newly moved tiles get placed on top
-		(it) => it.lastMovedAt ?? 0,
+	useEffect(() => {
+		const controller = new AbortController()
 
-		// manual order, which is set to
-		// preserve the order of several tiles moved at once,
-		// which would otherwise be clobbered when their `lastMovedAt`
-		// gets set to the value value
-		(it) => it.order ?? 0,
-	])
+		window.addEventListener(
+			"keydown",
+			(event) => {
+				const inputHasFocus =
+					document.activeElement?.tagName === "INPUT" ||
+					document.activeElement?.tagName === "TEXTAREA" ||
+					(document.activeElement as HTMLElement)?.isContentEditable
+				if (inputHasFocus) return
 
-	// map to indexes for later efficient use as z-indexes
-	// we use z-indexes instead of mapping over a sorted array
-	// because CSS transitions break when an item is re-ordered
-	// (even though it theoretically shouldn't with keys?? lol)
-	const tileOrder = new Map(
-		orderedTiles.map((tile, index) => [tile._id, index]),
-	)
+				if (event.key === "Delete" || event.key === "Backspace") {
+					if (assetSelection.items.size > 0) {
+						event.preventDefault()
+						removeTiles([...assetSelection.items])
+						assetSelection.clear()
+					}
+				}
+			},
+			{ signal: controller.signal },
+		)
+
+		return () => {
+			controller.abort()
+		}
+	}, [assetSelection, removeTiles])
 
 	return (
-		<div className="relative isolate h-full overflow-clip">
+		<>
 			<div
-				className="relative h-full touch-none"
-				onPointerDown={async (event) => {
-					if (toolbar.selectedToolId === "newLabel") {
-						updateSurfaceOffset()
-						toolbar.setSelectedToolId("select")
-						await createTile({
-							surfaceId: surface._id,
-							type: "label",
-							left: event.clientX - surfaceOffsetRef.current.x,
-							top: event.clientY - surfaceOffsetRef.current.y,
-							width: 200,
-							height: 50,
-							text: "Sample Text",
-						})
-						return
+				className="h-dvh touch-none"
+				onPointerDown={(event) => {
+					if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
+						assetSelection.clear()
 					}
-					viewportDrag.handlePointerDown(event)
-				}}
-				onDragEnter={(event) => {
-					event.preventDefault()
-					event.dataTransfer.dropEffect = "copy"
-				}}
-				onDragOver={(event) => {
-					event.preventDefault()
-				}}
-				onDrop={async (event) => {
-					try {
-						const DropDataFromJson =
-							type("string.json.parse").to(SurfaceAssetDropData)
-
-						const data = DropDataFromJson.assert(
-							event.dataTransfer.getData("application/json"),
-						)
-
-						const rect = event.currentTarget.getBoundingClientRect()
-
-						await createTile({
-							surfaceId: surface._id,
-							type: "image",
-							left: event.clientX - rect.left - viewportOffset.x - 50,
-							top: event.clientY - rect.top - viewportOffset.y - 50,
-							width: 100,
-							height: 100,
-							assetId: data.assetId,
-						})
-					} catch (error) {
-						toast.error(String(error))
-					}
+					areaSelect.handlePointerDown(event)
 				}}
 			>
 				<div
-					className="relative h-full touch-none"
-					onPointerDown={(event) => {
-						if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
-							tileSelection.clear()
-						}
-						areaSelectDrag.handlePointerDown(event)
-					}}
+					className="relative size-full touch-none overflow-clip"
+					onPointerDown={viewport.drag.handlePointerDown}
+					ref={viewport.ref}
 				>
 					<div
-						className="pointer-events-children absolute top-0 left-0 origin-top-left panel overflow-visible border-gray-700/50 bg-gray-900"
+						className="absolute inset-0 origin-top-left transition-transform duration-150 ease-out will-change-transform data-dragging:duration-75"
+						data-dragging={viewport.drag.isDragging || undefined}
 						style={{
-							width: surfaceWidth,
-							height: surfaceHeight,
-							translate: `${renderedOffset.x}px ${renderedOffset.y}px`,
+							translate: vec.css.translate(
+								vec.add(viewport.offset, viewport.drag.delta),
+							),
+							scale: viewport.scale,
 						}}
 					>
 						<div
-							className="relative isolate size-full touch-none"
-							ref={surfacePanelRef}
+							id={assetTileListElementId}
+							className="relative isolate size-full panel overflow-visible"
+							style={{
+								width: SURFACE_WIDTH,
+								height: SURFACE_HEIGHT,
+								// display a grid of dots
+								backgroundImage:
+									"radial-gradient(currentColor 1px, transparent 1px)",
+								backgroundSize: `${GRID_SNAP}px ${GRID_SNAP}px`,
+								color: "rgba(255, 255, 255, 0.1)",
+							}}
 						>
-							{tiles.map((tile) => {
-								const selected = tileSelection.has(tile._id)
-
-								const position = vec.add(
-									vec(tile.left, tile.top),
-									selected ? tileDrag.state.delta : vec(0),
-								)
-
-								return (
-									<div
-										key={tile._id}
-										style={{
-											zIndex: tileOrder.get(tile._id),
-											translate: `${Math.round(position.x)}px ${Math.round(position.y)}px`,
-										}}
-										className={twMerge(
-											"absolute touch-none transition ease-out",
-											selected && tileDrag.state.isDragging
-												? "opacity-75 duration-50"
-												: "",
-										)}
+							{tiles
+								.sort((a, b) => a.order - b.order)
+								.map((asset) => (
+									<SurfaceTile
+										key={asset.id}
+										id={asset.id}
+										imageUrl={
+											asset.imageUrl
+											// uncomment this when we're using remote URLs
+											// getOptimizedImageUrl(
+											// 	asset.url,
+											// 	ceilToNearest(asset.size.x, 100),
+											// ).href
+										}
+										position={getRenderedAssetPosition(asset)}
+										size={asset.size}
+										dragging={isDraggingAsset(asset.id)}
+										selected={assetSelection.has(asset.id)}
 										onPointerDown={(event) => {
-											tileDrag.handlePointerDown(event)
-
 											if (event.button === 0) {
 												if (event.ctrlKey || event.shiftKey) {
-													tileSelection.toggleItemSelected(tile._id)
-												} else if (!selected) {
-													tileSelection.setSelectedItems([tile._id])
+													assetSelection.toggleItemSelected(asset.id)
+												} else if (!assetSelection.has(asset.id)) {
+													assetSelection.setSelectedItems([asset.id])
 												}
 											}
+											assetDrag.handlePointerDown(event)
 										}}
-									>
-										<SurfaceTile tile={tile} selected={selected} />
-									</div>
-								)
-							})}
+									/>
+								))}
 						</div>
-
-						{selectionArea && areaSelectDrag.state.isDragging && (
-							<div
-								className="pointer-events-none absolute top-0 left-0 border border-primary-700 bg-primary-800/25"
-								style={{
-									translate: `${selectionArea.start.x}px ${selectionArea.start.y}px`,
-									width: selectionArea.end.x - selectionArea.start.x,
-									height: selectionArea.end.y - selectionArea.start.y,
-								}}
-							></div>
-						)}
 					</div>
 				</div>
 			</div>
 
-			{toolbar.selectedToolId === "newLabel" && <NewLabelPreview />}
+			{areaSelect.isDragging && (
+				<Portal>
+					<div
+						className="pointer-events-none fixed top-0 left-0 border border-primary-400 bg-primary-700/25"
+						style={{
+							translate: vec.css.translate(
+								vec.min(areaSelect.start, areaSelect.end),
+							),
+							...vec.asSize(vec.abs(areaSelect.delta)),
+						}}
+					></div>
+				</Portal>
+			)}
 
-			<div className="pointer-events-children absolute inset-x-0 bottom-0 flex-center p-2 opacity-75 transition-opacity hover:opacity-100">
-				<SurfaceToolbar {...toolbar} />
-			</div>
-		</div>
+			{fileDrop.overlayElement}
+			{importDialog.element}
+		</>
 	)
-}
-
-function NewLabelPreview() {
-	const cursor = useCursor()
-	return (
-		<div
-			className="pointer-events-none fixed top-0 left-0"
-			style={{
-				translate: `${cursor.x}px ${cursor.y}px`,
-			}}
-		>
-			<SurfaceTile
-				tile={{
-					type: "label",
-					width: 200,
-					height: 50,
-					text: "Sample Text",
-					assetUrl: undefined,
-				}}
-				selected={false}
-			/>
-		</div>
-	)
-}
-
-function useCursor() {
-	const [cursor, setCursor] = useState(vec.zero)
-
-	useWindowEvent("mousemove", (event) => {
-		setCursor(vec(event.clientX, event.clientY))
-	})
-
-	return cursor
-}
-
-function useWindowEvent<T extends keyof WindowEventMap>(
-	eventName: T,
-	handler: (event: WindowEventMap[T]) => void,
-) {
-	useEffect(() => {
-		window.addEventListener(eventName, handler)
-		return () => {
-			window.removeEventListener(eventName, handler)
-		}
-	}, [eventName, handler])
 }

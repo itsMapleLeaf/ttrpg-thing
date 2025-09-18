@@ -5,7 +5,7 @@ import type { ClientAsset } from "../../convex/assets.ts"
 import { getOptimizedImageUrl } from "../lib/helpers.ts"
 import { SmartImage } from "../ui/SmartImage.tsx"
 import { WithTooltip } from "../ui/Tooltip.tsx"
-import type { SurfaceAssetDropData } from "./surface/SurfaceViewer.tsx"
+import type { SurfaceAssetDropData } from "./surface.old/SurfaceViewer.tsx"
 
 export function AssetCard({
 	asset,
