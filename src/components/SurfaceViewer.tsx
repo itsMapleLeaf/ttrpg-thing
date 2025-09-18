@@ -1,12 +1,15 @@
+import { Dialog } from "@base-ui-components/react"
 import { type } from "arktype"
 import { clamp } from "es-toolkit"
 import { useId, useRef, useState } from "react"
+import { twMerge } from "tailwind-merge"
 import { useDrag } from "../hooks/useDrag.ts"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
 import { useSelection } from "../hooks/useSelection.ts"
 import { useWindowFileDrop } from "../hooks/useWindowFileDrop.tsx"
 import { useWindowSize } from "../hooks/useWindowSize.ts"
 import { type Vec, vec } from "../lib/vec.ts"
+import { Button } from "../ui/Button.tsx"
 import { Portal } from "../ui/Portal.tsx"
 import { useToastContext } from "../ui/Toast.tsx"
 
@@ -20,17 +23,38 @@ export function SurfaceViewer() {
 	const assetSelection = useSelection(assets.map((a) => a.id))
 	const assetTileListElementId = useId()
 	const viewport = useViewport()
+	const toast = useToastContext()
+	const [windowWidth, windowHeight] = useWindowSize()
+
+	const importDialog = useImportDialog((preset, files) => {
+		importAssets(
+			files,
+			vec
+				.with(vec(windowWidth / 2, windowHeight / 2))
+				.subtract(viewport.offset)
+				.multiply(1 / viewport.scale)
+				.result(),
+			preset.size,
+		)
+	})
 
 	const fileDrop = useWindowFileDrop((event) => {
-		if (!event.dataTransfer) return
-		importAssets(
-			vec
-				.with(event.clientX, event.clientY)
-				.subtract(viewport.offset)
-				.divide(viewport.scale)
-				.result(),
-			event.dataTransfer,
-		)
+		const imageFiles = []
+		for (const item of event.dataTransfer?.items ?? []) {
+			const file = item.getAsFile()
+			if (!file) continue
+
+			if (!ACCEPTED_FILE_TYPES.has(item.type)) {
+				toast.error(`Unsupported file type: ${item.type}`)
+				continue
+			}
+
+			imageFiles.push(file)
+		}
+
+		if (imageFiles.length === 0) return
+
+		importDialog.show(imageFiles)
 	})
 
 	// precompute asset rectangles once on drag start for performance
@@ -202,8 +226,85 @@ export function SurfaceViewer() {
 			)}
 
 			{fileDrop.overlayElement}
+			{importDialog.element}
 		</>
 	)
+}
+
+type AssetImportPreset = (typeof IMPORT_PRESETS)[number]
+const IMPORT_PRESETS = [
+	{ name: "Tile", size: vec(100, 100) },
+	{ name: "Map", size: vec(1000, 1000) },
+	{ name: "Portrait", size: vec(400, 600) },
+	{ name: "Scene", size: vec(1600, 900) },
+]
+
+function useImportDialog(
+	onSubmit: (preset: AssetImportPreset, files: File[]) => void,
+) {
+	const [visible, setVisible] = useState(false)
+	const [files, setFiles] = useState<File[]>([])
+
+	const element = (
+		<Dialog.Root open={visible}>
+			<Dialog.Portal>
+				<Dialog.Backdrop className="fixed inset-0 bg-black/50 transition data-ending-style:opacity-0 data-starting-style:opacity-0" />
+				<Dialog.Popup className="fixed inset-0 flex-center flex-col gap-8 overflow-y-auto text-center">
+					<Dialog.Title className="text-2xl font-light">
+						Choose a preset
+					</Dialog.Title>
+
+					<div className="flex flex-wrap items-center gap-8">
+						{/* <button type="button" className="flex flex-col gap-2">
+							<div className="aspect-[1/1] panel">
+								<p>100x100</p>
+							</div>
+							<p>Tile</p>
+						</button> */}
+
+						{IMPORT_PRESETS.map((preset) => (
+							<button
+								key={preset.name}
+								type="button"
+								className="flex flex-col gap-2 rounded p-2 opacity-75 transition hover:bg-white/10 hover:opacity-100"
+								onClick={() => {
+									onSubmit(preset, files)
+									setVisible(false)
+								}}
+							>
+								<div className="flex-center size-48">
+									<div
+										className={twMerge(
+											"flex-center panel text-gray-500",
+											preset.size.x > preset.size.y ? "w-full" : "h-full",
+										)}
+										style={{
+											aspectRatio: `${preset.size.x}/${preset.size.y}`,
+										}}
+									>
+										{preset.size.x}x{preset.size.y}
+									</div>
+								</div>
+								<p>{preset.name}</p>
+							</button>
+						))}
+					</div>
+
+					<Button icon="mingcute:close-fill" onClick={() => setVisible(false)}>
+						Cancel
+					</Button>
+				</Dialog.Popup>
+			</Dialog.Portal>
+		</Dialog.Root>
+	)
+
+	return {
+		element,
+		show: (files: File[]) => {
+			setFiles(files)
+			setVisible(true)
+		},
+	}
 }
 
 function SurfaceTile({
@@ -373,23 +474,14 @@ function useTiles() {
 
 	const [assets, setAssets] = useState<TileDoc[]>([])
 
-	const importAssets = (basePosition: Vec, dataTransfer: DataTransfer) => {
+	const importAssets = (files: File[], basePosition: Vec, size: Vec) => {
 		const now = Date.now()
 
-		for (const [index, item] of [...dataTransfer.items].entries()) {
-			const file = item.getAsFile()
-			if (!file) continue
-
-			if (!ACCEPTED_FILE_TYPES.has(item.type)) {
-				toast.error(`Unsupported file type: ${item.type}`)
-				continue
-			}
-
+		for (const [index, file] of files.entries()) {
 			try {
 				const id = crypto.randomUUID()
 				const url = URL.createObjectURL(file)
 				// const bitmap = await createImageBitmap(file)
-				const size = vec(500)
 
 				const position = vec
 					.with(basePosition)
