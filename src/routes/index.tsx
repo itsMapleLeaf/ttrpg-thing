@@ -2,7 +2,7 @@ import { type DragDropEvents, DragDropProvider } from "@dnd-kit/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { type } from "arktype"
 import { clamp, mapValues, sum } from "es-toolkit"
-import { Fragment, useId, useRef, useState } from "react"
+import { Fragment, useEffect, useId, useReducer, useRef, useState } from "react"
 import { twMerge } from "tailwind-merge"
 import { useDrag } from "../hooks/useDrag.ts"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
@@ -230,6 +230,7 @@ function RouteComponent() {
 const MAX_ZOOM_TICK = 10
 const MIN_ZOOM_TICK = -10
 const ZOOM_COEFFICIENT = 1.2
+const ZOOM_CLAMP_MARGIN = 200
 
 function useViewportZoom() {
 	const [tick, setTick] = useState(0)
@@ -244,31 +245,24 @@ function Viewport({
 	children: React.ReactNode
 	zoom: ReturnType<typeof useViewportZoom>
 }) {
-	const [offset, setOffset] = useState(vec.zero)
+	const [windowWidth, windowHeight] = useWindowSize()
 
-	const handleWheel = (event: React.WheelEvent) => {
-		event.preventDefault()
+	const [offset, setOffset] = useReducer(
+		(current: Vec, update: (current: Vec) => Vec) => {
+			const newOffset = update(current)
 
-		const delta = -Math.sign(event.deltaY)
-		if (delta === 0) return
-
-		const newZoomTick = clamp(zoom.tick + delta, MIN_ZOOM_TICK, MAX_ZOOM_TICK)
-		zoom.setTick(newZoomTick)
-
-		// Adjust offset so that the point under the cursor stays in the same place
-		const newZoomScale = ZOOM_COEFFICIENT ** newZoomTick
-		const zoomFactor = newZoomScale / zoom.scale
-		const cursorPosition = vec(event.clientX, event.clientY)
-
-		setOffset(
-			vec
-				.with(offset)
-				.subtract(cursorPosition)
-				.multiply(zoomFactor)
-				.add(cursorPosition)
-				.result(),
-		)
-	}
+			// Keep viewport within bounds
+			return vec.clamp(
+				newOffset,
+				vec(
+					-SURFACE_WIDTH * zoom.scale + windowWidth - ZOOM_CLAMP_MARGIN,
+					-SURFACE_HEIGHT * zoom.scale + windowHeight - ZOOM_CLAMP_MARGIN,
+				),
+				vec(ZOOM_CLAMP_MARGIN),
+			)
+		},
+		vec.zero,
+	)
 
 	const viewportDrag = useDrag({
 		buttons: ["middle", "right"],
@@ -281,10 +275,52 @@ function Viewport({
 		<div
 			className="relative size-full touch-none overflow-clip"
 			onPointerDown={viewportDrag.handlePointerDown}
-			onWheel={handleWheel}
+			ref={(element) => {
+				if (!element) return
+
+				const controller = new AbortController()
+
+				// use a direct event listener instead of onWheel so we can call preventDefault
+				window.addEventListener(
+					"wheel",
+					(event) => {
+						event.preventDefault()
+
+						const delta = -Math.sign(event.deltaY)
+						if (delta === 0) return
+
+						const newZoomTick = clamp(
+							zoom.tick + delta,
+							MIN_ZOOM_TICK,
+							MAX_ZOOM_TICK,
+						)
+						zoom.setTick(newZoomTick)
+
+						// Adjust offset so that the point under the cursor stays in the same place
+						const newZoomScale = ZOOM_COEFFICIENT ** newZoomTick
+						const zoomFactor = newZoomScale / zoom.scale
+						const cursorPosition = vec(event.clientX, event.clientY)
+
+						setOffset((offset) =>
+							vec
+								.with(offset)
+								.subtract(cursorPosition)
+								.multiply(zoomFactor)
+								.add(cursorPosition)
+								.result(),
+						)
+					},
+					{ passive: false, signal: controller.signal },
+				)
+
+				return () => {
+					controller.abort()
+				}
+			}}
 		>
 			<div
-				className="absolute inset-0 origin-top-left transition-transform duration-100 ease-out will-change-transform"
+				className="absolute inset-0 origin-top-left transition-transform duration-150 ease-out data-dragging:duration-75"
+				data-dragging={viewportDrag.isDragging || undefined}
 				style={{
 					translate: vec.css.translate(vec.add(offset, viewportDrag.delta)),
 					scale: zoom.scale,
@@ -679,4 +715,34 @@ function HistoryPanelItem({
 			</button>
 		</li>
 	)
+}
+
+function useWindowSize(): readonly [number, number] {
+	const [width, setWidth] = useState(0)
+	const [height, setHeight] = useState(0)
+
+	// init from useEffect to support SSR
+	useEffect(() => {
+		setWidth(window.innerWidth)
+		setHeight(window.innerHeight)
+	}, [])
+
+	useEffect(() => {
+		const controller = new AbortController()
+
+		window.addEventListener(
+			"resize",
+			() => {
+				setWidth(window.innerWidth)
+				setHeight(window.innerHeight)
+			},
+			{ signal: controller.signal },
+		)
+
+		return () => {
+			controller.abort()
+		}
+	}, [])
+
+	return [width, height] as const
 }
