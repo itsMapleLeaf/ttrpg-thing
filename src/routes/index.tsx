@@ -29,8 +29,8 @@ export const Route = createFileRoute("/")({
 	component: RouteComponent,
 })
 
-const SURFACE_WIDTH = 5000
-const SURFACE_HEIGHT = 5000
+const SURFACE_WIDTH = 1600 * 4
+const SURFACE_HEIGHT = 900 * 4
 const GRID_SNAP = 20
 
 type Asset = {
