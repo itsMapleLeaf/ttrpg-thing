@@ -8,162 +8,39 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createServerRootRoute } from "@tanstack/react-start/server"
-
 import { Route as rootRouteImport } from "./routes/__root"
-import { Route as DsRouteImport } from "./routes/ds"
-import { Route as ProtectedRouteImport } from "./routes/_protected"
 import { Route as IndexRouteImport } from "./routes/index"
-import { Route as DemoCardsRouteImport } from "./routes/demo.cards"
-import { Route as ProtectedAccountRouteImport } from "./routes/_protected/account"
-import { Route as ProtectedRoomsNewRouteImport } from "./routes/_protected/rooms.new"
-import { Route as ProtectedRoomsSlugRouteImport } from "./routes/_protected/rooms.$slug"
-import { ServerRoute as FaviconDotsvgServerRouteImport } from "./routes/favicon[.]svg"
-import { ServerRoute as ApiImagesOptimizeServerRouteImport } from "./routes/api/images.optimize"
 
-const rootServerRouteImport = createServerRootRoute()
-
-const DsRoute = DsRouteImport.update({
-  id: "/ds",
-  path: "/ds",
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProtectedRoute = ProtectedRouteImport.update({
-  id: "/_protected",
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoCardsRoute = DemoCardsRouteImport.update({
-  id: "/demo/cards",
-  path: "/demo/cards",
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
-  id: "/account",
-  path: "/account",
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedRoomsNewRoute = ProtectedRoomsNewRouteImport.update({
-  id: "/rooms/new",
-  path: "/rooms/new",
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedRoomsSlugRoute = ProtectedRoomsSlugRouteImport.update({
-  id: "/rooms/$slug",
-  path: "/rooms/$slug",
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const FaviconDotsvgServerRoute = FaviconDotsvgServerRouteImport.update({
-  id: "/favicon.svg",
-  path: "/favicon.svg",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiImagesOptimizeServerRoute = ApiImagesOptimizeServerRouteImport.update({
-  id: "/api/images/optimize",
-  path: "/api/images/optimize",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
-  "/ds": typeof DsRoute
-  "/account": typeof ProtectedAccountRoute
-  "/demo/cards": typeof DemoCardsRoute
-  "/rooms/$slug": typeof ProtectedRoomsSlugRoute
-  "/rooms/new": typeof ProtectedRoomsNewRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
-  "/ds": typeof DsRoute
-  "/account": typeof ProtectedAccountRoute
-  "/demo/cards": typeof DemoCardsRoute
-  "/rooms/$slug": typeof ProtectedRoomsSlugRoute
-  "/rooms/new": typeof ProtectedRoomsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
-  "/_protected": typeof ProtectedRouteWithChildren
-  "/ds": typeof DsRoute
-  "/_protected/account": typeof ProtectedAccountRoute
-  "/demo/cards": typeof DemoCardsRoute
-  "/_protected/rooms/$slug": typeof ProtectedRoomsSlugRoute
-  "/_protected/rooms/new": typeof ProtectedRoomsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | "/"
-    | "/ds"
-    | "/account"
-    | "/demo/cards"
-    | "/rooms/$slug"
-    | "/rooms/new"
+  fullPaths: "/"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/ds" | "/account" | "/demo/cards" | "/rooms/$slug" | "/rooms/new"
-  id:
-    | "__root__"
-    | "/"
-    | "/_protected"
-    | "/ds"
-    | "/_protected/account"
-    | "/demo/cards"
-    | "/_protected/rooms/$slug"
-    | "/_protected/rooms/new"
+  to: "/"
+  id: "__root__" | "/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ProtectedRoute: typeof ProtectedRouteWithChildren
-  DsRoute: typeof DsRoute
-  DemoCardsRoute: typeof DemoCardsRoute
-}
-export interface FileServerRoutesByFullPath {
-  "/favicon.svg": typeof FaviconDotsvgServerRoute
-  "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
-}
-export interface FileServerRoutesByTo {
-  "/favicon.svg": typeof FaviconDotsvgServerRoute
-  "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
-}
-export interface FileServerRoutesById {
-  __root__: typeof rootServerRouteImport
-  "/favicon.svg": typeof FaviconDotsvgServerRoute
-  "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
-}
-export interface FileServerRouteTypes {
-  fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: "/favicon.svg" | "/api/images/optimize"
-  fileServerRoutesByTo: FileServerRoutesByTo
-  to: "/favicon.svg" | "/api/images/optimize"
-  id: "__root__" | "/favicon.svg" | "/api/images/optimize"
-  fileServerRoutesById: FileServerRoutesById
-}
-export interface RootServerRouteChildren {
-  FaviconDotsvgServerRoute: typeof FaviconDotsvgServerRoute
-  ApiImagesOptimizeServerRoute: typeof ApiImagesOptimizeServerRoute
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    "/ds": {
-      id: "/ds"
-      path: "/ds"
-      fullPath: "/ds"
-      preLoaderRoute: typeof DsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    "/_protected": {
-      id: "/_protected"
-      path: ""
-      fullPath: ""
-      preLoaderRoute: typeof ProtectedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     "/": {
       id: "/"
       path: "/"
@@ -171,84 +48,12 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    "/demo/cards": {
-      id: "/demo/cards"
-      path: "/demo/cards"
-      fullPath: "/demo/cards"
-      preLoaderRoute: typeof DemoCardsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    "/_protected/account": {
-      id: "/_protected/account"
-      path: "/account"
-      fullPath: "/account"
-      preLoaderRoute: typeof ProtectedAccountRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
-    "/_protected/rooms/new": {
-      id: "/_protected/rooms/new"
-      path: "/rooms/new"
-      fullPath: "/rooms/new"
-      preLoaderRoute: typeof ProtectedRoomsNewRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
-    "/_protected/rooms/$slug": {
-      id: "/_protected/rooms/$slug"
-      path: "/rooms/$slug"
-      fullPath: "/rooms/$slug"
-      preLoaderRoute: typeof ProtectedRoomsSlugRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
   }
 }
-declare module "@tanstack/react-start/server" {
-  interface ServerFileRoutesByPath {
-    "/favicon.svg": {
-      id: "/favicon.svg"
-      path: "/favicon.svg"
-      fullPath: "/favicon.svg"
-      preLoaderRoute: typeof FaviconDotsvgServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/images/optimize": {
-      id: "/api/images/optimize"
-      path: "/api/images/optimize"
-      fullPath: "/api/images/optimize"
-      preLoaderRoute: typeof ApiImagesOptimizeServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-  }
-}
-
-interface ProtectedRouteChildren {
-  ProtectedAccountRoute: typeof ProtectedAccountRoute
-  ProtectedRoomsSlugRoute: typeof ProtectedRoomsSlugRoute
-  ProtectedRoomsNewRoute: typeof ProtectedRoomsNewRoute
-}
-
-const ProtectedRouteChildren: ProtectedRouteChildren = {
-  ProtectedAccountRoute: ProtectedAccountRoute,
-  ProtectedRoomsSlugRoute: ProtectedRoomsSlugRoute,
-  ProtectedRoomsNewRoute: ProtectedRoomsNewRoute,
-}
-
-const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
-  ProtectedRouteChildren,
-)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ProtectedRoute: ProtectedRouteWithChildren,
-  DsRoute: DsRoute,
-  DemoCardsRoute: DemoCardsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-const rootServerRouteChildren: RootServerRouteChildren = {
-  FaviconDotsvgServerRoute: FaviconDotsvgServerRoute,
-  ApiImagesOptimizeServerRoute: ApiImagesOptimizeServerRoute,
-}
-export const serverRouteTree = rootServerRouteImport
-  ._addFileChildren(rootServerRouteChildren)
-  ._addFileTypes<FileServerRouteTypes>()
