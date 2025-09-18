@@ -42,19 +42,20 @@ type Asset = {
 }
 
 function RouteComponent() {
-	const { assets, createAssetsFromFiles, updateAsset } = useAssets()
+	const { assets, importAssets, updateAsset } = useAssets()
 	const assetSelection = useSelection(assets.map((a) => a.id))
 	const assetTileListElementId = useId()
 	const viewport = useViewport()
 
 	const fileDrop = useWindowFileDrop((event) => {
-		createAssetsFromFiles(
+		if (!event.dataTransfer) return
+		importAssets(
 			vec
 				.with(event.clientX, event.clientY)
 				.subtract(viewport.offset)
 				.divide(viewport.scale)
 				.result(),
-			event.dataTransfer?.files ?? [],
+			event.dataTransfer,
 		)
 	})
 
@@ -335,14 +336,30 @@ function useViewport() {
 	}
 }
 
+const ACCEPTED_FILE_TYPES = new Set([
+	"image/png",
+	"image/jpeg",
+	"image/webp",
+	"image/svg+xml",
+])
+
 function useAssets() {
 	const toast = useToastContext()
 
 	const [assets, setAssets] = useState<Asset[]>([])
 
-	const createAssetsFromFiles = (basePosition: Vec, files: Iterable<File>) => {
+	const importAssets = (basePosition: Vec, dataTransfer: DataTransfer) => {
 		const now = Date.now()
-		for (const [index, file] of [...files].entries()) {
+
+		for (const [index, item] of [...dataTransfer.items].entries()) {
+			const file = item.getAsFile()
+			if (!file) continue
+
+			if (!ACCEPTED_FILE_TYPES.has(item.type)) {
+				toast.error(`Unsupported file type: ${item.type}`)
+				continue
+			}
+
 			try {
 				const id = crypto.randomUUID()
 				const url = URL.createObjectURL(file)
@@ -384,7 +401,7 @@ function useAssets() {
 		)
 	}
 
-	return { assets, createAssetsFromFiles, updateAsset }
+	return { assets, importAssets, updateAsset }
 }
 
 function AssetTile({
