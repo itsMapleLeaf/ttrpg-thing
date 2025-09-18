@@ -140,7 +140,15 @@ function RouteComponent() {
 
 	return (
 		<>
-			<div className="h-dvh" onPointerDown={areaSelect.handlePointerDown}>
+			<div
+				className="h-dvh touch-none"
+				onPointerDown={(event) => {
+					if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
+						assetSelection.clear()
+					}
+					areaSelect.handlePointerDown(event)
+				}}
+			>
 				<div
 					className="relative size-full touch-none overflow-clip"
 					onPointerDown={viewport.drag.handlePointerDown}
