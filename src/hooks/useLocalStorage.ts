@@ -25,10 +25,28 @@ export function useLocalStorage<T>({
 		}
 	})
 
+	return useLocalStorageEffect({
+		key,
+		schema,
+		state: [state, setState] as const,
+	})
+}
+
+export type UseLocalStorageWrapperOptions<T> = {
+	key: string
+	schema: Type<T>
+	state: readonly [T, (action: (value: T) => T) => void]
+}
+
+export function useLocalStorageEffect<T>({
+	key,
+	schema,
+	state: [state, setState],
+}: UseLocalStorageWrapperOptions<T>) {
 	const setValue = (action: SetStateAction<T>) => {
 		try {
 			const value = action instanceof Function ? action(state) : action
-			setState(value)
+			setState(() => value)
 			window.localStorage.setItem(key, JSON.stringify(value))
 		} catch (error) {
 			console.warn(`Error setting localStorage key "${key}":`, error)
@@ -45,7 +63,7 @@ export function useLocalStorage<T>({
 					try {
 						const parsed = JSON.parse(event.newValue)
 						const validated = schema.assert(parsed) as T
-						setState(validated)
+						setState(() => validated)
 					} catch (error) {
 						console.warn(
 							`Error parsing localStorage key "${key}" from storage event:`,
@@ -58,7 +76,7 @@ export function useLocalStorage<T>({
 		)
 
 		return () => controller.abort()
-	}, [key, schema])
+	}, [key, schema, setState])
 
 	return [state, setValue] as const
 }
