@@ -159,16 +159,14 @@ function RouteComponent() {
 						<div
 							id={assetTileListElementId}
 							className="relative isolate size-full panel overflow-visible"
-							style={{ width: SURFACE_WIDTH, height: SURFACE_HEIGHT }}
-							onPointerDown={(event) => {
-								if (
-									event.button === 0 &&
-									event.target === event.currentTarget &&
-									!event.ctrlKey &&
-									!event.shiftKey
-								) {
-									assetSelection.clear()
-								}
+							style={{
+								width: SURFACE_WIDTH,
+								height: SURFACE_HEIGHT,
+								// display a grid of dots
+								backgroundImage:
+									"radial-gradient(currentColor 1px, transparent 1px)",
+								backgroundSize: `${GRID_SNAP}px ${GRID_SNAP}px`,
+								color: "rgba(255, 255, 255, 0.1)",
 							}}
 						>
 							{assets
