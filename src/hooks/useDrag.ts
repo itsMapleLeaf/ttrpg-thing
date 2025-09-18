@@ -124,6 +124,7 @@ export function useDrag(args: {
 	}
 
 	return {
+		...getDerivedDragState(state),
 		state: getDerivedDragState(state),
 		handlePointerDown,
 	}

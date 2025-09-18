@@ -1,15 +1,12 @@
-import {
-	type DragDropEvents,
-	DragDropProvider,
-	useDraggable,
-	useDroppable,
-} from "@dnd-kit/react"
+import { type DragDropEvents, DragDropProvider } from "@dnd-kit/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { type } from "arktype"
 import { mapValues, sum } from "es-toolkit"
-import { type ComponentProps, Fragment, useState } from "react"
+import { Fragment, useState } from "react"
 import { twMerge } from "tailwind-merge"
+import { useDrag } from "../hooks/useDrag.ts"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
+import { useSelection } from "../hooks/useSelection.ts"
 import { useWindowFileDrop } from "../hooks/useWindowFileDrop.ts"
 import {
 	type Card,
@@ -44,12 +41,55 @@ type Asset = {
 
 function RouteComponent() {
 	const { assets, createAssetsFromFiles, updateAsset } = useAssets()
+	const assetSelection = useSelection(assets.map((a) => a.id))
 
 	const fileDrop = useWindowFileDrop((event) => {
 		createAssetsFromFiles(
 			vec(event.clientX, event.clientY),
 			event.dataTransfer?.files ?? [],
 		)
+	})
+
+	const areaSelect = useDrag({
+		buttons: ["left"],
+		onMove(state) {
+			const overlappedAssets = assets.filter((asset) => {
+				const corners = vec.corners(state.start, state.end)
+				return vec.intersects(
+					asset.position,
+					vec.add(asset.position, asset.size),
+					corners[0],
+					corners[1],
+				)
+			})
+			assetSelection.setSelectedItems(overlappedAssets.map((asset) => asset.id))
+		},
+	})
+
+	const [assetDragDelta, setAssetDragDelta] = useState(vec.zero)
+	const assetDrag = useDrag({
+		buttons: ["left"],
+		onStart() {
+			const now = Date.now()
+			for (const [index, id] of [...assetSelection.items].entries()) {
+				updateAsset(id, (asset) => ({
+					// Bring selected assets to front
+					order: now + index,
+					// Snap to grid on drag start, so the ending position is also on grid
+					position: vec.roundTo(asset.position, GRID_SNAP),
+				}))
+			}
+		},
+		onMove(state) {
+			setAssetDragDelta(state.delta)
+		},
+		onEnd() {
+			for (const id of assetSelection.items) {
+				updateAsset(id, (current) => ({
+					position: vec.add(current.position, assetDragDelta),
+				}))
+			}
+		},
 	})
 
 	const handleDragEnd: DragDropEvents["dragend"] = (event) => {
@@ -67,13 +107,68 @@ function RouteComponent() {
 
 	return (
 		<DragDropProvider onDragEnd={handleDragEnd}>
-			<div className="relative isolate h-dvh overflow-clip">
+			<div
+				className="relative isolate h-dvh overflow-clip"
+				onPointerDown={(event) => {
+					if (event.button === 0 && event.target === event.currentTarget) {
+						assetSelection.clear()
+					}
+					areaSelect.handlePointerDown(event)
+				}}
+			>
 				{assets
 					.sort((a, b) => a.order - b.order)
 					.map((asset) => (
-						<AssetTile key={asset.id} asset={asset} />
+						<div
+							key={asset.id}
+							style={{
+								translate: vec.css.translate(
+									vec.add(
+										vec.roundTo(asset.position, GRID_SNAP),
+										assetSelection.has(asset.id) && assetDrag.isDragging
+											? assetDragDelta
+											: vec.zero,
+									),
+								),
+								zIndex: asset.order,
+							}}
+							data-dragging={
+								assetSelection.has(asset.id) && assetDrag.isDragging
+							}
+							className="absolute top-0 left-0 transition-transform duration-100 ease-out data-[dragging=true]:duration-25"
+							onPointerDown={(event) => {
+								if (event.button === 0) {
+									if (event.ctrlKey || event.shiftKey) {
+										assetSelection.toggleItemSelected(asset.id)
+									} else if (!assetSelection.has(asset.id)) {
+										assetSelection.setSelectedItems([asset.id])
+									}
+								}
+								assetDrag.handlePointerDown(event)
+							}}
+						>
+							<AssetTile
+								asset={asset}
+								selected={assetSelection.has(asset.id)}
+							/>
+						</div>
 					))}
 			</div>
+
+			{areaSelect.isDragging && (
+				<Portal>
+					<div
+						className="pointer-events-none fixed top-0 left-0 border border-primary-400 bg-primary-700/25"
+						style={{
+							translate: vec.css.translate(
+								vec.min(areaSelect.start, areaSelect.end),
+							),
+							...vec.asSize(vec.abs(areaSelect.delta)),
+						}}
+					></div>
+				</Portal>
+			)}
+
 			<FileDropOverlay isOver={fileDrop.isOver} />
 		</DragDropProvider>
 	)
@@ -130,27 +225,46 @@ function useAssets() {
 	return { assets, createAssetsFromFiles, updateAsset }
 }
 
-function AssetTile({ asset }: { asset: Asset }) {
-	const draggable = useDraggable({
-		id: asset.id,
-		type: "asset",
-		feedback: "move",
-	})
+function AssetTile({
+	asset,
+	selected,
+	// onPointerDown,
+}: {
+	asset: Asset
+	selected: boolean
+	// onPointerDown: (event: React.PointerEvent) => void
+}) {
+	// const draggable = useDraggable({
+	// 	id: asset.id,
+	// 	type: "asset",
+	// 	feedback: "move",
+	// })
 
 	return (
-		<div
-			ref={draggable.ref}
-			className="group absolute top-0 left-0 transition-transform ease-out"
-			style={{
-				translate: vec.css.translate(vec.roundTo(asset.position, GRID_SNAP)),
-			}}
-		>
+		// <div
+		// 	ref={draggable.ref}
+		// 	className="group absolute top-0 left-0 transition-transform ease-out"
+		// 	style={{
+		// 		translate: vec.css.translate(vec.roundTo(asset.position, GRID_SNAP)),
+		// 	}}
+		// 	onPointerDown={(event) => {
+		// 		event.stopPropagation()
+		// 		onPointerDown?.(event)
+		// 	}}
+		// >
+		// </div>
+		<div className="relative">
 			<div
 				className="panel opacity-100 transition group-aria-pressed:opacity-50 group-aria-pressed:drop-shadow-lg"
+				data-selected={selected}
 				style={{
 					background: `url(${asset.url}) center / cover`,
 					...vec.asSize(asset.size),
 				}}
+			></div>
+			<div
+				className="absolute inset-0 border border-primary-400 bg-primary-500/10 opacity-0 transition data-[visible=true]:opacity-100"
+				data-visible={selected}
 			></div>
 		</div>
 	)

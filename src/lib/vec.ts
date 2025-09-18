@@ -24,6 +24,21 @@ vec.right = vec(1, 0)
 vec.up = vec(0, -1)
 vec.down = vec(0, 1)
 
+vec.map = (v: VecInput, fn: (n: number) => number): Vec => {
+	v = vec(v)
+	return { x: fn(v.x), y: fn(v.y) }
+}
+
+vec.mapWith = (
+	a: VecInput,
+	b: VecInput,
+	fn: (a: number, b: number) => number,
+): Vec => {
+	a = vec(a)
+	b = vec(b)
+	return { x: fn(a.x, b.x), y: fn(a.y, b.y) }
+}
+
 vec.add = (a: VecInput, b: VecInput): Vec => {
 	a = vec(a)
 	b = vec(b)
@@ -54,6 +69,19 @@ vec.distance = (a: VecInput, b: VecInput): number => {
 	return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2)
 }
 
+vec.min = (a: VecInput, b: VecInput) => vec.mapWith(a, b, Math.min)
+vec.max = (a: VecInput, b: VecInput) => vec.mapWith(a, b, Math.max)
+vec.abs = (v: VecInput) => vec.map(v, Math.abs)
+
+vec.roundTo = (input: VecInput, multiple: VecInput) => {
+	input = vec(input)
+	multiple = vec(multiple)
+	return vec(
+		Math.round(input.x / multiple.x) * multiple.x,
+		Math.round(input.y / multiple.y) * multiple.y,
+	)
+}
+
 vec.intersects = (
 	firstTopLeft: VecInput,
 	firstBottomRight: VecInput,
@@ -79,15 +107,6 @@ vec.corners = (a: VecInput, b: VecInput) => {
 		vec(Math.min(a.x, b.x), Math.min(a.y, b.y)),
 		vec(Math.max(a.x, b.x), Math.max(a.y, b.y)),
 	] as const
-}
-
-vec.roundTo = (input: VecInput, multiple: VecInput) => {
-	input = vec(input)
-	multiple = vec(multiple)
-	return vec(
-		Math.round(input.x / multiple.x) * multiple.x,
-		Math.round(input.y / multiple.y) * multiple.y,
-	)
 }
 
 vec.asSize = (input: VecInput) => {
