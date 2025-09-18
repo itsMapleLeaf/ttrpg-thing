@@ -18,7 +18,7 @@ import { Route as ProtectedAccountRouteImport } from "./routes/_protected/accoun
 import { Route as ProtectedRoomsNewRouteImport } from "./routes/_protected/rooms.new"
 import { Route as ProtectedRoomsSlugRouteImport } from "./routes/_protected/rooms.$slug"
 import { ServerRoute as FaviconDotsvgServerRouteImport } from "./routes/favicon[.]svg"
-import { ServerRoute as ApiImagesOptimizeServerRouteImport } from "./routes/api/images/optimize"
+import { ServerRoute as ApiImagesOptimizeServerRouteImport } from "./routes/api/images.optimize"
 
 const rootServerRouteImport = createServerRootRoute()
 
