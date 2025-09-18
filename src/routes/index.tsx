@@ -92,6 +92,17 @@ function RouteComponent() {
 		},
 	})
 
+	const isDraggingAsset = (assetId: string) =>
+		assetSelection.has(assetId) && assetDrag.isDragging
+
+	const getRenderedAssetPosition = (asset: Asset) => {
+		let position = vec.roundTo(asset.position, GRID_SNAP)
+		if (isDraggingAsset(asset.id)) {
+			position = vec.add(position, assetDragDelta)
+		}
+		return position
+	}
+
 	const handleDragEnd: DragDropEvents["dragend"] = (event) => {
 		if (event.canceled) return
 
@@ -119,23 +130,13 @@ function RouteComponent() {
 				{assets
 					.sort((a, b) => a.order - b.order)
 					.map((asset) => (
-						<div
+						<AssetTile
 							key={asset.id}
-							style={{
-								translate: vec.css.translate(
-									vec.add(
-										vec.roundTo(asset.position, GRID_SNAP),
-										assetSelection.has(asset.id) && assetDrag.isDragging
-											? assetDragDelta
-											: vec.zero,
-									),
-								),
-								zIndex: asset.order,
-							}}
-							data-dragging={
-								assetSelection.has(asset.id) && assetDrag.isDragging
-							}
-							className="absolute top-0 left-0 transition-transform duration-100 ease-out data-[dragging=true]:duration-25"
+							url={asset.url}
+							position={getRenderedAssetPosition(asset)}
+							size={asset.size}
+							dragging={isDraggingAsset(asset.id)}
+							selected={assetSelection.has(asset.id)}
 							onPointerDown={(event) => {
 								if (event.button === 0) {
 									if (event.ctrlKey || event.shiftKey) {
@@ -146,12 +147,7 @@ function RouteComponent() {
 								}
 								assetDrag.handlePointerDown(event)
 							}}
-						>
-							<AssetTile
-								asset={asset}
-								selected={assetSelection.has(asset.id)}
-							/>
-						</div>
+						/>
 					))}
 			</div>
 
@@ -226,46 +222,41 @@ function useAssets() {
 }
 
 function AssetTile({
-	asset,
+	position,
+	size,
+	url,
 	selected,
-	// onPointerDown,
+	dragging,
+	onPointerDown,
 }: {
-	asset: Asset
+	position: Vec
+	size: Vec
+	url: string
 	selected: boolean
-	// onPointerDown: (event: React.PointerEvent) => void
+	dragging: boolean
+	onPointerDown: (event: React.PointerEvent) => void
 }) {
-	// const draggable = useDraggable({
-	// 	id: asset.id,
-	// 	type: "asset",
-	// 	feedback: "move",
-	// })
-
 	return (
-		// <div
-		// 	ref={draggable.ref}
-		// 	className="group absolute top-0 left-0 transition-transform ease-out"
-		// 	style={{
-		// 		translate: vec.css.translate(vec.roundTo(asset.position, GRID_SNAP)),
-		// 	}}
-		// 	onPointerDown={(event) => {
-		// 		event.stopPropagation()
-		// 		onPointerDown?.(event)
-		// 	}}
-		// >
-		// </div>
-		<div className="relative">
-			<div
-				className="panel opacity-100 transition group-aria-pressed:opacity-50 group-aria-pressed:drop-shadow-lg"
-				data-selected={selected}
-				style={{
-					background: `url(${asset.url}) center / cover`,
-					...vec.asSize(asset.size),
-				}}
-			></div>
-			<div
-				className="absolute inset-0 border border-primary-400 bg-primary-500/10 opacity-0 transition data-[visible=true]:opacity-100"
-				data-visible={selected}
-			></div>
+		<div
+			style={{ translate: vec.css.translate(position) }}
+			data-dragging={dragging}
+			className="absolute top-0 left-0 transition-transform duration-100 ease-out data-[dragging=true]:duration-25"
+			onPointerDown={onPointerDown}
+		>
+			<div className="relative">
+				<div
+					className="panel rounded opacity-100 shadow-black/50 transition data-[dragging=true]:opacity-75 data-[dragging=true]:shadow-lg"
+					data-dragging={dragging}
+					style={{
+						background: `url(${url}) center / cover`,
+						...vec.asSize(size),
+					}}
+				></div>
+				<div
+					className="absolute -inset-1 rounded-md border border-primary-400 bg-primary-500/20 opacity-0 transition data-[visible=true]:opacity-100"
+					data-visible={selected}
+				></div>
+			</div>
 		</div>
 	)
 }
