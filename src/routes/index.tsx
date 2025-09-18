@@ -1,7 +1,7 @@
 import { type DragDropEvents, DragDropProvider } from "@dnd-kit/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { type } from "arktype"
-import { mapValues, sum } from "es-toolkit"
+import { clamp, mapValues, sum } from "es-toolkit"
 import { Fragment, useId, useRef, useState } from "react"
 import { twMerge } from "tailwind-merge"
 import { useDrag } from "../hooks/useDrag.ts"
@@ -45,6 +45,7 @@ function RouteComponent() {
 	const { assets, createAssetsFromFiles, updateAsset } = useAssets()
 	const assetSelection = useSelection(assets.map((a) => a.id))
 	const assetTileListElementId = useId()
+	const viewportZoom = useViewportZoom()
 
 	const fileDrop = useWindowFileDrop((event) => {
 		createAssetsFromFiles(
@@ -95,7 +96,12 @@ function RouteComponent() {
 		},
 	})
 
-	const [assetDragDelta, setAssetDragDelta] = useState(vec.zero)
+	const [baseAssetDragDelta, setBaseAssetDragDelta] = useState(vec.zero)
+	const assetDragDelta = vec.multiply(
+		baseAssetDragDelta,
+		1 / viewportZoom.scale,
+	)
+
 	const assetDrag = useDrag({
 		buttons: ["left"],
 		onStart() {
@@ -110,7 +116,7 @@ function RouteComponent() {
 			}
 		},
 		onMove(state) {
-			setAssetDragDelta(state.delta)
+			setBaseAssetDragDelta(state.delta)
 		},
 		onEnd() {
 			for (const id of assetSelection.items) {
@@ -152,7 +158,7 @@ function RouteComponent() {
 	return (
 		<DragDropProvider onDragEnd={handleDragEnd}>
 			<div className="h-dvh" onPointerDown={areaSelect.handlePointerDown}>
-				<Viewport>
+				<Viewport zoom={viewportZoom}>
 					<div
 						id={assetTileListElementId}
 						className="relative isolate size-full panel overflow-visible"
@@ -221,13 +227,53 @@ function RouteComponent() {
 	)
 }
 
-function Viewport({ children }: { children: React.ReactNode }) {
-	const [viewportOffset, setViewportOffset] = useState(vec.zero)
+const MAX_ZOOM_TICK = 10
+const MIN_ZOOM_TICK = -10
+const ZOOM_COEFFICIENT = 1.2
+
+function useViewportZoom() {
+	const [tick, setTick] = useState(0)
+	const scale = ZOOM_COEFFICIENT ** tick
+	return { scale, tick, setTick }
+}
+
+function Viewport({
+	children,
+	zoom,
+}: {
+	children: React.ReactNode
+	zoom: ReturnType<typeof useViewportZoom>
+}) {
+	const [offset, setOffset] = useState(vec.zero)
+
+	const handleWheel = (event: React.WheelEvent) => {
+		event.preventDefault()
+
+		const delta = -Math.sign(event.deltaY)
+		if (delta === 0) return
+
+		const newZoomTick = clamp(zoom.tick + delta, MIN_ZOOM_TICK, MAX_ZOOM_TICK)
+		zoom.setTick(newZoomTick)
+
+		// Adjust offset so that the point under the cursor stays in the same place
+		const newZoomScale = ZOOM_COEFFICIENT ** newZoomTick
+		const zoomFactor = newZoomScale / zoom.scale
+		const cursorPosition = vec(event.clientX, event.clientY)
+
+		setOffset(
+			vec
+				.with(offset)
+				.subtract(cursorPosition)
+				.multiply(zoomFactor)
+				.add(cursorPosition)
+				.result(),
+		)
+	}
 
 	const viewportDrag = useDrag({
 		buttons: ["middle", "right"],
 		onEnd(state) {
-			setViewportOffset((offset) => vec.add(offset, state.delta))
+			setOffset((offset) => vec.add(offset, state.delta))
 		},
 	})
 
@@ -235,13 +281,13 @@ function Viewport({ children }: { children: React.ReactNode }) {
 		<div
 			className="relative size-full touch-none overflow-clip"
 			onPointerDown={viewportDrag.handlePointerDown}
+			onWheel={handleWheel}
 		>
 			<div
-				className="absolute inset-0"
+				className="absolute inset-0 origin-top-left transition-transform duration-100 ease-out will-change-transform"
 				style={{
-					translate: vec.css.translate(
-						vec.add(viewportOffset, viewportDrag.delta),
-					),
+					translate: vec.css.translate(vec.add(offset, viewportDrag.delta)),
+					scale: zoom.scale,
 				}}
 			>
 				{children}
