@@ -16,8 +16,11 @@ export function useWindowFileDrop(onDrop: (event: DragEvent) => void) {
 		window.addEventListener(
 			"dragenter",
 			(event) => {
-				event.preventDefault()
-				setIsOver(true)
+				// ensure the drag is related to the window and not a child element
+				if (event.relatedTarget === null) {
+					event.preventDefault()
+					setIsOver(true)
+				}
 			},
 			{ signal: controller.signal },
 		)
@@ -25,8 +28,11 @@ export function useWindowFileDrop(onDrop: (event: DragEvent) => void) {
 		window.addEventListener(
 			"dragleave",
 			(event) => {
-				event.preventDefault()
-				setIsOver(false)
+				// ensure the drag is related to the window and not a child element
+				if (event.relatedTarget === null) {
+					event.preventDefault()
+					setIsOver(false)
+				}
 			},
 			{ signal: controller.signal },
 		)
