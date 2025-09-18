@@ -69,9 +69,15 @@ vec.distance = (a: VecInput, b: VecInput): number => {
 	return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2)
 }
 
+vec.abs = (v: VecInput) => vec.map(v, Math.abs)
 vec.min = (a: VecInput, b: VecInput) => vec.mapWith(a, b, Math.min)
 vec.max = (a: VecInput, b: VecInput) => vec.mapWith(a, b, Math.max)
-vec.abs = (v: VecInput) => vec.map(v, Math.abs)
+vec.clamp = (v: VecInput, min: VecInput, max: VecInput) =>
+	vec.mapWith(vec.max(v, min), max, Math.min)
+
+vec.floor = (v: VecInput) => vec.map(v, Math.floor)
+vec.ceil = (v: VecInput) => vec.map(v, Math.ceil)
+vec.round = (v: VecInput) => vec.map(v, Math.round)
 
 vec.roundTo = (input: VecInput, multiple: VecInput) => {
 	input = vec(input)
