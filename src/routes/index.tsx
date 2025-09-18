@@ -131,11 +131,15 @@ function useAssets() {
 }
 
 function AssetTile({ asset }: { asset: Asset }) {
+	const draggable = useDraggable({
+		id: asset.id,
+		type: "asset",
+		feedback: "move",
+	})
+
 	return (
-		<Draggable
-			key={asset.id}
-			draggableType="asset"
-			draggableId={asset.id}
+		<div
+			ref={draggable.ref}
 			className="group absolute top-0 left-0 transition-transform ease-out"
 			style={{
 				translate: vec.css.translate(vec.roundTo(asset.position, GRID_SNAP)),
@@ -148,7 +152,7 @@ function AssetTile({ asset }: { asset: Asset }) {
 					...vec.asSize(asset.size),
 				}}
 			></div>
-		</Draggable>
+		</div>
 	)
 }
 
@@ -162,33 +166,6 @@ function FileDropOverlay({ isOver }: { isOver: boolean }) {
 				<p className="text-3xl font-light">Drop files to import assets</p>
 			</div>
 		</Portal>
-	)
-}
-
-function Draggable({
-	draggableType,
-	draggableId,
-	...props
-}: ComponentProps<"div"> & {
-	draggableId: string
-	draggableType: string
-}) {
-	const { ref } = useDraggable({
-		id: draggableId,
-		type: draggableType,
-		feedback: "move",
-	})
-
-	return <div {...props} ref={ref} /* className={twMerge(props.className)} */ />
-}
-
-function Droppable({ children }: { children: React.ReactNode }) {
-	const { ref } = useDroppable({ id: "droppable" })
-
-	return (
-		<div ref={ref} className="size-48 panel p-4">
-			{children}
-		</div>
 	)
 }
 
