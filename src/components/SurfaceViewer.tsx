@@ -182,7 +182,7 @@ export function SurfaceViewer() {
 					ref={viewport.ref}
 				>
 					<div
-						className="absolute inset-0 origin-top-left transition-transform duration-150 ease-out data-dragging:duration-75"
+						className="absolute inset-0 origin-top-left transition-transform duration-150 ease-out will-change-transform data-dragging:duration-75"
 						data-dragging={viewport.drag.isDragging || undefined}
 						style={{
 							translate: vec.css.translate(
@@ -357,7 +357,7 @@ function SurfaceTile({
 			style={{ translate: vec.css.translate(position) }}
 			data-asset-id={id}
 			data-dragging={dragging}
-			className="absolute top-0 left-0 transition-transform duration-100 ease-out data-[dragging=true]:duration-25"
+			className="absolute top-0 left-0 transition-transform duration-100 ease-out will-change-transform data-[dragging=true]:duration-25"
 			onPointerDown={onPointerDown}
 		>
 			<div className="relative">
