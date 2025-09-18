@@ -120,18 +120,23 @@ vec.asSize = (input: VecInput) => {
 	return { width: input.x, height: input.y }
 }
 
-vec.with = (input: VecInput) => ({
-	add: (...args: VecInputArgs) => vec.with(vec.add(input, vec(...args))),
+vec.with = (...input: VecInputArgs) => ({
+	add: (...args: VecInputArgs) =>
+		vec.with(vec.add(vec(...input), vec(...args))),
 
 	subtract: (...args: VecInputArgs) =>
-		vec.with(vec.subtract(input, vec(...args))),
+		vec.with(vec.subtract(vec(...input), vec(...args))),
 
 	multiply: (...args: VecInputArgs) =>
-		vec.with(vec.multiply(input, vec(...args))),
+		vec.with(vec.multiply(vec(...input), vec(...args))),
 
-	divide: (...args: VecInputArgs) => vec.with(vec.divide(input, vec(...args))),
+	divide: (...args: VecInputArgs) =>
+		vec.with(vec.divide(vec(...input), vec(...args))),
 
-	result: () => vec(input),
+	clamp: (min: VecInput, max: VecInput) =>
+		vec.with(vec.clamp(vec(...input), min, max)),
+
+	result: () => vec(...input),
 })
 
 vec.css = {
