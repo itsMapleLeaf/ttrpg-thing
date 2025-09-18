@@ -14,6 +14,7 @@ import { Route as rootRouteImport } from "./routes/__root"
 import { Route as DsRouteImport } from "./routes/ds"
 import { Route as ProtectedRouteImport } from "./routes/_protected"
 import { Route as IndexRouteImport } from "./routes/index"
+import { Route as DemoCardsRouteImport } from "./routes/demo.cards"
 import { Route as ProtectedAccountRouteImport } from "./routes/_protected/account"
 import { Route as ProtectedRoomsNewRouteImport } from "./routes/_protected/rooms.new"
 import { Route as ProtectedRoomsSlugRouteImport } from "./routes/_protected/rooms.$slug"
@@ -34,6 +35,11 @@ const ProtectedRoute = ProtectedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoCardsRoute = DemoCardsRouteImport.update({
+  id: "/demo/cards",
+  path: "/demo/cards",
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "/ds": typeof DsRoute
   "/account": typeof ProtectedAccountRoute
+  "/demo/cards": typeof DemoCardsRoute
   "/rooms/$slug": typeof ProtectedRoomsSlugRoute
   "/rooms/new": typeof ProtectedRoomsNewRoute
 }
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/ds": typeof DsRoute
   "/account": typeof ProtectedAccountRoute
+  "/demo/cards": typeof DemoCardsRoute
   "/rooms/$slug": typeof ProtectedRoomsSlugRoute
   "/rooms/new": typeof ProtectedRoomsNewRoute
 }
@@ -82,20 +90,28 @@ export interface FileRoutesById {
   "/_protected": typeof ProtectedRouteWithChildren
   "/ds": typeof DsRoute
   "/_protected/account": typeof ProtectedAccountRoute
+  "/demo/cards": typeof DemoCardsRoute
   "/_protected/rooms/$slug": typeof ProtectedRoomsSlugRoute
   "/_protected/rooms/new": typeof ProtectedRoomsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/ds" | "/account" | "/rooms/$slug" | "/rooms/new"
+  fullPaths:
+    | "/"
+    | "/ds"
+    | "/account"
+    | "/demo/cards"
+    | "/rooms/$slug"
+    | "/rooms/new"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/ds" | "/account" | "/rooms/$slug" | "/rooms/new"
+  to: "/" | "/ds" | "/account" | "/demo/cards" | "/rooms/$slug" | "/rooms/new"
   id:
     | "__root__"
     | "/"
     | "/_protected"
     | "/ds"
     | "/_protected/account"
+    | "/demo/cards"
     | "/_protected/rooms/$slug"
     | "/_protected/rooms/new"
   fileRoutesById: FileRoutesById
@@ -104,6 +120,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedRoute: typeof ProtectedRouteWithChildren
   DsRoute: typeof DsRoute
+  DemoCardsRoute: typeof DemoCardsRoute
 }
 export interface FileServerRoutesByFullPath {
   "/favicon.svg": typeof FaviconDotsvgServerRoute
@@ -152,6 +169,13 @@ declare module "@tanstack/react-router" {
       path: "/"
       fullPath: "/"
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/demo/cards": {
+      id: "/demo/cards"
+      path: "/demo/cards"
+      fullPath: "/demo/cards"
+      preLoaderRoute: typeof DemoCardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/_protected/account": {
@@ -216,6 +240,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
   DsRoute: DsRoute,
+  DemoCardsRoute: DemoCardsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
