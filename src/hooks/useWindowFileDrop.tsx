@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Portal } from "../ui/Portal.tsx"
 import { useEffectEvent } from "./useEffectEvent.ts"
 
 export function useWindowFileDrop(onDrop: (event: DragEvent) => void) {
@@ -50,5 +51,18 @@ export function useWindowFileDrop(onDrop: (event: DragEvent) => void) {
 		return () => controller.abort()
 	}, [handleDrop])
 
-	return { isOver }
+	return { isOver, overlayElement: <FileDropOverlay isOver={isOver} /> }
+}
+
+function FileDropOverlay({ isOver }: { isOver: boolean }) {
+	return (
+		<Portal>
+			<div
+				className="pointer-events-none invisible fixed inset-0 flex-center bg-black/50 opacity-0 backdrop-blur transition-all transition-discrete data-[visible=true]:visible data-[visible=true]:opacity-100"
+				data-visible={isOver}
+			>
+				<p className="text-3xl font-light">Drop files to import assets</p>
+			</div>
+		</Portal>
+	)
 }
