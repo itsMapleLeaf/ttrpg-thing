@@ -1,7 +1,7 @@
 import { Dialog } from "@base-ui-components/react"
 import { type } from "arktype"
 import { clamp } from "es-toolkit"
-import { useId, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { twMerge } from "tailwind-merge"
 import { useDrag } from "../hooks/useDrag.ts"
 import { useLocalStorage } from "../hooks/useLocalStorage.ts"
@@ -19,15 +19,15 @@ const SURFACE_SIZE = vec(SURFACE_WIDTH, SURFACE_HEIGHT)
 const GRID_SNAP = 20
 
 export function SurfaceViewer() {
-	const { assets, importAssets, updateAsset } = useTiles()
-	const assetSelection = useSelection(assets.map((a) => a.id))
+	const { tiles, importAssetTiles, updateTile, removeTiles } = useTiles()
+	const assetSelection = useSelection(tiles.map((a) => a.id))
 	const assetTileListElementId = useId()
 	const viewport = useViewport()
 	const toast = useToastContext()
 	const [windowWidth, windowHeight] = useWindowSize()
 
 	const importDialog = useImportDialog((preset, files) => {
-		importAssets(
+		importAssetTiles(
 			files,
 			vec
 				.with(vec(windowWidth / 2, windowHeight / 2))
@@ -102,7 +102,7 @@ export function SurfaceViewer() {
 		onStart() {
 			const now = Date.now()
 			for (const [index, id] of [...assetSelection.items].entries()) {
-				updateAsset(id, (asset) => ({
+				updateTile(id, (asset) => ({
 					// Bring selected assets to front
 					order: now + index,
 					// Snap to grid on drag start, so the ending position is also on grid
@@ -115,7 +115,7 @@ export function SurfaceViewer() {
 		},
 		onEnd() {
 			for (const id of assetSelection.items) {
-				updateAsset(id, (asset) => ({
+				updateTile(id, (asset) => ({
 					position: vec.clamp(
 						vec.add(asset.position, assetDragDelta),
 						vec.zero,
@@ -136,6 +136,34 @@ export function SurfaceViewer() {
 		}
 		return position
 	}
+
+	useEffect(() => {
+		const controller = new AbortController()
+
+		window.addEventListener(
+			"keydown",
+			(event) => {
+				const inputHasFocus =
+					document.activeElement?.tagName === "INPUT" ||
+					document.activeElement?.tagName === "TEXTAREA" ||
+					(document.activeElement as HTMLElement)?.isContentEditable
+				if (inputHasFocus) return
+
+				if (event.key === "Delete" || event.key === "Backspace") {
+					if (assetSelection.items.size > 0) {
+						event.preventDefault()
+						removeTiles([...assetSelection.items])
+						assetSelection.clear()
+					}
+				}
+			},
+			{ signal: controller.signal },
+		)
+
+		return () => {
+			controller.abort()
+		}
+	}, [assetSelection, removeTiles])
 
 	return (
 		<>
@@ -176,7 +204,7 @@ export function SurfaceViewer() {
 								color: "rgba(255, 255, 255, 0.1)",
 							}}
 						>
-							{assets
+							{tiles
 								.sort((a, b) => a.order - b.order)
 								.map((asset) => (
 									<SurfaceTile
@@ -236,7 +264,7 @@ const IMPORT_PRESETS = [
 	{ name: "Tile", size: vec(100, 100) },
 	{ name: "Map", size: vec(1000, 1000) },
 	{ name: "Portrait", size: vec(400, 600) },
-	{ name: "Scene", size: vec(1600, 900) },
+	{ name: "Scene", size: vec(1600 * 2, 900 * 2) },
 ]
 
 function useImportDialog(
@@ -470,11 +498,10 @@ type TileDoc = {
 }
 
 function useTiles() {
+	const [tiles, setTiles] = useState<TileDoc[]>([])
 	const toast = useToastContext()
 
-	const [assets, setAssets] = useState<TileDoc[]>([])
-
-	const importAssets = (files: File[], basePosition: Vec, size: Vec) => {
+	const importAssetTiles = (files: File[], position: Vec, size: Vec) => {
 		const now = Date.now()
 
 		for (const [index, file] of files.entries()) {
@@ -483,19 +510,19 @@ function useTiles() {
 				const url = URL.createObjectURL(file)
 				// const bitmap = await createImageBitmap(file)
 
-				const position = vec
-					.with(basePosition)
+				const tilePosition = vec
+					.with(position)
 					.subtract(vec.divide(size, 2))
 					.add(index * GRID_SNAP)
 					.clamp(vec.zero, vec.subtract(SURFACE_SIZE, size))
 					.result()
 
-				setAssets((assets) => [
+				setTiles((assets) => [
 					...assets,
 					{
 						id,
 						imageUrl: url,
-						position,
+						position: tilePosition,
 						size,
 						order: now + index,
 					},
@@ -506,11 +533,11 @@ function useTiles() {
 		}
 	}
 
-	const updateAsset = (
+	const updateTile = (
 		id: string,
 		update: (current: TileDoc) => Partial<TileDoc>,
 	) => {
-		setAssets((assets) =>
+		setTiles((assets) =>
 			assets.map((asset) => {
 				if (asset.id !== id) return asset
 				return { ...asset, ...update(asset) }
@@ -518,5 +545,10 @@ function useTiles() {
 		)
 	}
 
-	return { assets, importAssets, updateAsset }
+	const removeTiles = (ids: string[]) => {
+		const idSet = new Set(ids)
+		setTiles((assets) => assets.filter((asset) => !idSet.has(asset.id)))
+	}
+
+	return { tiles, importAssetTiles, updateTile, removeTiles }
 }
