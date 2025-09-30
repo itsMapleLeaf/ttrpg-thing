@@ -3,7 +3,6 @@ import { useWindowSize } from "../../common/dom.ts"
 import { useDrag } from "../../common/drag.ts"
 import { useSelection } from "../../common/selection.ts"
 import { vec } from "../../common/vec.ts"
-import { useWindowFileDrop } from "../../hooks/useWindowFileDrop.tsx"
 import { Portal } from "../../ui/Portal.tsx"
 import { useToastContext } from "../../ui/Toast.tsx"
 import { useAssetImportDialog } from "./assets.tsx"
@@ -14,6 +13,7 @@ import {
 	SURFACE_WIDTH,
 } from "./constants.ts"
 import { SurfaceTile, type TileInstance, useTiles } from "./tiles.tsx"
+import { useWindowFileDrop } from "./useWindowFileDrop.tsx"
 import { useViewport } from "./viewport.ts"
 
 export function SurfaceViewer() {
