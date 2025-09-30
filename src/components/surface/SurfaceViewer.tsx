@@ -180,7 +180,7 @@ export function SurfaceViewer() {
 					ref={viewport.ref}
 				>
 					<div
-						className="absolute inset-0 origin-top-left transition-transform duration-150 ease-out will-change-transform data-dragging:duration-75"
+						className="absolute inset-0 origin-top-left transition-transform duration-150 ease-out data-dragging:duration-75"
 						data-dragging={viewport.drag.isDragging || undefined}
 						style={{
 							translate: vec.css.translate(
