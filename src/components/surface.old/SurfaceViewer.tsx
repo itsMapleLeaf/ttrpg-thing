@@ -6,10 +6,10 @@ import { twMerge } from "tailwind-merge"
 import { api } from "../../../convex/_generated/api"
 import type { Id } from "../../../convex/_generated/dataModel"
 import type { ClientSurface } from "../../../convex/surfaces.ts"
+import { type Vec, vec } from "../../common/vec.ts"
 import { type DerivedDragState, useDrag } from "../../hooks/useDrag.ts"
 import { useLocalStorage } from "../../hooks/useLocalStorage.ts"
 import { useSelection } from "../../hooks/useSelection.ts"
-import { type Vec, vec } from "../../lib/vec.ts"
 import { useToastContext } from "../../ui/Toast.tsx"
 import { SurfaceTile } from "./SurfaceTile.tsx"
 import { SurfaceToolbar, useToolbarState } from "./SurfaceToolbar.tsx"
@@ -81,7 +81,7 @@ export function SurfaceViewer({ surface }: { surface: ClientSurface }) {
 	const surfaceOffsetRef = useRef<Vec>(vec(0))
 	function updateSurfaceOffset() {
 		const rect = surfacePanelRef.current?.getBoundingClientRect()
-		surfaceOffsetRef.current = vec(rect?.left ?? 0, rect?.top)
+		surfaceOffsetRef.current = vec(rect?.left ?? 0, rect?.top ?? 0)
 	}
 
 	const [selectionArea, setSelectionArea] = useState<{ start: Vec; end: Vec }>()

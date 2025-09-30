@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { typedEntries } from "../../lib/helpers.ts"
+import { typedEntries } from "../../common/helpers.ts"
 import { Icon } from "../../ui/Icon.tsx"
 import { ScrollArea } from "../../ui/ScrollArea.tsx"
 import { WithTooltip } from "../../ui/Tooltip.tsx"

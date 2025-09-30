@@ -1,4 +1,16 @@
-import { useWindowEvent } from "./useWindowEvent.ts"
+import { useEffect, useState } from "react"
+
+export function useWindowSize(): readonly [number, number] {
+	const [width, setWidth] = useState(window.innerWidth)
+	const [height, setHeight] = useState(window.innerHeight)
+
+	useWindowEvent("resize", () => {
+		setWidth(window.innerWidth)
+		setHeight(window.innerHeight)
+	})
+
+	return [width, height] as const
+}
 
 export function useWindowDragEvents({
 	onDragEnter,
@@ -36,4 +48,19 @@ export function useWindowDragEvents({
 		event.preventDefault()
 		onDrop?.(event)
 	})
+}
+
+export function useWindowEvent<K extends keyof WindowEventMap>(
+	eventName: K,
+	handler: (event: WindowEventMap[K]) => void,
+) {
+	useEffect(() => {
+		const controller = new AbortController()
+
+		window.addEventListener(eventName, handler, {
+			signal: controller.signal,
+		})
+
+		return () => controller.abort()
+	}, [eventName, handler])
 }

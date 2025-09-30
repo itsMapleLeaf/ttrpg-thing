@@ -1,7 +1,7 @@
 import { Dialog } from "@base-ui-components/react"
 import { useState } from "react"
 import { twMerge } from "tailwind-merge"
-import { vec } from "../../lib/vec.ts"
+import { vec } from "../../common/vec.ts"
 import { Button } from "../../ui/Button.tsx"
 
 type AssetImportPreset = (typeof IMPORT_PRESETS)[number]

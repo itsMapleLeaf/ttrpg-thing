@@ -2,16 +2,16 @@ import { type } from "arktype"
 import { mapValues, sum } from "es-toolkit"
 import { Fragment, useState } from "react"
 import { twMerge } from "tailwind-merge"
-import { useLocalStorage } from "../hooks/useLocalStorage.ts"
 import {
 	type Card,
 	type CardCounts,
 	type CardInstance,
 	getCardOrder,
 	listCards,
-} from "../lib/cards.ts"
-import { DECK_SIZE, Player } from "../lib/player.ts"
-import type { NonEmptyArray } from "../lib/types.ts"
+} from "../cards.ts"
+import { useLocalStorage } from "../common/local-storage.ts"
+import type { NonEmptyArray } from "../common/types.ts"
+import { DECK_SIZE, Player } from "../player.ts"
 import { Button } from "../ui/Button.tsx"
 import { EmptyState } from "../ui/EmptyState.tsx"
 import { Icon } from "../ui/Icon.tsx"

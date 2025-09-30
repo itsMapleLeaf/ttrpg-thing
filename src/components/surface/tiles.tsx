@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { type Vec, vec } from "../../lib/vec.ts"
+import { type Vec, vec } from "../../common/vec.ts"
 import { useToastContext } from "../../ui/Toast.tsx"
 import { GRID_SNAP, SURFACE_SIZE } from "./constants.ts"
 

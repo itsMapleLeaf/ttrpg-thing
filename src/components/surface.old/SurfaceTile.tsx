@@ -1,5 +1,5 @@
 import type { ClientTile } from "../../../convex/tiles.ts"
-import { ceilToNearest, getOptimizedImageUrl } from "../../lib/helpers.ts"
+import { ceilToNearest, getOptimizedImageUrl } from "../../common/helpers.ts"
 
 export type SurfaceTileProps = {
 	tile: Pick<ClientTile, "type" | "width" | "height" | "text" | "assetUrl">

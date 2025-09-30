@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import { type Vec, vec } from "../lib/vec.ts"
-import { useEffectEvent } from "./useEffectEvent.ts"
+import { useEffectEvent } from "./react.ts"
+import { type Vec, vec } from "./vec.ts"
 
 export type DragState = {
 	status: "idle" | "down" | "dragging"

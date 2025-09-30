@@ -1,6 +1,6 @@
 import { mapValues, range, startCase } from "es-toolkit"
-import { typedEntries } from "./helpers.ts"
-import type { Branded } from "./types.ts"
+import { typedEntries } from "../common/helpers.ts"
+import type { Branded } from "../common/types.ts"
 
 export type CardId = Branded<string, "CardId">
 

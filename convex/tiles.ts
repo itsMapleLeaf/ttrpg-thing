@@ -3,7 +3,7 @@ import type { WithoutSystemFields } from "convex/server"
 import { ConvexError, type Infer, v } from "convex/values"
 import { omit } from "convex-helpers"
 import { literals, partial } from "convex-helpers/validators"
-import { roundToNearest } from "../src/lib/helpers.ts"
+import { roundToNearest } from "../src/common/helpers.ts"
 import type { Doc, Id } from "./_generated/dataModel"
 import {
 	type MutationCtx,

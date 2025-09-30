@@ -1,7 +1,7 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
 import { type ComponentProps, type ReactElement, useTransition } from "react"
 import { twMerge } from "tailwind-merge"
-import { usePendingDelay } from "../hooks/usePendingDelay.ts"
+import { usePendingDelay } from "../common/react.ts"
 import { useToastContext } from "./Toast.tsx"
 import { WithTooltip } from "./Tooltip.tsx"
 

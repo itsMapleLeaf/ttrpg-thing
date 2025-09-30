@@ -1,6 +1,6 @@
 import { useState } from "react"
+import { useWindowDragEvents } from "../common/dom.ts"
 import { Portal } from "../ui/Portal.tsx"
-import { useWindowDragEvents } from "./useWindowDragEvents.ts"
 
 export function useWindowFileDrop(onDrop: (event: DragEvent) => void) {
 	const [isOver, setIsOver] = useState(false)
