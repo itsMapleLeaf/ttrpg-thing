@@ -6,8 +6,9 @@ import {
 	Scripts,
 } from "@tanstack/react-router"
 import type { ConvexReactClient } from "convex/react"
-import type * as React from "react"
+import * as React from "react"
 import appCss from "../styles/app.css?url"
+import { Loading } from "../ui/Loading.tsx"
 import { ToastProvider } from "../ui/Toast.tsx"
 import { UserProvider } from "../user-context.tsx"
 
@@ -33,24 +34,18 @@ export const Route = createRootRouteWithContext<{
 
 function RootComponent() {
 	return (
-		<RootDocument>
-			<UserProvider>
-				<ToastProvider>
-					<Outlet />
-				</ToastProvider>
-			</UserProvider>
-		</RootDocument>
-	)
-}
-
-function RootDocument({ children }: { children: React.ReactNode }) {
-	return (
 		<html lang="en" className="bg-gray-900 wrap-break-word text-gray-50">
 			<head>
 				<HeadContent />
 			</head>
 			<body>
-				{children}
+				<UserProvider>
+					<ToastProvider>
+						<React.Suspense fallback={<Loading />}>
+							<Outlet />
+						</React.Suspense>
+					</ToastProvider>
+				</UserProvider>
 				<Scripts />
 			</body>
 		</html>

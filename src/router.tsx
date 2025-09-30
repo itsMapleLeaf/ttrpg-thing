@@ -2,9 +2,7 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react"
 
 import { createRouter as createTanStackRouter } from "@tanstack/react-router"
 import { ConvexReactClient } from "convex/react"
-import { Suspense } from "react"
 import { routeTree } from "./routeTree.gen"
-import { Loading } from "./ui/Loading.tsx"
 
 export function getRouter() {
 	const convexClient = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
@@ -19,9 +17,7 @@ export function getRouter() {
 		defaultErrorComponent: (err) => <p>{err.error.stack}</p>,
 		defaultNotFoundComponent: () => <p>not found</p>,
 		Wrap: ({ children }) => (
-			<ConvexAuthProvider client={convexClient}>
-				<Suspense fallback={<Loading />}>{children}</Suspense>
-			</ConvexAuthProvider>
+			<ConvexAuthProvider client={convexClient}>{children}</ConvexAuthProvider>
 		),
 	})
 
