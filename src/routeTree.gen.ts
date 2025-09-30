@@ -8,70 +8,66 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createServerRootRoute } from "@tanstack/react-start/server"
-
 import { Route as rootRouteImport } from "./routes/__root"
+import { Route as FaviconDotsvgRouteImport } from "./routes/favicon[.]svg"
 import { Route as IndexRouteImport } from "./routes/index"
-import { ServerRoute as ApiImagesOptimizeServerRouteImport } from "./routes/api/images.optimize"
+import { Route as ApiImagesOptimizeRouteImport } from "./routes/api/images.optimize"
 
-const rootServerRouteImport = createServerRootRoute()
-
+const FaviconDotsvgRoute = FaviconDotsvgRouteImport.update({
+  id: "/favicon.svg",
+  path: "/favicon.svg",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiImagesOptimizeServerRoute = ApiImagesOptimizeServerRouteImport.update({
+const ApiImagesOptimizeRoute = ApiImagesOptimizeRouteImport.update({
   id: "/api/images/optimize",
   path: "/api/images/optimize",
-  getParentRoute: () => rootServerRouteImport,
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
+  "/favicon.svg": typeof FaviconDotsvgRoute
+  "/api/images/optimize": typeof ApiImagesOptimizeRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
+  "/favicon.svg": typeof FaviconDotsvgRoute
+  "/api/images/optimize": typeof ApiImagesOptimizeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
+  "/favicon.svg": typeof FaviconDotsvgRoute
+  "/api/images/optimize": typeof ApiImagesOptimizeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/"
+  fullPaths: "/" | "/favicon.svg" | "/api/images/optimize"
   fileRoutesByTo: FileRoutesByTo
-  to: "/"
-  id: "__root__" | "/"
+  to: "/" | "/favicon.svg" | "/api/images/optimize"
+  id: "__root__" | "/" | "/favicon.svg" | "/api/images/optimize"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-}
-export interface FileServerRoutesByFullPath {
-  "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
-}
-export interface FileServerRoutesByTo {
-  "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
-}
-export interface FileServerRoutesById {
-  __root__: typeof rootServerRouteImport
-  "/api/images/optimize": typeof ApiImagesOptimizeServerRoute
-}
-export interface FileServerRouteTypes {
-  fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: "/api/images/optimize"
-  fileServerRoutesByTo: FileServerRoutesByTo
-  to: "/api/images/optimize"
-  id: "__root__" | "/api/images/optimize"
-  fileServerRoutesById: FileServerRoutesById
-}
-export interface RootServerRouteChildren {
-  ApiImagesOptimizeServerRoute: typeof ApiImagesOptimizeServerRoute
+  FaviconDotsvgRoute: typeof FaviconDotsvgRoute
+  ApiImagesOptimizeRoute: typeof ApiImagesOptimizeRoute
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/favicon.svg": {
+      id: "/favicon.svg"
+      path: "/favicon.svg"
+      fullPath: "/favicon.svg"
+      preLoaderRoute: typeof FaviconDotsvgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/": {
       id: "/"
       path: "/"
@@ -79,29 +75,30 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-  }
-}
-declare module "@tanstack/react-start/server" {
-  interface ServerFileRoutesByPath {
     "/api/images/optimize": {
       id: "/api/images/optimize"
       path: "/api/images/optimize"
       fullPath: "/api/images/optimize"
-      preLoaderRoute: typeof ApiImagesOptimizeServerRouteImport
-      parentRoute: typeof rootServerRouteImport
+      preLoaderRoute: typeof ApiImagesOptimizeRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FaviconDotsvgRoute: FaviconDotsvgRoute,
+  ApiImagesOptimizeRoute: ApiImagesOptimizeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-const rootServerRouteChildren: RootServerRouteChildren = {
-  ApiImagesOptimizeServerRoute: ApiImagesOptimizeServerRoute,
+
+import type { getRouter } from "./router.tsx"
+import type { createStart } from "@tanstack/react-start"
+declare module "@tanstack/react-start" {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
 }
-export const serverRouteTree = rootServerRouteImport
-  ._addFileChildren(rootServerRouteChildren)
-  ._addFileTypes<FileServerRouteTypes>()

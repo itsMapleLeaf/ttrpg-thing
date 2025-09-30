@@ -1,24 +1,26 @@
-import { createServerFileRoute } from "@tanstack/react-start/server"
+import { createFileRoute } from "@tanstack/react-router"
 import { type } from "arktype"
 import { LRUCache } from "lru-cache"
 import sharp from "sharp"
 
-export const ServerRoute = createServerFileRoute(
-	"/api/images/optimize",
-).methods({
-	GET: async (ctx) => {
-		try {
-			const result = await cache.fetch(ctx.request.url)
-			return new Response(result, {
-				headers: {
-					"Content-Type": "image/webp",
-					"Cache-Control": "public, max-age=31536000, immutable",
-				},
-			})
-		} catch (error) {
-			console.error("Error resizing image:", error)
-			return new Response("", { status: 500 })
-		}
+export const Route = createFileRoute("/api/images/optimize")({
+	server: {
+		handlers: {
+			GET: async (ctx) => {
+				try {
+					const result = await cache.fetch(ctx.request.url)
+					return new Response(result, {
+						headers: {
+							"Content-Type": "image/webp",
+							"Cache-Control": "public, max-age=31536000, immutable",
+						},
+					})
+				} catch (error) {
+					console.error("Error resizing image:", error)
+					return new Response("", { status: 500 })
+				}
+			},
+		},
 	},
 })
 

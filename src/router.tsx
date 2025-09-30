@@ -6,7 +6,7 @@ import { Suspense } from "react"
 import { routeTree } from "./routeTree.gen"
 import { Loading } from "./ui/Loading.tsx"
 
-export function createRouter() {
+export function getRouter() {
 	const convexClient = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
 
 	const router = createTanStackRouter({
@@ -16,7 +16,6 @@ export function createRouter() {
 			convexClient,
 		},
 		scrollRestoration: true,
-		defaultPreloadStaleTime: 0, // Let React Query handle all caching
 		defaultErrorComponent: (err) => <p>{err.error.stack}</p>,
 		defaultNotFoundComponent: () => <p>not found</p>,
 		Wrap: ({ children }) => (
@@ -31,6 +30,6 @@ export function createRouter() {
 
 declare module "@tanstack/react-router" {
 	interface Register {
-		router: ReturnType<typeof createRouter>
+		router: ReturnType<typeof getRouter>
 	}
 }

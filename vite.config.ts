@@ -1,3 +1,4 @@
+import netlify from "@netlify/vite-plugin-tanstack-start"
 import tailwindcss from "@tailwindcss/vite"
 import { tanstackStart } from "@tanstack/react-start/plugin/vite"
 import react from "@vitejs/plugin-react"
@@ -7,12 +8,9 @@ export default defineConfig({
 	plugins: [
 		tailwindcss(),
 		tanstackStart({
-			customViteReactPlugin: true,
-			target: "netlify",
-			tsr: {
-				quoteStyle: "double",
-			},
+			router: { quoteStyle: "double" },
 		}),
+		netlify(),
 		react(),
 	],
 	server: {
