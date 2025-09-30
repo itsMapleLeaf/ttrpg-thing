@@ -64,3 +64,18 @@ export function useWindowEvent<K extends keyof WindowEventMap>(
 		return () => controller.abort()
 	}, [eventName, handler])
 }
+
+export function useWindowFileDrop(onDrop?: (event: DragEvent) => void) {
+	const [isOver, setIsOver] = useState(false)
+
+	useWindowDragEvents({
+		onDragEnter: () => setIsOver(true),
+		onDragLeave: () => setIsOver(false),
+		onDrop: (event) => {
+			setIsOver(false)
+			onDrop?.(event)
+		},
+	})
+
+	return { isOver }
+}

@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState } from "react"
-import { useWindowSize } from "../../common/dom.ts"
+import { useWindowFileDrop, useWindowSize } from "../../common/dom.ts"
 import { useDrag } from "../../common/drag.ts"
 import { useSelection } from "../../common/selection.ts"
 import { vec } from "../../common/vec.ts"
 import { Portal } from "../../ui/Portal.tsx"
 import { useToastContext } from "../../ui/Toast.tsx"
-import { useAssetImportDialog } from "./assets.tsx"
+import { AssetDropOverlay } from "./AssetDropOverlay.tsx"
 import {
 	ACCEPTED_FILE_TYPES,
 	GRID_SNAP,
@@ -13,7 +13,6 @@ import {
 	SURFACE_WIDTH,
 } from "./constants.ts"
 import { SurfaceTile, type TileInstance, useTiles } from "./tiles.tsx"
-import { useWindowFileDrop } from "./useWindowFileDrop.tsx"
 import { useViewport } from "./viewport.ts"
 
 export function SurfaceViewer() {
@@ -24,36 +23,7 @@ export function SurfaceViewer() {
 	const toast = useToastContext()
 	const [windowWidth, windowHeight] = useWindowSize()
 
-	const importDialog = useAssetImportDialog((preset, files) => {
-		importAssetTiles(
-			files,
-			vec
-				.with(vec(windowWidth / 2, windowHeight / 2))
-				.subtract(viewport.offset)
-				.multiply(1 / viewport.scale)
-				.result(),
-			preset.size,
-		)
-	})
-
-	const fileDrop = useWindowFileDrop((event) => {
-		const imageFiles = []
-		for (const item of event.dataTransfer?.items ?? []) {
-			const file = item.getAsFile()
-			if (!file) continue
-
-			if (!ACCEPTED_FILE_TYPES.has(item.type)) {
-				toast.error(`Unsupported file type: ${item.type}`)
-				continue
-			}
-
-			imageFiles.push(file)
-		}
-
-		if (imageFiles.length === 0) return
-
-		importDialog.show(imageFiles)
-	})
+	const fileDrop = useWindowFileDrop()
 
 	// precompute asset rectangles once on drag start for performance
 	const assetElementRects = useRef<{ id: string; rect: DOMRect }[]>([])
@@ -251,34 +221,32 @@ export function SurfaceViewer() {
 				</Portal>
 			)}
 
-			<Portal>
-				<div
-					className="invisible fixed inset-0 flex-center bg-black/50 opacity-0 backdrop-blur transition-all transition-discrete data-[visible=true]:visible data-[visible=true]:opacity-100"
-					data-visible={fileDrop.isOver}
-				>
-					<p className="text-3xl font-light">Drop files to import assets</p>
-					<div
-						onDragOver={(event) => event.preventDefault()}
-						onDrop={(event) => {
-							event.preventDefault()
-							console.log("drop a")
-						}}
-					>
-						drop on a
-					</div>
-					<div
-						onDragOver={(event) => event.preventDefault()}
-						onDrop={(event) => {
-							console.log("drop b")
-							event.preventDefault()
-						}}
-					>
-						drop on b
-					</div>
-				</div>
-			</Portal>
+			<AssetDropOverlay
+				visible={fileDrop.isOver}
+				onDrop={(preset, files) => {
+					const imageFiles = []
+					for (const file of files) {
+						if (!ACCEPTED_FILE_TYPES.has(file.type)) {
+							toast.error(`Unsupported file type: ${file.type}`)
+							continue
+						}
 
-			{importDialog.element}
+						imageFiles.push(file)
+					}
+
+					if (imageFiles.length === 0) return
+
+					importAssetTiles(
+						files,
+						vec
+							.with(vec(windowWidth / 2, windowHeight / 2))
+							.subtract(viewport.offset)
+							.multiply(1 / viewport.scale)
+							.result(),
+						preset.size,
+					)
+				}}
+			/>
 		</>
 	)
 }

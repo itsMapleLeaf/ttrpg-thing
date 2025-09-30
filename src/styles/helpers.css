@@ -6,6 +6,10 @@
 	@apply flex items-center justify-center;
 }
 
+@utility flex-center-col {
+	@apply flex flex-col items-center justify-center;
+}
+
 @utility fade {
 	@apply invisible opacity-0 transition transition-discrete;
 }
