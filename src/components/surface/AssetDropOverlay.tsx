@@ -6,9 +6,8 @@ import { Portal } from "../../ui/Portal.tsx"
 type AssetImportPreset = (typeof IMPORT_PRESETS)[number]
 const IMPORT_PRESETS = [
 	{ name: "Tile", size: vec(100, 100) },
-	{ name: "Map", size: vec(1000, 1000) },
-	{ name: "Portrait", size: vec(400, 600) },
-	{ name: "Scene", size: vec(1600 * 2, 900 * 2) },
+	{ name: "Portrait", size: vec(200, 300) },
+	{ name: "Scene", size: vec(1600, 900) },
 ]
 
 export function AssetDropOverlay({
@@ -21,7 +20,7 @@ export function AssetDropOverlay({
 	return (
 		<Portal>
 			<div
-				className="flex-center-col pointer-events-none fixed inset-0 gap-4 bg-black/50 opacity-0 backdrop-blur transition-all transition-discrete data-visible:pointer-events-auto data-visible:bg-black/50 data-visible:opacity-100"
+				className="pointer-events-none fixed inset-0 flex-center-col gap-4 bg-black/50 opacity-0 backdrop-blur transition-all transition-discrete data-visible:pointer-events-auto data-visible:bg-black/50 data-visible:opacity-100"
 				data-visible={visible || undefined}
 			>
 				<p className="text-2xl font-light">Import as...</p>
@@ -61,6 +60,7 @@ function PresetDropTarget({
 			}}
 			onDrop={(event) => {
 				event.preventDefault()
+				setIsOver(false)
 				onDrop(preset, Array.from(event.dataTransfer.files))
 			}}
 		>

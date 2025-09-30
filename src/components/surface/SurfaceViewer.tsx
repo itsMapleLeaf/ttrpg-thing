@@ -21,8 +21,8 @@ export function SurfaceViewer() {
 	const assetTileListElementId = useId()
 	const viewport = useViewport()
 	const toast = useToastContext()
-
 	const fileDrop = useWindowFileDrop()
+	const [backgroundUrl, setBackgroundUrl] = useState<string>()
 
 	// precompute asset rectangles once on drag start for performance
 	const assetElementRects = useRef<{ id: string; rect: DOMRect }[]>([])
@@ -135,7 +135,12 @@ export function SurfaceViewer() {
 	return (
 		<>
 			<div
-				className="h-dvh touch-none"
+				className="relative h-dvh touch-none"
+				style={{
+					backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : undefined,
+					backgroundSize: "cover",
+					backgroundPosition: "center",
+				}}
 				onPointerDown={(event) => {
 					if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
 						assetSelection.clear()
@@ -143,6 +148,7 @@ export function SurfaceViewer() {
 					areaSelect.handlePointerDown(event)
 				}}
 			>
+				<div className="pointer-events-none absolute inset-0 bg-black/75 backdrop-blur" />
 				<div
 					className="relative size-full touch-none overflow-clip"
 					onPointerDown={viewport.drag.handlePointerDown}
@@ -165,12 +171,19 @@ export function SurfaceViewer() {
 								width: SURFACE_WIDTH,
 								height: SURFACE_HEIGHT,
 								// display a grid of dots
-								backgroundImage:
-									"radial-gradient(currentColor 1px, transparent 1px)",
-								backgroundSize: `${GRID_SNAP}px ${GRID_SNAP}px`,
-								color: "rgba(255, 255, 255, 0.1)",
+								// backgroundImage:
+								// 	"radial-gradient(currentColor 1px, transparent 1px)",
+								// backgroundSize: `${GRID_SNAP}px ${GRID_SNAP}px`,
+								// color: "rgba(255, 255, 255, 0.1)",
+
+								backgroundImage: backgroundUrl
+									? `url(${backgroundUrl})`
+									: undefined,
+								backgroundSize: "cover",
+								backgroundPosition: "center",
 							}}
 						>
+							<div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-black/40" />
 							{tiles
 								.sort((a, b) => a.order - b.order)
 								.map((asset) => (
@@ -233,17 +246,31 @@ export function SurfaceViewer() {
 						imageFiles.push(file)
 					}
 
-					if (imageFiles.length === 0) return
+					if (imageFiles[0] == null) {
+						toast.error("No valid image files to import")
+						return
+					}
 
-					importAssetTiles(
-						files,
-						vec
-							.with(vec(window.innerWidth / 2, window.innerHeight / 2))
-							.subtract(viewport.offset)
-							.multiply(1 / viewport.scale)
-							.result(),
-						preset.size,
-					)
+					if (preset.name !== "Scene") {
+						importAssetTiles(
+							files,
+							vec
+								.with(vec(window.innerWidth / 2, window.innerHeight / 2))
+								.subtract(viewport.offset)
+								.multiply(1 / viewport.scale)
+								.result(),
+							preset.size,
+						)
+						return
+					}
+
+					if (imageFiles.length > 1) {
+						toast.error("Only one image can be used for the background")
+						return
+					}
+
+					const objectUrl = URL.createObjectURL(imageFiles[0])
+					setBackgroundUrl(objectUrl)
 				}}
 			/>
 		</>
