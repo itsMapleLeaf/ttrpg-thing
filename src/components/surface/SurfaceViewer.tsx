@@ -251,7 +251,33 @@ export function SurfaceViewer() {
 				</Portal>
 			)}
 
-			{fileDrop.overlayElement}
+			<Portal>
+				<div
+					className="invisible fixed inset-0 flex-center bg-black/50 opacity-0 backdrop-blur transition-all transition-discrete data-[visible=true]:visible data-[visible=true]:opacity-100"
+					data-visible={fileDrop.isOver}
+				>
+					<p className="text-3xl font-light">Drop files to import assets</p>
+					<div
+						onDragOver={(event) => event.preventDefault()}
+						onDrop={(event) => {
+							event.preventDefault()
+							console.log("drop a")
+						}}
+					>
+						drop on a
+					</div>
+					<div
+						onDragOver={(event) => event.preventDefault()}
+						onDrop={(event) => {
+							console.log("drop b")
+							event.preventDefault()
+						}}
+					>
+						drop on b
+					</div>
+				</div>
+			</Portal>
+
 			{importDialog.element}
 		</>
 	)
