@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react"
-import { useWindowFileDrop, useWindowSize } from "../../common/dom.ts"
+import { useWindowFileDrop } from "../../common/dom.ts"
 import { useDrag } from "../../common/drag.ts"
 import { useSelection } from "../../common/selection.ts"
 import { vec } from "../../common/vec.ts"
@@ -21,7 +21,6 @@ export function SurfaceViewer() {
 	const assetTileListElementId = useId()
 	const viewport = useViewport()
 	const toast = useToastContext()
-	const [windowWidth, windowHeight] = useWindowSize()
 
 	const fileDrop = useWindowFileDrop()
 
@@ -239,7 +238,7 @@ export function SurfaceViewer() {
 					importAssetTiles(
 						files,
 						vec
-							.with(vec(windowWidth / 2, windowHeight / 2))
+							.with(vec(window.innerWidth / 2, window.innerHeight / 2))
 							.subtract(viewport.offset)
 							.multiply(1 / viewport.scale)
 							.result(),
