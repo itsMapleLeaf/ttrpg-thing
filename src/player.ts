@@ -1,5 +1,5 @@
 import { shuffle } from "es-toolkit"
-import { buildDeck, type CardCounts, type CardInstance } from "./lib/cards.ts"
+import { buildDeck, type CardCounts, type CardInstance } from "./cards.ts"
 
 export * as Player from "./player.ts"
 

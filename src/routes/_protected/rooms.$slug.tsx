@@ -2,10 +2,10 @@ import { Icon } from "@iconify/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api.js"
+import { useStable } from "../../common/convex.ts"
 import { ResourcePanel } from "../../components/resource-panel/ResourcePanel.tsx"
 import { SidebarLayout } from "../../components/sidebar/SidebarLayout.tsx"
-import { SurfaceViewer } from "../../components/surface/SurfaceViewer.tsx"
-import { useStable } from "../../hooks/useStable.ts"
+import { SurfaceViewer } from "../../components/surface.old/SurfaceViewer.tsx"
 
 export const Route = createFileRoute("/_protected/rooms/$slug")({
 	component: RoomDetail,

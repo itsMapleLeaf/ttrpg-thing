@@ -10,12 +10,26 @@
 
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as FaviconDotsvgRouteImport } from "./routes/favicon[.]svg"
+import { Route as DsRouteImport } from "./routes/ds"
+import { Route as ProtectedRouteImport } from "./routes/_protected"
 import { Route as IndexRouteImport } from "./routes/index"
+import { Route as ProtectedAccountRouteImport } from "./routes/_protected/account"
 import { Route as ApiImagesOptimizeRouteImport } from "./routes/api/images.optimize"
+import { Route as ProtectedRoomsNewRouteImport } from "./routes/_protected/rooms.new"
+import { Route as ProtectedRoomsSlugRouteImport } from "./routes/_protected/rooms.$slug"
 
 const FaviconDotsvgRoute = FaviconDotsvgRouteImport.update({
   id: "/favicon.svg",
   path: "/favicon.svg",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DsRoute = DsRouteImport.update({
+  id: "/ds",
+  path: "/ds",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProtectedRoute = ProtectedRouteImport.update({
+  id: "/_protected",
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -23,38 +37,91 @@ const IndexRoute = IndexRouteImport.update({
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
+  id: "/account",
+  path: "/account",
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ApiImagesOptimizeRoute = ApiImagesOptimizeRouteImport.update({
   id: "/api/images/optimize",
   path: "/api/images/optimize",
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProtectedRoomsNewRoute = ProtectedRoomsNewRouteImport.update({
+  id: "/rooms/new",
+  path: "/rooms/new",
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedRoomsSlugRoute = ProtectedRoomsSlugRouteImport.update({
+  id: "/rooms/$slug",
+  path: "/rooms/$slug",
+  getParentRoute: () => ProtectedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
+  "/ds": typeof DsRoute
   "/favicon.svg": typeof FaviconDotsvgRoute
+  "/account": typeof ProtectedAccountRoute
+  "/rooms/$slug": typeof ProtectedRoomsSlugRoute
+  "/rooms/new": typeof ProtectedRoomsNewRoute
   "/api/images/optimize": typeof ApiImagesOptimizeRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
+  "/ds": typeof DsRoute
   "/favicon.svg": typeof FaviconDotsvgRoute
+  "/account": typeof ProtectedAccountRoute
+  "/rooms/$slug": typeof ProtectedRoomsSlugRoute
+  "/rooms/new": typeof ProtectedRoomsNewRoute
   "/api/images/optimize": typeof ApiImagesOptimizeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
+  "/_protected": typeof ProtectedRouteWithChildren
+  "/ds": typeof DsRoute
   "/favicon.svg": typeof FaviconDotsvgRoute
+  "/_protected/account": typeof ProtectedAccountRoute
+  "/_protected/rooms/$slug": typeof ProtectedRoomsSlugRoute
+  "/_protected/rooms/new": typeof ProtectedRoomsNewRoute
   "/api/images/optimize": typeof ApiImagesOptimizeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/favicon.svg" | "/api/images/optimize"
+  fullPaths:
+    | "/"
+    | "/ds"
+    | "/favicon.svg"
+    | "/account"
+    | "/rooms/$slug"
+    | "/rooms/new"
+    | "/api/images/optimize"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/favicon.svg" | "/api/images/optimize"
-  id: "__root__" | "/" | "/favicon.svg" | "/api/images/optimize"
+  to:
+    | "/"
+    | "/ds"
+    | "/favicon.svg"
+    | "/account"
+    | "/rooms/$slug"
+    | "/rooms/new"
+    | "/api/images/optimize"
+  id:
+    | "__root__"
+    | "/"
+    | "/_protected"
+    | "/ds"
+    | "/favicon.svg"
+    | "/_protected/account"
+    | "/_protected/rooms/$slug"
+    | "/_protected/rooms/new"
+    | "/api/images/optimize"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ProtectedRoute: typeof ProtectedRouteWithChildren
+  DsRoute: typeof DsRoute
   FaviconDotsvgRoute: typeof FaviconDotsvgRoute
   ApiImagesOptimizeRoute: typeof ApiImagesOptimizeRoute
 }
@@ -68,12 +135,33 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof FaviconDotsvgRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/ds": {
+      id: "/ds"
+      path: "/ds"
+      fullPath: "/ds"
+      preLoaderRoute: typeof DsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/_protected": {
+      id: "/_protected"
+      path: ""
+      fullPath: ""
+      preLoaderRoute: typeof ProtectedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/": {
       id: "/"
       path: "/"
       fullPath: "/"
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    "/_protected/account": {
+      id: "/_protected/account"
+      path: "/account"
+      fullPath: "/account"
+      preLoaderRoute: typeof ProtectedAccountRouteImport
+      parentRoute: typeof ProtectedRoute
     }
     "/api/images/optimize": {
       id: "/api/images/optimize"
@@ -82,11 +170,43 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ApiImagesOptimizeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/_protected/rooms/new": {
+      id: "/_protected/rooms/new"
+      path: "/rooms/new"
+      fullPath: "/rooms/new"
+      preLoaderRoute: typeof ProtectedRoomsNewRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    "/_protected/rooms/$slug": {
+      id: "/_protected/rooms/$slug"
+      path: "/rooms/$slug"
+      fullPath: "/rooms/$slug"
+      preLoaderRoute: typeof ProtectedRoomsSlugRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
   }
 }
 
+interface ProtectedRouteChildren {
+  ProtectedAccountRoute: typeof ProtectedAccountRoute
+  ProtectedRoomsSlugRoute: typeof ProtectedRoomsSlugRoute
+  ProtectedRoomsNewRoute: typeof ProtectedRoomsNewRoute
+}
+
+const ProtectedRouteChildren: ProtectedRouteChildren = {
+  ProtectedAccountRoute: ProtectedAccountRoute,
+  ProtectedRoomsSlugRoute: ProtectedRoomsSlugRoute,
+  ProtectedRoomsNewRoute: ProtectedRoomsNewRoute,
+}
+
+const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
+  ProtectedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ProtectedRoute: ProtectedRouteWithChildren,
+  DsRoute: DsRoute,
   FaviconDotsvgRoute: FaviconDotsvgRoute,
   ApiImagesOptimizeRoute: ApiImagesOptimizeRoute,
 }

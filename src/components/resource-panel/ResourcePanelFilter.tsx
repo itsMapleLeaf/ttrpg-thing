@@ -2,8 +2,8 @@ import { Icon } from "@iconify/react/dist/iconify.js"
 import { type } from "arktype"
 import { useState } from "react"
 import type { AssetListOrder } from "../../../convex/assets.ts"
+import { useLocalStorage } from "../../common/local-storage.ts"
 import type { NonEmptyArray } from "../../common/types.ts"
-import { useLocalStorage } from "../../hooks/useLocalStorage.ts"
 import { Button } from "../../ui/Button.tsx"
 
 type SortOption = {

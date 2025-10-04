@@ -1,7 +1,7 @@
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import type { Id } from "../../../convex/_generated/dataModel"
-import { useStable } from "../../hooks/useStable.ts"
+import { useStable } from "../../common/convex.ts"
 import { ScrollArea } from "../../ui/ScrollArea.tsx"
 import { AssetListSection } from "./AssetListSection.tsx"
 import {
