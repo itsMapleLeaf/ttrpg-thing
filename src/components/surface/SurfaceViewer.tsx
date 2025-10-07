@@ -228,7 +228,7 @@ export function SurfaceViewer() {
 				<div className="pointer-events-none absolute inset-0 bg-black/75 backdrop-blur" />
 
 				<div
-					className="relative size-full touch-none overflow-clip"
+					className="relative size-full touch-none"
 					onPointerDown={viewport.drag.handlePointerDown}
 					ref={viewport.ref}
 				>
