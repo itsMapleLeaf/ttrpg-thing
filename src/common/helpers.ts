@@ -86,3 +86,7 @@ export function typedEntries<T extends Record<string, unknown>>(
 export function typed<T>(value: T): T {
 	return value
 }
+
+export function raise(message: string): never {
+	throw new Error(message)
+}
