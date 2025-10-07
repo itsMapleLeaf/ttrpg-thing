@@ -1,11 +1,14 @@
-import { useEffect, useId, useRef, useState } from "react"
-import { useWindowFileDrop } from "../../common/dom.ts"
+import { type CSSProperties, useId, useRef, useState } from "react"
+import { useWindowEvent, useWindowFileDrop } from "../../common/dom.ts"
 import { useDrag } from "../../common/drag.ts"
 import { useSelection } from "../../common/selection.ts"
 import { vec } from "../../common/vec.ts"
 import { Portal } from "../../ui/Portal.tsx"
 import { useToastContext } from "../../ui/Toast.tsx"
-import { AssetDropOverlay } from "./AssetDropOverlay.tsx"
+import {
+	AssetDropOverlay,
+	type AssetImportPreset,
+} from "./AssetDropOverlay.tsx"
 import {
 	ACCEPTED_FILE_TYPES,
 	GRID_SNAP,
@@ -104,51 +107,126 @@ export function SurfaceViewer() {
 		return position
 	}
 
-	useEffect(() => {
-		const controller = new AbortController()
+	useWindowEvent("keydown", (event) => {
+		const inputHasFocus =
+			document.activeElement?.tagName === "INPUT" ||
+			document.activeElement?.tagName === "TEXTAREA" ||
+			(document.activeElement as HTMLElement)?.isContentEditable
+		if (inputHasFocus) return
 
-		window.addEventListener(
-			"keydown",
-			(event) => {
-				const inputHasFocus =
-					document.activeElement?.tagName === "INPUT" ||
-					document.activeElement?.tagName === "TEXTAREA" ||
-					(document.activeElement as HTMLElement)?.isContentEditable
-				if (inputHasFocus) return
-
-				if (event.key === "Delete" || event.key === "Backspace") {
-					if (assetSelection.items.size > 0) {
-						event.preventDefault()
-						removeTiles([...assetSelection.items])
-						assetSelection.clear()
-					}
-				}
-			},
-			{ signal: controller.signal },
-		)
-
-		return () => {
-			controller.abort()
+		if (event.key === "Delete" || event.key === "Backspace") {
+			if (assetSelection.items.size > 0) {
+				event.preventDefault()
+				removeTiles([...assetSelection.items])
+				assetSelection.clear()
+			}
 		}
-	}, [assetSelection, removeTiles])
+	})
+
+	const handleRootPointerDown = (event: React.PointerEvent) => {
+		if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
+			assetSelection.clear()
+		}
+		areaSelect.handlePointerDown(event)
+	}
+
+	const handleAssetDrop = (preset: AssetImportPreset, files: File[]): void => {
+		const imageFiles = []
+		for (const file of files) {
+			if (!ACCEPTED_FILE_TYPES.has(file.type)) {
+				toast.error(`Unsupported file type: ${file.type}`)
+				continue
+			}
+
+			imageFiles.push(file)
+		}
+
+		if (imageFiles[0] == null) {
+			toast.error("No valid image files to import")
+			return
+		}
+
+		if (preset.name !== "Scene") {
+			importAssetTiles(
+				files,
+				vec
+					.with(vec(window.innerWidth / 2, window.innerHeight / 2))
+					.subtract(viewport.offset)
+					.multiply(1 / viewport.scale)
+					.result(),
+				preset.size,
+			)
+			return
+		}
+
+		if (imageFiles.length > 1) {
+			toast.error("Only one image can be used for the background")
+			return
+		}
+
+		const objectUrl = URL.createObjectURL(imageFiles[0])
+		setBackgroundUrl(objectUrl)
+	}
+
+	const rootStyle: CSSProperties = {
+		backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : undefined,
+		backgroundSize: "cover",
+		backgroundPosition: "center",
+	}
+
+	const panelWrapperStyle: CSSProperties = {
+		translate: vec.css.translate(vec.add(viewport.offset, viewport.drag.delta)),
+		scale: viewport.scale,
+	}
+
+	const panelStyle: CSSProperties = {
+		width: SURFACE_WIDTH,
+		height: SURFACE_HEIGHT,
+		backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : undefined,
+		backgroundSize: "cover",
+		backgroundPosition: "center",
+	}
+
+	const tileElements = tiles
+		.sort((a, b) => a.order - b.order)
+		.map((asset) => (
+			<SurfaceTile
+				key={asset.id}
+				id={asset.id}
+				imageUrl={
+					asset.imageUrl
+					// uncomment this when we're using remote URLs
+					// getOptimizedImageUrl(
+					// 	asset.url,
+					// 	ceilToNearest(asset.size.x, 100),
+					// ).href
+				}
+				position={getRenderedAssetPosition(asset)}
+				size={asset.size}
+				dragging={isDraggingAsset(asset.id)}
+				selected={assetSelection.has(asset.id)}
+				onPointerDown={(event) => {
+					if (event.button === 0) {
+						if (event.ctrlKey || event.shiftKey) {
+							assetSelection.toggleItemSelected(asset.id)
+						} else if (!assetSelection.has(asset.id)) {
+							assetSelection.setSelectedItems([asset.id])
+						}
+					}
+					assetDrag.handlePointerDown(event)
+				}}
+			/>
+		))
 
 	return (
 		<>
 			<div
 				className="relative h-dvh touch-none"
-				style={{
-					backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : undefined,
-					backgroundSize: "cover",
-					backgroundPosition: "center",
-				}}
-				onPointerDown={(event) => {
-					if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
-						assetSelection.clear()
-					}
-					areaSelect.handlePointerDown(event)
-				}}
+				style={rootStyle}
+				onPointerDown={handleRootPointerDown}
 			>
 				<div className="pointer-events-none absolute inset-0 bg-black/75 backdrop-blur" />
+
 				<div
 					className="relative size-full touch-none overflow-clip"
 					onPointerDown={viewport.drag.handlePointerDown}
@@ -157,63 +235,15 @@ export function SurfaceViewer() {
 					<div
 						className="absolute inset-0 origin-top-left transition-transform duration-150 ease-out data-dragging:duration-75"
 						data-dragging={viewport.drag.isDragging || undefined}
-						style={{
-							translate: vec.css.translate(
-								vec.add(viewport.offset, viewport.drag.delta),
-							),
-							scale: viewport.scale,
-						}}
+						style={panelWrapperStyle}
 					>
 						<div
 							id={assetTileListElementId}
 							className="relative isolate size-full panel overflow-visible"
-							style={{
-								width: SURFACE_WIDTH,
-								height: SURFACE_HEIGHT,
-								// display a grid of dots
-								// backgroundImage:
-								// 	"radial-gradient(currentColor 1px, transparent 1px)",
-								// backgroundSize: `${GRID_SNAP}px ${GRID_SNAP}px`,
-								// color: "rgba(255, 255, 255, 0.1)",
-
-								backgroundImage: backgroundUrl
-									? `url(${backgroundUrl})`
-									: undefined,
-								backgroundSize: "cover",
-								backgroundPosition: "center",
-							}}
+							style={panelStyle}
 						>
 							<div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-black/40" />
-							{tiles
-								.sort((a, b) => a.order - b.order)
-								.map((asset) => (
-									<SurfaceTile
-										key={asset.id}
-										id={asset.id}
-										imageUrl={
-											asset.imageUrl
-											// uncomment this when we're using remote URLs
-											// getOptimizedImageUrl(
-											// 	asset.url,
-											// 	ceilToNearest(asset.size.x, 100),
-											// ).href
-										}
-										position={getRenderedAssetPosition(asset)}
-										size={asset.size}
-										dragging={isDraggingAsset(asset.id)}
-										selected={assetSelection.has(asset.id)}
-										onPointerDown={(event) => {
-											if (event.button === 0) {
-												if (event.ctrlKey || event.shiftKey) {
-													assetSelection.toggleItemSelected(asset.id)
-												} else if (!assetSelection.has(asset.id)) {
-													assetSelection.setSelectedItems([asset.id])
-												}
-											}
-											assetDrag.handlePointerDown(event)
-										}}
-									/>
-								))}
+							{tileElements}
 						</div>
 					</div>
 				</div>
@@ -233,46 +263,7 @@ export function SurfaceViewer() {
 				</Portal>
 			)}
 
-			<AssetDropOverlay
-				visible={fileDrop.isOver}
-				onDrop={(preset, files) => {
-					const imageFiles = []
-					for (const file of files) {
-						if (!ACCEPTED_FILE_TYPES.has(file.type)) {
-							toast.error(`Unsupported file type: ${file.type}`)
-							continue
-						}
-
-						imageFiles.push(file)
-					}
-
-					if (imageFiles[0] == null) {
-						toast.error("No valid image files to import")
-						return
-					}
-
-					if (preset.name !== "Scene") {
-						importAssetTiles(
-							files,
-							vec
-								.with(vec(window.innerWidth / 2, window.innerHeight / 2))
-								.subtract(viewport.offset)
-								.multiply(1 / viewport.scale)
-								.result(),
-							preset.size,
-						)
-						return
-					}
-
-					if (imageFiles.length > 1) {
-						toast.error("Only one image can be used for the background")
-						return
-					}
-
-					const objectUrl = URL.createObjectURL(imageFiles[0])
-					setBackgroundUrl(objectUrl)
-				}}
-			/>
+			<AssetDropOverlay visible={fileDrop.isOver} onDrop={handleAssetDrop} />
 		</>
 	)
 }

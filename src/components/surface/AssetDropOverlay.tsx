@@ -3,12 +3,12 @@ import { twMerge } from "tailwind-merge"
 import { vec } from "../../common/vec.ts"
 import { Portal } from "../../ui/Portal.tsx"
 
-type AssetImportPreset = (typeof IMPORT_PRESETS)[number]
+export type AssetImportPreset = (typeof IMPORT_PRESETS)[number]
 const IMPORT_PRESETS = [
 	{ name: "Tile", size: vec(100, 100) },
 	{ name: "Portrait", size: vec(200, 300) },
 	{ name: "Scene", size: vec(1600, 900) },
-]
+] as const
 
 export function AssetDropOverlay({
 	visible,
