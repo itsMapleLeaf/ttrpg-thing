@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { PageHeader } from "../components/PageHeader.tsx"
+import { PageHeader } from "../core/PageHeader.tsx"
 import { Button } from "../ui/Button.tsx"
 import { useToastContext } from "../ui/Toast.tsx"
 

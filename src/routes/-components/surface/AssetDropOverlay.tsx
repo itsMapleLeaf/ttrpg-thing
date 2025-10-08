@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { twMerge } from "tailwind-merge"
-import { vec } from "../../common/vec.ts"
-import { Portal } from "../../ui/Portal.tsx"
+import { vec } from "../../../common/vec.ts"
+import { Portal } from "../../../ui/Portal.tsx"
 
 export type AssetImportPreset = (typeof IMPORT_PRESETS)[number]
 const IMPORT_PRESETS = [

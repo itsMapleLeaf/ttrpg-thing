@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { type Vec, vec } from "../../common/vec.ts"
-import { useToastContext } from "../../ui/Toast.tsx"
+import { type Vec, vec } from "../../../common/vec.ts"
+import { useToastContext } from "../../../ui/Toast.tsx"
 import { GRID_SNAP, SURFACE_SIZE } from "./constants.ts"
 
 export type TileInstance = {

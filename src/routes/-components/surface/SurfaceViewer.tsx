@@ -1,10 +1,10 @@
 import { type CSSProperties, useId, useRef, useState } from "react"
-import { useWindowEvent, useWindowFileDrop } from "../../common/dom.ts"
-import { useDrag } from "../../common/drag.ts"
-import { useSelection } from "../../common/selection.ts"
-import { vec } from "../../common/vec.ts"
-import { Portal } from "../../ui/Portal.tsx"
-import { useToastContext } from "../../ui/Toast.tsx"
+import { useWindowEvent, useWindowFileDrop } from "../../../common/dom.ts"
+import { useDrag } from "../../../common/drag.ts"
+import { useSelection } from "../../../common/selection.ts"
+import { vec } from "../../../common/vec.ts"
+import { Portal } from "../../../ui/Portal.tsx"
+import { useToastContext } from "../../../ui/Toast.tsx"
 import {
 	AssetDropOverlay,
 	type AssetImportPreset,

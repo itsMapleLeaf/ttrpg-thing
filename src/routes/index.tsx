@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { SurfaceViewer } from "../components/surface/SurfaceViewer.tsx"
 import { ChatPanel } from "./-components/ChatPanel.tsx"
 import { PlayerHandPanel } from "./-components/PlayerHandPanel.tsx"
+import { SurfaceViewer } from "./-components/surface/SurfaceViewer.tsx"
 
 export const Route = createFileRoute("/")({
 	component: RouteComponent,

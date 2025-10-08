@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router"
 import type { ReactNode } from "react"
-import { useOptionalUser } from "../user-context"
-import { UserMenu } from "./UserMenu.tsx"
+import { UserMenu } from "../auth/UserMenu.tsx"
+import { useOptionalUser } from "../auth/user-context.tsx"
 
 export function PageHeader({
 	heading,
