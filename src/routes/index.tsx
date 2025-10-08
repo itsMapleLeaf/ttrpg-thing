@@ -9,16 +9,16 @@ export const Route = createFileRoute("/")({
 
 function RouteComponent() {
 	return (
-		<div className="isolate grid h-dvh grid-cols-[1fr_--spacing(72)]">
-			<div className="relative -z-10 flex flex-col items-center">
-				<div className="absolute inset-0">
-					<SurfaceViewer />
-				</div>
-				<div className="pointer-events-children absolute bottom-0 p-2">
-					<PlayerHandPanel />
-				</div>
+		<div className="relative isolate flex h-dvh">
+			<div className="absolute inset-0">
+				<SurfaceViewer />
 			</div>
-			<ChatPanel />
+			<div className="flex flex-1 items-end justify-center p-2">
+				<PlayerHandPanel />
+			</div>
+			<div className="w-72">
+				<ChatPanel />
+			</div>
 		</div>
 	)
 }

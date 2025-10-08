@@ -221,7 +221,7 @@ export function SurfaceViewer() {
 	return (
 		<>
 			<div
-				className="relative h-dvh touch-none"
+				className="relative h-dvh touch-none overflow-clip"
 				style={rootStyle}
 				onPointerDown={handleRootPointerDown}
 			>

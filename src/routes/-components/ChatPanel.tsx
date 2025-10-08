@@ -11,7 +11,7 @@ export function ChatPanel() {
 	const [messages, setMessages] = useState<Message[]>([])
 
 	return (
-		<div className="flex flex-col gap-3 panel overflow-y-auto rounded-none border-0 border-l bg-gray-900/50 p-2 backdrop-blur-lg">
+		<div className="flex h-full flex-col gap-3 panel overflow-y-auto rounded-none border-0 border-l bg-gray-900/50 p-2 backdrop-blur-lg">
 			<ul className="flex flex-1 flex-col justify-end gap-3 overflow-y-auto">
 				{messages.map((msg) => (
 					<li key={msg.id} className="leading-snug">
