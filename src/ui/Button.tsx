@@ -8,7 +8,7 @@ import { WithTooltip } from "./Tooltip.tsx"
 export interface ButtonProps extends ComponentProps<"button"> {
 	icon: string | ReactElement | null
 	appearance?: "solid" | "clear"
-	shape?: "default" | "square"
+	presentation?: "default" | "square"
 	size?: "default" | "sm"
 	intent?: "default" | "danger"
 	pending?: boolean
@@ -21,7 +21,7 @@ export function Button({
 	className,
 	icon,
 	appearance = "clear",
-	shape = "default",
+	presentation = "default",
 	size = "default",
 	intent = "default",
 	pending: pendingProp,
@@ -64,7 +64,7 @@ export function Button({
 	const derivedClassName = twMerge(
 		appearance === "solid" && "button-solid",
 		appearance === "clear" && "button-clear",
-		shape === "square" && "button-square",
+		presentation === "square" && "button-square",
 		size === "sm" && "button-sm",
 		intent === "danger" && "button-danger",
 		pending && "opacity-50",
@@ -79,7 +79,7 @@ export function Button({
 
 	return (
 		<>
-			{shape === "square" ? (
+			{presentation === "square" ? (
 				<WithTooltip content={children} {...tooltipProps}>
 					<button type="button" {...derivedProps}>
 						{iconElement}

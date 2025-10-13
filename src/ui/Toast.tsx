@@ -136,7 +136,7 @@ function ToastItem({
 					<Button
 						icon="mingcute:close-line"
 						appearance="clear"
-						shape="square"
+						presentation="square"
 					/>
 				}
 				className="size-6 shrink-0 !p-0 hover:bg-white/10"
