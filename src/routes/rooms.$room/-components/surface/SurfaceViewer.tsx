@@ -208,7 +208,7 @@ function AssetDropHandler({
 			return
 		}
 
-		if (preset.name !== "Scene") {
+		if (preset.name !== "Background") {
 			tileActions.createManyFromFiles(
 				files,
 				vec
