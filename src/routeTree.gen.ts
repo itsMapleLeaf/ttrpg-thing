@@ -13,6 +13,7 @@ import { Route as FaviconDotsvgRouteImport } from "./routes/favicon[.]svg"
 import { Route as DsRouteImport } from "./routes/ds"
 import { Route as IndexRouteImport } from "./routes/index"
 import { Route as ProtectedAccountRouteImport } from "./routes/_protected/account"
+import { Route as RoomsRoomIndexRouteImport } from "./routes/rooms.$room/index"
 import { Route as ApiImagesOptimizeRouteImport } from "./routes/api/images.optimize"
 
 const FaviconDotsvgRoute = FaviconDotsvgRouteImport.update({
@@ -35,6 +36,11 @@ const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
   path: "/account",
   getParentRoute: () => rootRouteImport,
 } as any)
+const RoomsRoomIndexRoute = RoomsRoomIndexRouteImport.update({
+  id: "/rooms/$room/",
+  path: "/rooms/$room/",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiImagesOptimizeRoute = ApiImagesOptimizeRouteImport.update({
   id: "/api/images/optimize",
   path: "/api/images/optimize",
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   "/favicon.svg": typeof FaviconDotsvgRoute
   "/account": typeof ProtectedAccountRoute
   "/api/images/optimize": typeof ApiImagesOptimizeRoute
+  "/rooms/$room": typeof RoomsRoomIndexRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   "/favicon.svg": typeof FaviconDotsvgRoute
   "/account": typeof ProtectedAccountRoute
   "/api/images/optimize": typeof ApiImagesOptimizeRoute
+  "/rooms/$room": typeof RoomsRoomIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,12 +70,25 @@ export interface FileRoutesById {
   "/favicon.svg": typeof FaviconDotsvgRoute
   "/_protected/account": typeof ProtectedAccountRoute
   "/api/images/optimize": typeof ApiImagesOptimizeRoute
+  "/rooms/$room/": typeof RoomsRoomIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/ds" | "/favicon.svg" | "/account" | "/api/images/optimize"
+  fullPaths:
+    | "/"
+    | "/ds"
+    | "/favicon.svg"
+    | "/account"
+    | "/api/images/optimize"
+    | "/rooms/$room"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/ds" | "/favicon.svg" | "/account" | "/api/images/optimize"
+  to:
+    | "/"
+    | "/ds"
+    | "/favicon.svg"
+    | "/account"
+    | "/api/images/optimize"
+    | "/rooms/$room"
   id:
     | "__root__"
     | "/"
@@ -75,6 +96,7 @@ export interface FileRouteTypes {
     | "/favicon.svg"
     | "/_protected/account"
     | "/api/images/optimize"
+    | "/rooms/$room/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -83,6 +105,7 @@ export interface RootRouteChildren {
   FaviconDotsvgRoute: typeof FaviconDotsvgRoute
   ProtectedAccountRoute: typeof ProtectedAccountRoute
   ApiImagesOptimizeRoute: typeof ApiImagesOptimizeRoute
+  RoomsRoomIndexRoute: typeof RoomsRoomIndexRoute
 }
 
 declare module "@tanstack/react-router" {
@@ -115,6 +138,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ProtectedAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/rooms/$room/": {
+      id: "/rooms/$room/"
+      path: "/rooms/$room"
+      fullPath: "/rooms/$room"
+      preLoaderRoute: typeof RoomsRoomIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/api/images/optimize": {
       id: "/api/images/optimize"
       path: "/api/images/optimize"
@@ -131,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaviconDotsvgRoute: FaviconDotsvgRoute,
   ProtectedAccountRoute: ProtectedAccountRoute,
   ApiImagesOptimizeRoute: ApiImagesOptimizeRoute,
+  RoomsRoomIndexRoute: RoomsRoomIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,24 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { ChatPanel } from "./-components/ChatPanel.tsx"
-import { PlayerHandPanel } from "./-components/PlayerHandPanel.tsx"
-import { SurfaceViewer } from "./-components/surface/SurfaceViewer.tsx"
+import { useMutation } from "convex/react"
+import { api } from "../../convex/_generated/api.js"
+import { Button } from "../ui/Button.tsx"
 
 export const Route = createFileRoute("/")({
 	component: RouteComponent,
 })
 
 function RouteComponent() {
+	const createRoom = useMutation(api.rooms.create)
+	const navigate = Route.useNavigate()
+
+	const submit = async () => {
+		const { slug } = await createRoom({})
+		await navigate({ to: "/rooms/$room", params: { room: slug } })
+	}
+
 	return (
-		<div className="relative isolate flex h-dvh">
-			<div className="absolute inset-0">
-				<SurfaceViewer />
-			</div>
-			<div className="flex flex-1 items-end justify-center p-2">
-				<PlayerHandPanel />
-			</div>
-			<div className="w-72">
-				<ChatPanel />
-			</div>
-		</div>
+		<form action={submit}>
+			<Button type="submit" icon="mingcute:classify-add-2-fill">
+				New Room
+			</Button>
+		</form>
 	)
 }

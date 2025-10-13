@@ -9,11 +9,19 @@ export type ClientTile = Doc<"tiles"> & {
 }
 
 export const list = query({
-	async handler(ctx): Promise<ClientTile[]> {
-		return await Array.fromAsync(ctx.db.query("tiles"), async (tile) => {
-			const imageUrl = await ctx.storage.getUrl(tile.imageId)
-			return { ...tile, imageUrl }
-		})
+	args: {
+		roomId: v.id("rooms"),
+	},
+	async handler(ctx, args): Promise<ClientTile[]> {
+		return await Array.fromAsync(
+			ctx.db
+				.query("tiles")
+				.withIndex("by_room", (q) => q.eq("roomId", args.roomId)),
+			async (tile) => {
+				const imageUrl = await ctx.storage.getUrl(tile.imageId)
+				return { ...tile, imageUrl }
+			},
+		)
 	},
 })
 

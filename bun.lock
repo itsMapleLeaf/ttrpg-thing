@@ -22,6 +22,7 @@
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "sharp": "^0.34.4",
+        "space-slug": "^2.1.0",
         "tailwind-merge": "^3.3.1",
         "type-fest": "^5.0.1",
       },
@@ -1395,6 +1396,8 @@
     "source-map-js": ["source-map-js@1.2.1", "", {}, "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA=="],
 
     "source-map-support": ["source-map-support@0.5.21", "", { "dependencies": { "buffer-from": "^1.0.0", "source-map": "^0.6.0" } }, "sha512-uBHU3L3czsIyYXKX88fdrGovxdSCoTGDRZ6SYXtSRxLZUzHg5P/66Ht6uoUlHu9EZod+inXhKo3qQgwXUT/y1w=="],
+
+    "space-slug": ["space-slug@2.1.0", "", {}, "sha512-0UspsV8UScxEZ/K1xZxBwYZGfTLpl8+irn/W2vTQCxBDC04bHUK2u6bFpi155YlowKy6yrVp7ycZACtbc3Yw0A=="],
 
     "spdx-correct": ["spdx-correct@3.2.0", "", { "dependencies": { "spdx-expression-parse": "^3.0.0", "spdx-license-ids": "^3.0.0" } }, "sha512-kN9dJbvnySHULIluDHy32WHRUu3Og7B9sbY7tsFLctQkIqnMh3hErYgdMjTYuqmcXX+lK5T1lnUt3G7zNswmZA=="],
 

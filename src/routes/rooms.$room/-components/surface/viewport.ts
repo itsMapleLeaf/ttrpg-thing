@@ -1,9 +1,9 @@
 import { type } from "arktype"
 import { clamp } from "es-toolkit"
-import { useWindowSize } from "../../../common/dom.ts"
-import { useDrag } from "../../../common/drag.ts"
-import { useLocalStorage } from "../../../common/local-storage.ts"
-import { type Vec, vec } from "../../../common/vec.ts"
+import { useWindowSize } from "../../../../common/dom.ts"
+import { useDrag } from "../../../../common/drag.ts"
+import { useLocalStorage } from "../../../../common/local-storage.ts"
+import { type Vec, vec } from "../../../../common/vec.ts"
 import { SURFACE_HEIGHT, SURFACE_WIDTH } from "./constants.ts"
 
 const MAX_ZOOM_TICK = 10

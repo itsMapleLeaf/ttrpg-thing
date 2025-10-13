@@ -1,12 +1,13 @@
 import { useQuery } from "convex/react"
 import { type CSSProperties, useRef, useState } from "react"
-import { api } from "../../../../convex/_generated/api.js"
-import type { Id } from "../../../../convex/_generated/dataModel"
-import { useWindowEvent, useWindowFileDrop } from "../../../common/dom.ts"
-import { useDrag } from "../../../common/drag.ts"
-import { vec } from "../../../common/vec.ts"
-import { Portal } from "../../../ui/Portal.tsx"
-import { useToastContext } from "../../../ui/Toast.tsx"
+import { api } from "../../../../../convex/_generated/api.js"
+import type { Id } from "../../../../../convex/_generated/dataModel"
+import { useWindowEvent, useWindowFileDrop } from "../../../../common/dom.ts"
+import { useDrag } from "../../../../common/drag.ts"
+import { vec } from "../../../../common/vec.ts"
+import { Portal } from "../../../../ui/Portal.tsx"
+import { useToastContext } from "../../../../ui/Toast.tsx"
+import { useRoomContext } from "../../-local/rooms.tsx"
 import {
 	AssetDropOverlay,
 	type AssetImportPreset,
@@ -33,7 +34,8 @@ export function SurfaceViewer() {
 }
 
 function SurfaceViewerInner() {
-	const tiles = useQuery(api.tiles.list) ?? []
+	const room = useRoomContext()
+	const tiles = useQuery(api.tiles.list, { roomId: room._id }) ?? []
 	const tileSelection = useTileSelection()
 	const tileActions = useTileActions()
 

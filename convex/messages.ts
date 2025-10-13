@@ -5,8 +5,14 @@ import { handleRollCommand } from "./dice.js"
 import schema from "./schema.js"
 
 export const list = query({
-	async handler(ctx) {
-		return await ctx.db.query("messages").collect()
+	args: {
+		roomId: v.id("rooms"),
+	},
+	async handler(ctx, args) {
+		return await ctx.db
+			.query("messages")
+			.withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+			.collect()
 	},
 })
 
@@ -29,7 +35,7 @@ export const create = mutation({
 		if (text.startsWith("/roll")) {
 			const { summary } = handleRollCommand(text.slice(5).trim().split(/\s+/))
 			return ctx.db.insert("messages", {
-				sender: args.sender,
+				...args,
 				text: summary,
 			})
 		}

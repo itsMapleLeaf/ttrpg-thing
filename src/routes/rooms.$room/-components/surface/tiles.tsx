@@ -1,19 +1,25 @@
 import { useMutation, useQuery } from "convex/react"
 import { createContext, use, useState } from "react"
-import { api } from "../../../../convex/_generated/api.js"
-import type { Id } from "../../../../convex/_generated/dataModel"
-import type { CreateManyInput } from "../../../../convex/tiles"
-import type { ClientTile } from "../../../../convex/tiles.ts"
-import { useDrag } from "../../../common/drag.ts"
+import { api } from "../../../../../convex/_generated/api.js"
+import type { Id } from "../../../../../convex/_generated/dataModel"
+import type {
+	ClientTile,
+	CreateManyInput,
+} from "../../../../../convex/tiles.ts"
+import { useDrag } from "../../../../common/drag.ts"
 import {
 	ceilToNearest,
 	getErrorMessage,
 	getOptimizedImageUrl,
-} from "../../../common/helpers.ts"
-import { type SelectionHook, useSelection } from "../../../common/selection.ts"
-import { type Vec, vec } from "../../../common/vec.ts"
-import { useUploadImage } from "../../../core/useUploadImage.ts"
-import { useToastContext } from "../../../ui/Toast.tsx"
+} from "../../../../common/helpers.ts"
+import {
+	type SelectionHook,
+	useSelection,
+} from "../../../../common/selection.ts"
+import { type Vec, vec } from "../../../../common/vec.ts"
+import { useUploadImage } from "../../../../core/useUploadImage.ts"
+import { useToastContext } from "../../../../ui/Toast.tsx"
+import { useRoomContext } from "../../-local/rooms.tsx"
 import {
 	GRID_SNAP,
 	SURFACE_HEIGHT,
@@ -31,7 +37,8 @@ export function TileSelectionProvider({
 }: {
 	children: React.ReactNode
 }) {
-	const tiles = useQuery(api.tiles.list) ?? []
+	const room = useRoomContext()
+	const tiles = useQuery(api.tiles.list, { roomId: room._id }) ?? []
 	const tileSelection = useSelection(tiles.map((a) => a._id))
 	return (
 		<TileSelectionContext.Provider value={tileSelection}>
@@ -51,6 +58,7 @@ export function useTileSelection() {
 }
 
 export function useTileActions() {
+	const room = useRoomContext()
 	const createMany = useMutation(api.tiles.createMany)
 
 	const updateMany = useMutation(api.tiles.updateMany).withOptimisticUpdate(
@@ -111,6 +119,7 @@ export function useTileActions() {
 							size,
 							orderTime: now,
 							orderIndex: index,
+							roomId: room._id,
 						},
 					}
 				} catch (error) {
@@ -119,13 +128,13 @@ export function useTileActions() {
 			}),
 		)
 
+		if (itemResults.length === 0) {
+			return
+		}
+
 		const failedResults = itemResults.filter((result) => !result.success)
 		for (const result of failedResults) {
 			toast.error(`Failed to upload image: ${result.error}`)
-		}
-
-		if (itemResults.length === 0) {
-			return
 		}
 
 		await createMany({

@@ -18,10 +18,16 @@ export default defineSchema({
 		imageId: v.optional(nullable(v.id("_storage"))),
 	}).index("by_email", ["email"]),
 
+	rooms: defineTable({
+		slug: v.string(),
+		backgroundImageId: v.optional(nullable(v.id("_storage"))),
+	}).index("by_slug", ["slug"]),
+
 	messages: defineTable({
 		sender: v.string(), // will be a userId later
 		text: v.string(),
-	}),
+		roomId: v.id("rooms"),
+	}).index("by_room", ["roomId"]),
 
 	tiles: defineTable({
 		position: vectorValidator,
@@ -29,5 +35,6 @@ export default defineSchema({
 		orderTime: v.number(),
 		orderIndex: v.number(),
 		imageId: v.id("_storage"),
-	}),
+		roomId: v.id("rooms"),
+	}).index("by_room", ["roomId"]),
 })

@@ -1,20 +1,22 @@
 import { type } from "arktype"
 import { useConvex, useQuery } from "convex/react"
 import { useActionState, useState } from "react"
-import { api } from "../../../convex/_generated/api.js"
-import { useLocalStorage } from "../../common/local-storage.ts"
-import { Button } from "../../ui/Button.tsx"
+import { api } from "../../../../convex/_generated/api.js"
+import { useLocalStorage } from "../../../common/local-storage.ts"
+import { Button } from "../../../ui/Button.tsx"
 import {
 	Popover,
 	PopoverButton,
 	PopoverClose,
 	PopoverPanel,
-} from "../../ui/Popover.tsx"
-import { TextField } from "../../ui/TextField.tsx"
-import { useToastContext } from "../../ui/Toast.tsx"
+} from "../../../ui/Popover.tsx"
+import { TextField } from "../../../ui/TextField.tsx"
+import { useToastContext } from "../../../ui/Toast.tsx"
+import { useRoomContext } from "../-local/rooms.tsx"
 
 export function ChatPanel() {
-	const messages = useQuery(api.messages.list)
+	const room = useRoomContext()
+	const messages = useQuery(api.messages.list, { roomId: room._id })
 
 	const [senderName, setSenderName] = useLocalStorage({
 		key: "Chat:senderName",
@@ -90,6 +92,7 @@ function MessageInput({
 	const convex = useConvex()
 	const toast = useToastContext()
 	const [newMessageText, setNewMessageText] = useState("")
+	const room = useRoomContext()
 
 	const [_, submit, pending] = useActionState(async () => {
 		try {
@@ -97,6 +100,7 @@ function MessageInput({
 			if (!text) return
 
 			await convex.mutation(api.messages.create, {
+				roomId: room._id,
 				sender: senderName,
 				text,
 			})
