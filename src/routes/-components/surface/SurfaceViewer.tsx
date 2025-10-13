@@ -1,7 +1,9 @@
-import { type CSSProperties, useId, useRef, useState } from "react"
+import { useQuery } from "convex/react"
+import { type CSSProperties, useRef, useState } from "react"
+import { api } from "../../../../convex/_generated/api.js"
+import type { Id } from "../../../../convex/_generated/dataModel"
 import { useWindowEvent, useWindowFileDrop } from "../../../common/dom.ts"
 import { useDrag } from "../../../common/drag.ts"
-import { useSelection } from "../../../common/selection.ts"
 import { vec } from "../../../common/vec.ts"
 import { Portal } from "../../../ui/Portal.tsx"
 import { useToastContext } from "../../../ui/Toast.tsx"
@@ -11,35 +13,49 @@ import {
 } from "./AssetDropOverlay.tsx"
 import {
 	ACCEPTED_FILE_TYPES,
-	GRID_SNAP,
 	SURFACE_HEIGHT,
 	SURFACE_WIDTH,
 } from "./constants.ts"
-import { SurfaceTile, type TileInstance, useTiles } from "./tiles.tsx"
+import {
+	SurfaceTileLayer,
+	TileSelectionProvider,
+	useTileActions,
+	useTileSelection,
+} from "./tiles.tsx"
 import { useViewport } from "./viewport.ts"
 
 export function SurfaceViewer() {
-	const { tiles, importAssetTiles, updateTile, removeTiles } = useTiles()
-	const assetSelection = useSelection(tiles.map((a) => a.id))
-	const assetTileListElementId = useId()
+	return (
+		<TileSelectionProvider>
+			<SurfaceViewerInner />
+		</TileSelectionProvider>
+	)
+}
+
+function SurfaceViewerInner() {
+	const tiles = useQuery(api.tiles.list) ?? []
+	const tileSelection = useTileSelection()
+	const tileActions = useTileActions()
+
+	const panelRef = useRef<HTMLDivElement>(null)
 	const viewport = useViewport()
 	const toast = useToastContext()
 	const fileDrop = useWindowFileDrop()
 	const [backgroundUrl, setBackgroundUrl] = useState<string>()
 
 	// precompute asset rectangles once on drag start for performance
-	const assetElementRects = useRef<{ id: string; rect: DOMRect }[]>([])
+	const tileElementRects = useRef<{ id: Id<"tiles">; rect: DOMRect }[]>([])
 
 	const areaSelect = useDrag({
 		buttons: ["left"],
 
 		onStart() {
-			assetElementRects.current = [
-				...document.querySelectorAll(
-					`#${assetTileListElementId} [data-asset-id]`,
+			tileElementRects.current = [
+				...(panelRef.current as HTMLElement).querySelectorAll(
+					`[data-asset-id]`,
 				),
 			].map((element) => ({
-				id: (element as HTMLElement).dataset.assetId as string,
+				id: (element as HTMLElement).dataset.assetId as Id<"tiles">,
 				rect: element.getBoundingClientRect(),
 			}))
 		},
@@ -48,7 +64,7 @@ export function SurfaceViewer() {
 			const [start, end] = vec.corners(state.start, state.end)
 
 			// find overlapping assets by checking element bounding boxes
-			const overlappedAssetElements = assetElementRects.current.filter(
+			const overlappedAssetElements = tileElementRects.current.filter(
 				({ rect }) =>
 					vec.intersects(
 						vec(rect.left, rect.top),
@@ -58,54 +74,11 @@ export function SurfaceViewer() {
 					),
 			)
 
-			assetSelection.setSelectedItems(
+			tileSelection.setSelectedItems(
 				overlappedAssetElements.map((entry) => entry.id),
 			)
 		},
 	})
-
-	const [baseAssetDragDelta, setBaseAssetDragDelta] = useState(vec.zero)
-	const assetDragDelta = vec.multiply(baseAssetDragDelta, 1 / viewport.scale)
-
-	const assetDrag = useDrag({
-		buttons: ["left"],
-		onStart() {
-			const now = Date.now()
-			for (const [index, id] of [...assetSelection.items].entries()) {
-				updateTile(id, (asset) => ({
-					// Bring selected assets to front
-					order: now + index,
-					// Snap to grid on drag start, so the ending position is also on grid
-					position: vec.roundTo(asset.position, GRID_SNAP),
-				}))
-			}
-		},
-		onMove(state) {
-			setBaseAssetDragDelta(state.delta)
-		},
-		onEnd() {
-			for (const id of assetSelection.items) {
-				updateTile(id, (asset) => ({
-					position: vec.clamp(
-						vec.add(asset.position, assetDragDelta),
-						vec.zero,
-						vec.subtract(vec(SURFACE_WIDTH, SURFACE_HEIGHT), asset.size),
-					),
-				}))
-			}
-		},
-	})
-
-	const isDraggingAsset = (assetId: string) =>
-		assetSelection.has(assetId) && assetDrag.isDragging
-
-	const getRenderedAssetPosition = (asset: TileInstance) => {
-		let position = vec.roundTo(asset.position, GRID_SNAP)
-		if (isDraggingAsset(asset.id)) {
-			position = vec.add(position, assetDragDelta)
-		}
-		return position
-	}
 
 	useWindowEvent("keydown", (event) => {
 		const inputHasFocus =
@@ -115,17 +88,17 @@ export function SurfaceViewer() {
 		if (inputHasFocus) return
 
 		if (event.key === "Delete" || event.key === "Backspace") {
-			if (assetSelection.items.size > 0) {
+			if (tileSelection.items.size > 0) {
 				event.preventDefault()
-				removeTiles([...assetSelection.items])
-				assetSelection.clear()
+				tileActions.deleteMany({ ids: Array.from(tileSelection.items) })
+				tileSelection.clear()
 			}
 		}
 	})
 
 	const handleRootPointerDown = (event: React.PointerEvent) => {
 		if (event.button === 0 && !event.ctrlKey && !event.shiftKey) {
-			assetSelection.clear()
+			tileSelection.clear()
 		}
 		areaSelect.handlePointerDown(event)
 	}
@@ -147,10 +120,11 @@ export function SurfaceViewer() {
 		}
 
 		if (preset.name !== "Scene") {
-			importAssetTiles(
+			tileActions.createManyFromFiles(
 				files,
 				vec
-					.with(vec(window.innerWidth / 2, window.innerHeight / 2))
+					.with(window.innerWidth, window.innerHeight)
+					.divide(2)
 					.subtract(viewport.offset)
 					.multiply(1 / viewport.scale)
 					.result(),
@@ -187,37 +161,6 @@ export function SurfaceViewer() {
 		backgroundPosition: "center",
 	}
 
-	const tileElements = tiles
-		.sort((a, b) => a.order - b.order)
-		.map((asset) => (
-			<SurfaceTile
-				key={asset.id}
-				id={asset.id}
-				imageUrl={
-					asset.imageUrl
-					// uncomment this when we're using remote URLs
-					// getOptimizedImageUrl(
-					// 	asset.url,
-					// 	ceilToNearest(asset.size.x, 100),
-					// ).href
-				}
-				position={getRenderedAssetPosition(asset)}
-				size={asset.size}
-				dragging={isDraggingAsset(asset.id)}
-				selected={assetSelection.has(asset.id)}
-				onPointerDown={(event) => {
-					if (event.button === 0) {
-						if (event.ctrlKey || event.shiftKey) {
-							assetSelection.toggleItemSelected(asset.id)
-						} else if (!assetSelection.has(asset.id)) {
-							assetSelection.setSelectedItems([asset.id])
-						}
-					}
-					assetDrag.handlePointerDown(event)
-				}}
-			/>
-		))
-
 	return (
 		<>
 			<div
@@ -238,12 +181,16 @@ export function SurfaceViewer() {
 						style={panelWrapperStyle}
 					>
 						<div
-							id={assetTileListElementId}
+							ref={panelRef}
 							className="relative isolate size-full panel overflow-visible"
 							style={panelStyle}
 						>
 							<div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-black/40" />
-							{tileElements}
+							<SurfaceTileLayer
+								tiles={tiles}
+								tileSelection={tileSelection}
+								viewport={viewport}
+							/>
 						</div>
 					</div>
 				</div>

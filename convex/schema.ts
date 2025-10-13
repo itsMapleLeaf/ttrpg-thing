@@ -3,6 +3,11 @@ import { defineSchema, defineTable } from "convex/server"
 import { v } from "convex/values"
 import { nullable } from "convex-helpers/validators"
 
+export const vectorValidator = v.object({
+	x: v.number(),
+	y: v.number(),
+})
+
 export default defineSchema({
 	...authTables,
 
@@ -16,5 +21,13 @@ export default defineSchema({
 	messages: defineTable({
 		sender: v.string(), // will be a userId later
 		text: v.string(),
+	}),
+
+	tiles: defineTable({
+		position: vectorValidator,
+		size: vectorValidator,
+		orderTime: v.number(),
+		orderIndex: v.number(),
+		imageId: v.id("_storage"),
 	}),
 })

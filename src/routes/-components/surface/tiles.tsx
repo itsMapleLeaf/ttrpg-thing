@@ -1,70 +1,248 @@
-import { useState } from "react"
+import { useMutation, useQuery } from "convex/react"
+import { createContext, use, useState } from "react"
+import { api } from "../../../../convex/_generated/api.js"
+import type { Id } from "../../../../convex/_generated/dataModel"
+import type { CreateManyInput } from "../../../../convex/tiles"
+import type { ClientTile } from "../../../../convex/tiles.ts"
+import { useDrag } from "../../../common/drag.ts"
+import {
+	ceilToNearest,
+	getErrorMessage,
+	getOptimizedImageUrl,
+} from "../../../common/helpers.ts"
+import { type SelectionHook, useSelection } from "../../../common/selection.ts"
 import { type Vec, vec } from "../../../common/vec.ts"
+import { useUploadImage } from "../../../core/useUploadImage.ts"
 import { useToastContext } from "../../../ui/Toast.tsx"
-import { GRID_SNAP, SURFACE_SIZE } from "./constants.ts"
+import {
+	GRID_SNAP,
+	SURFACE_HEIGHT,
+	SURFACE_SIZE,
+	SURFACE_WIDTH,
+} from "./constants.ts"
+import type { useViewport } from "./viewport.ts"
 
-export type TileInstance = {
-	id: string
-	position: Vec
-	size: Vec
-	order: number
-	imageUrl: string
+const TileSelectionContext = createContext<SelectionHook<Id<"tiles">> | null>(
+	null,
+)
+
+export function TileSelectionProvider({
+	children,
+}: {
+	children: React.ReactNode
+}) {
+	const tiles = useQuery(api.tiles.list) ?? []
+	const tileSelection = useSelection(tiles.map((a) => a._id))
+	return (
+		<TileSelectionContext.Provider value={tileSelection}>
+			{children}
+		</TileSelectionContext.Provider>
+	)
 }
 
-export function useTiles() {
-	const [tiles, setTiles] = useState<TileInstance[]>([])
-	const toast = useToastContext()
-
-	const importAssetTiles = (files: File[], position: Vec, size: Vec) => {
-		const now = Date.now()
-
-		for (const [index, file] of files.entries()) {
-			try {
-				const id = crypto.randomUUID()
-				const url = URL.createObjectURL(file)
-				// const bitmap = await createImageBitmap(file)
-
-				const tilePosition = vec
-					.with(position)
-					.subtract(vec.divide(size, 2))
-					.add(index * GRID_SNAP)
-					.clamp(vec.zero, vec.subtract(SURFACE_SIZE, size))
-					.result()
-
-				setTiles((assets) => [
-					...assets,
-					{
-						id,
-						imageUrl: url,
-						position: tilePosition,
-						size,
-						order: now + index,
-					},
-				])
-			} catch (error) {
-				toast.error(`Failed to load image: ${(error as Error).message}`)
-			}
-		}
-	}
-
-	const updateTile = (
-		id: string,
-		update: (current: TileInstance) => Partial<TileInstance>,
-	) => {
-		setTiles((assets) =>
-			assets.map((asset) => {
-				if (asset.id !== id) return asset
-				return { ...asset, ...update(asset) }
-			}),
+export function useTileSelection() {
+	const tileSelection = use(TileSelectionContext)
+	if (!tileSelection) {
+		throw new Error(
+			"useTileSelection must be used within a TileSelectionProvider",
 		)
 	}
+	return tileSelection
+}
 
-	const removeTiles = (ids: string[]) => {
-		const idSet = new Set(ids)
-		setTiles((assets) => assets.filter((asset) => !idSet.has(asset.id)))
+export function useTileActions() {
+	const createMany = useMutation(api.tiles.createMany)
+
+	const updateMany = useMutation(api.tiles.updateMany).withOptimisticUpdate(
+		(store, args) => {
+			for (const query of store.getAllQueries(api.tiles.list)) {
+				if (!query.value) continue
+				const updatedTiles = query.value.map((tile) => {
+					const updated = args.items.find((item) => item.id === tile._id)
+					if (updated) {
+						return { ...tile, ...updated.data }
+					}
+					return tile
+				})
+				store.setQuery(api.tiles.list, query.args, updatedTiles)
+			}
+		},
+	)
+
+	const deleteMany = useMutation(api.tiles.deleteMany).withOptimisticUpdate(
+		(store, args) => {
+			for (const query of store.getAllQueries(api.tiles.list)) {
+				if (!query.value) continue
+				const remainingTiles = query.value.filter(
+					(tile) => !args.ids.includes(tile._id),
+				)
+				store.setQuery(api.tiles.list, query.args, remainingTiles)
+			}
+		},
+	)
+
+	const toast = useToastContext()
+	const uploadImage = useUploadImage()
+
+	async function createManyFromFiles(files: File[], position: Vec, size: Vec) {
+		const now = Date.now()
+
+		type ItemResult =
+			| { success: true; input: CreateManyInput }
+			| { success: false; error: string }
+
+		const itemResults = await Promise.all(
+			files.map(async (file, index): Promise<ItemResult> => {
+				try {
+					const imageId = await uploadImage(file)
+
+					const tilePosition = vec
+						.with(position)
+						.subtract(vec.divide(size, 2))
+						.add(index * GRID_SNAP)
+						.clamp(vec.zero, vec.subtract(SURFACE_SIZE, size))
+						.result()
+
+					return {
+						success: true,
+						input: {
+							imageId,
+							position: tilePosition,
+							size,
+							orderTime: now,
+							orderIndex: index,
+						},
+					}
+				} catch (error) {
+					return { success: false, error: getErrorMessage(error) }
+				}
+			}),
+		)
+
+		const failedResults = itemResults.filter((result) => !result.success)
+		for (const result of failedResults) {
+			toast.error(`Failed to upload image: ${result.error}`)
+		}
+
+		if (itemResults.length === 0) {
+			return
+		}
+
+		await createMany({
+			items: itemResults
+				.filter((item) => item.success)
+				.map((item) => item.input),
+		})
 	}
 
-	return { tiles, importAssetTiles, updateTile, removeTiles }
+	return {
+		createMany,
+		createManyFromFiles,
+		updateMany,
+		deleteMany,
+	}
+}
+
+export function SurfaceTileLayer({
+	tiles,
+	tileSelection,
+	viewport,
+}: {
+	tiles: ClientTile[]
+	tileSelection: SelectionHook<Id<"tiles">>
+	viewport: ReturnType<typeof useViewport>
+}) {
+	const [baseDragDelta, setBaseDragDelta] = useState(vec.zero)
+	const dragDelta = vec.multiply(baseDragDelta, 1 / viewport.scale)
+	const tileActions = useTileActions()
+
+	const drag = useDrag({
+		buttons: ["left"],
+		onStart() {
+			const now = Date.now()
+
+			const tilesById = new Map(tiles.map((tile) => [tile._id, tile]))
+
+			tileActions.updateMany({
+				items: [...tileSelection.items].flatMap((id, index) => {
+					const tile = tilesById.get(id)
+					if (!tile) return []
+					return {
+						id,
+						data: {
+							orderTime: now,
+							orderIndex: index,
+							position: vec.roundTo(tile.position, GRID_SNAP),
+						},
+					}
+				}),
+			})
+		},
+
+		onMove(state) {
+			setBaseDragDelta(state.delta)
+		},
+
+		onEnd() {
+			const tilesById = new Map(tiles.map((tile) => [tile._id, tile]))
+
+			tileActions.updateMany({
+				items: [...tileSelection.items].flatMap((id) => {
+					const tile = tilesById.get(id)
+					if (!tile) return []
+					return {
+						id,
+						data: {
+							position: vec.clamp(
+								vec.add(tile.position, dragDelta),
+								vec.zero,
+								vec.subtract(vec(SURFACE_WIDTH, SURFACE_HEIGHT), tile.size),
+							),
+						},
+					}
+				}),
+			})
+		},
+	})
+
+	const isDraggingAsset = (tileId: Id<"tiles">) =>
+		tileSelection.has(tileId) && drag.isDragging
+
+	const getRenderedAssetPosition = (tile: ClientTile) => {
+		let position = vec.roundTo(tile.position, GRID_SNAP)
+		if (isDraggingAsset(tile._id)) {
+			position = vec.add(position, dragDelta)
+		}
+		return position
+	}
+
+	return tiles
+		.sort((a, b) => a.orderTime + a.orderIndex - (b.orderTime + b.orderIndex))
+		.map((tile) => (
+			<SurfaceTile
+				key={tile._id}
+				id={tile._id}
+				imageUrl={
+					tile.imageUrl &&
+					getOptimizedImageUrl(tile.imageUrl, ceilToNearest(tile.size.x, 100))
+						.href
+				}
+				position={getRenderedAssetPosition(tile)}
+				size={tile.size}
+				dragging={isDraggingAsset(tile._id)}
+				selected={tileSelection.has(tile._id)}
+				onPointerDown={(event) => {
+					if (event.button === 0) {
+						if (event.ctrlKey || event.shiftKey) {
+							tileSelection.toggleItemSelected(tile._id)
+						} else if (!tileSelection.has(tile._id)) {
+							tileSelection.setSelectedItems([tile._id])
+						}
+					}
+					drag.handlePointerDown(event)
+				}}
+			/>
+		))
 }
 
 export function SurfaceTile({
@@ -79,7 +257,7 @@ export function SurfaceTile({
 	id: string
 	position: Vec
 	size: Vec
-	imageUrl: string
+	imageUrl: string | null
 	selected: boolean
 	dragging: boolean
 	onPointerDown: (event: React.PointerEvent) => void
@@ -97,7 +275,7 @@ export function SurfaceTile({
 					className="panel rounded opacity-100 shadow-black/50 transition data-[dragging=true]:opacity-75 data-[dragging=true]:shadow-lg"
 					data-dragging={dragging}
 					style={{
-						background: `url(${imageUrl}) center / cover`,
+						background: imageUrl ? `url(${imageUrl}) center / cover` : "",
 						...vec.asSize(size),
 					}}
 				></div>

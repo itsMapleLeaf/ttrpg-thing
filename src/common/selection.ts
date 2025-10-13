@@ -1,5 +1,7 @@
 import { useState } from "react"
 
+export type SelectionHook<T> = ReturnType<typeof useSelection<T>>
+
 /**
  * A custom React hook for managing selection state of items in a library/collection.
  *

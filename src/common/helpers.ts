@@ -90,3 +90,8 @@ export function typed<T>(value: T): T {
 export function raise(message: string): never {
 	throw new Error(message)
 }
+
+export function getErrorMessage(error: unknown): string {
+	if (error instanceof Error) return error.message
+	return String(error)
+}
