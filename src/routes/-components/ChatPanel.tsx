@@ -108,7 +108,7 @@ function MessageInput({
 	})
 
 	return (
-		<form action={() => submit()} className={className}>
+		<form action={submit} className={className}>
 			<textarea
 				className="input field-sizing-content h-[unset] resize-none py-2 read-only:opacity-70 read-only:duration-0"
 				placeholder="Say something!"
