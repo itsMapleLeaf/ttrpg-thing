@@ -40,7 +40,7 @@ export function ChatPanel() {
 	return (
 		<div className="flex h-full flex-col gap-3 panel overflow-y-auto rounded-none border-0 border-l bg-gray-900/50 p-2 backdrop-blur-lg">
 			<ul className="flex flex-1 flex-col justify-end gap-3 overflow-y-auto">
-				{messages?.map((msg) => (
+				{messages?.slice(-100).map((msg) => (
 					<li key={msg._id} className="leading-snug">
 						<div className="flex items-baseline gap-2">
 							<strong className="text-sm/tight font-semibold">
