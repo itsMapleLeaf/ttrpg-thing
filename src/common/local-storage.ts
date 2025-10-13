@@ -1,13 +1,21 @@
 import type { Type } from "arktype"
 import { type SetStateAction, useEffect, useState } from "react"
 
-export type UseLocalStorageOptions<T> = {
+type Serializable =
+	| string
+	| number
+	| boolean
+	| null
+	| Serializable[]
+	| { [key: string]: Serializable }
+
+export interface UseLocalStorageOptions<T extends Serializable> {
 	key: string
 	fallback: T
 	schema: Type<T>
 }
 
-export function useLocalStorage<T>({
+export function useLocalStorage<T extends Serializable>({
 	key,
 	fallback,
 	schema,
