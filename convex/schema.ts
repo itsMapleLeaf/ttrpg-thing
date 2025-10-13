@@ -12,4 +12,9 @@ export default defineSchema({
 		email: v.string(),
 		imageId: v.optional(nullable(v.id("_storage"))),
 	}).index("by_email", ["email"]),
+
+	messages: defineTable({
+		sender: v.string(), // will be a userId later
+		text: v.string(),
+	}),
 })
