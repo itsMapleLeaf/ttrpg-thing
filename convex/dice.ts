@@ -77,7 +77,7 @@ export function handleRollCommand(dieInputs: string[]) {
 
 			let text = `Rolled ${result.input}: ${result.outcomes.join(", ")}`
 			if (result.outcomes.length > 1) {
-				text += ` = ${sum(result.outcomes)}`
+				text += ` | ➕${sum(result.outcomes)} | 🔼${Math.max(...result.outcomes)} | 🔽${Math.min(...result.outcomes)}`
 			}
 			return text
 		})
