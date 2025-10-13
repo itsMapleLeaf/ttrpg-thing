@@ -1,7 +1,8 @@
 import { vec } from "../../../../common/vec.ts"
 
-export const SURFACE_WIDTH = 1600 //* 4
-export const SURFACE_HEIGHT = 900 //* 4
+export const SURFACE_SCALE = 4
+export const SURFACE_WIDTH = 1600 * SURFACE_SCALE
+export const SURFACE_HEIGHT = 900 * SURFACE_SCALE
 export const SURFACE_SIZE = vec(SURFACE_WIDTH, SURFACE_HEIGHT)
 export const GRID_SNAP = 20
 

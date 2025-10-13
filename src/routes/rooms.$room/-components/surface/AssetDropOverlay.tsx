@@ -2,12 +2,13 @@ import { useState } from "react"
 import { twMerge } from "tailwind-merge"
 import { vec } from "../../../../common/vec.ts"
 import { Portal } from "../../../../ui/Portal.tsx"
+import { SURFACE_SCALE } from "./constants.ts"
 
 export type AssetImportPreset = (typeof IMPORT_PRESETS)[number]
 const IMPORT_PRESETS = [
-	{ name: "Tile", size: vec(100, 100) },
-	{ name: "Portrait", size: vec(100, 150) },
-	{ name: "Background", size: vec(1600, 900) },
+	{ name: "Tile", size: vec.multiply(vec(100, 100), SURFACE_SCALE) },
+	{ name: "Portrait", size: vec.multiply(vec(100, 150), SURFACE_SCALE) },
+	{ name: "Background", size: vec.multiply(vec(1600, 900), SURFACE_SCALE) },
 ] as const
 
 export function AssetDropOverlay({
