@@ -3,7 +3,12 @@ import { omit } from "convex-helpers"
 import { partial } from "convex-helpers/validators"
 import { spaceSlug } from "space-slug"
 import type { Doc } from "./_generated/dataModel.js"
-import { mutation, type QueryCtx, query } from "./_generated/server.js"
+import {
+	internalMutation,
+	mutation,
+	type QueryCtx,
+	query,
+} from "./_generated/server.js"
 import schema from "./schema.js"
 
 export type ClientRoom = Awaited<ReturnType<typeof createClientRoom>>
@@ -49,9 +54,38 @@ export const update = mutation({
 })
 
 export { delete_ as delete }
-const delete_ = mutation({
+const delete_ = internalMutation({
 	args: { id: v.id("rooms") },
 	async handler(ctx, { id }) {
+		const room = await ctx.db.get(id)
+
+		if (room?.backgroundImageId) {
+			try {
+				await ctx.storage.delete(room.backgroundImageId)
+			} catch (error) {
+				console.warn("Failed to delete background image:", error)
+			}
+		}
+
+		for await (const tile of ctx.db
+			.query("tiles")
+			.withIndex("by_room", (q) => q.eq("roomId", id))) {
+			if (tile.imageId) {
+				try {
+					await ctx.storage.delete(tile.imageId)
+				} catch (error) {
+					console.warn("Failed to delete tile image:", error)
+				}
+			}
+			await ctx.db.delete(tile._id)
+		}
+
+		for await (const message of ctx.db
+			.query("messages")
+			.withIndex("by_room", (q) => q.eq("roomId", id))) {
+			await ctx.db.delete(message._id)
+		}
+
 		await ctx.db.delete(id)
 	},
 })
