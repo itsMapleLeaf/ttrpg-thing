@@ -1,10 +1,11 @@
-import { useQuery } from "convex/react"
-import { type CSSProperties, useRef, useState } from "react"
+import { useMutation, useQuery } from "convex/react"
+import { type CSSProperties, useRef } from "react"
 import { api } from "../../../../../convex/_generated/api.js"
 import type { Id } from "../../../../../convex/_generated/dataModel"
 import { useWindowEvent, useWindowFileDrop } from "../../../../common/dom.ts"
 import { useDrag } from "../../../../common/drag.ts"
 import { vec } from "../../../../common/vec.ts"
+import { useUploadImage } from "../../../../core/useUploadImage.ts"
 import { Portal } from "../../../../ui/Portal.tsx"
 import { useToastContext } from "../../../../ui/Toast.tsx"
 import { useRoomContext } from "../../-local/rooms.tsx"
@@ -41,9 +42,6 @@ function SurfaceViewerInner() {
 
 	const panelRef = useRef<HTMLDivElement>(null)
 	const viewport = useViewport()
-	const toast = useToastContext()
-	const fileDrop = useWindowFileDrop()
-	const [backgroundUrl, setBackgroundUrl] = useState<string>()
 
 	// precompute asset rectangles once on drag start for performance
 	const tileElementRects = useRef<{ id: Id<"tiles">; rect: DOMRect }[]>([])
@@ -105,47 +103,10 @@ function SurfaceViewerInner() {
 		areaSelect.handlePointerDown(event)
 	}
 
-	const handleAssetDrop = (preset: AssetImportPreset, files: File[]): void => {
-		const imageFiles = []
-		for (const file of files) {
-			if (!ACCEPTED_FILE_TYPES.has(file.type)) {
-				toast.error(`Unsupported file type: ${file.type}`)
-				continue
-			}
-
-			imageFiles.push(file)
-		}
-
-		if (imageFiles[0] == null) {
-			toast.error("No valid image files to import")
-			return
-		}
-
-		if (preset.name !== "Scene") {
-			tileActions.createManyFromFiles(
-				files,
-				vec
-					.with(window.innerWidth, window.innerHeight)
-					.divide(2)
-					.subtract(viewport.offset)
-					.multiply(1 / viewport.scale)
-					.result(),
-				preset.size,
-			)
-			return
-		}
-
-		if (imageFiles.length > 1) {
-			toast.error("Only one image can be used for the background")
-			return
-		}
-
-		const objectUrl = URL.createObjectURL(imageFiles[0])
-		setBackgroundUrl(objectUrl)
-	}
-
 	const rootStyle: CSSProperties = {
-		backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : undefined,
+		backgroundImage: room.backgroundImageUrl
+			? `url(${room.backgroundImageUrl})`
+			: undefined,
 		backgroundSize: "cover",
 		backgroundPosition: "center",
 	}
@@ -158,7 +119,9 @@ function SurfaceViewerInner() {
 	const panelStyle: CSSProperties = {
 		width: SURFACE_WIDTH,
 		height: SURFACE_HEIGHT,
-		backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : undefined,
+		backgroundImage: room.backgroundImageUrl
+			? `url(${room.backgroundImageUrl})`
+			: undefined,
 		backgroundSize: "cover",
 		backgroundPosition: "center",
 	}
@@ -212,7 +175,64 @@ function SurfaceViewerInner() {
 				</Portal>
 			)}
 
-			<AssetDropOverlay visible={fileDrop.isOver} onDrop={handleAssetDrop} />
+			<AssetDropHandler viewport={viewport} />
 		</>
 	)
+}
+
+function AssetDropHandler({
+	viewport,
+}: {
+	viewport: ReturnType<typeof useViewport>
+}) {
+	const toast = useToastContext()
+	const fileDrop = useWindowFileDrop()
+	const tileActions = useTileActions()
+	const uploadImage = useUploadImage()
+	const room = useRoomContext()
+	const updateRoom = useMutation(api.rooms.update)
+
+	const handleAssetDrop = async (preset: AssetImportPreset, files: File[]) => {
+		const imageFiles = []
+		for (const file of files) {
+			if (!ACCEPTED_FILE_TYPES.has(file.type)) {
+				toast.error(`Unsupported file type: ${file.type}`)
+				continue
+			}
+
+			imageFiles.push(file)
+		}
+
+		if (imageFiles[0] == null) {
+			toast.error("No valid image files to import")
+			return
+		}
+
+		if (preset.name !== "Scene") {
+			tileActions.createManyFromFiles(
+				files,
+				vec
+					.with(window.innerWidth, window.innerHeight)
+					.divide(2)
+					.subtract(viewport.offset)
+					.multiply(1 / viewport.scale)
+					.result(),
+				preset.size,
+			)
+			return
+		}
+
+		if (imageFiles.length > 1) {
+			toast.error("Only one image can be used for the background")
+			return
+		}
+
+		const backgroundImageId = await uploadImage(imageFiles[0])
+		await updateRoom({
+			id: room._id,
+			data: { backgroundImageId },
+		})
+	}
+
+	return <AssetDropOverlay visible={fileDrop.isOver} onDrop={handleAssetDrop} />
 }
