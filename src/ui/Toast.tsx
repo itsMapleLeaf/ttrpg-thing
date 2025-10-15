@@ -1,6 +1,6 @@
 import { Toast as BaseToast } from "@base-ui-components/react"
 import { Icon } from "@iconify/react/dist/iconify.js"
-import { createContext, type ReactNode, useContext, useMemo } from "react"
+import { createContext, type ReactNode, use, useMemo } from "react"
 import { twMerge } from "tailwind-merge"
 import { Button } from "./Button.tsx"
 
@@ -19,7 +19,7 @@ type ToastContextValue = {
 const ToastContext = createContext<ToastContextValue>()
 
 export function useToastContext() {
-	const context = useContext(ToastContext)
+	const context = use(ToastContext)
 	if (!context) {
 		throw new Error("useToast must be used within ToastProvider")
 	}
@@ -58,6 +58,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 	return (
 		<ToastContext value={contextValue}>
+			{/* eslint-disable-next-line react-x/no-context-provider */}
 			<BaseToast.Provider toastManager={toastManager}>
 				{children}
 				<ToastContainer />

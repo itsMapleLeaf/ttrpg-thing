@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react"
-import { useEffectEvent } from "./react.ts"
+import { useEffect, useState, useEffectEvent } from "react"
 import { type Vec, vec } from "./vec.ts"
 
 export type DragState = {
@@ -98,7 +97,7 @@ export function useDrag(args: {
 		})
 
 		return () => controller.abort()
-	}, [state.status, handlePointerMove, handlePointerUp])
+	}, [state.status])
 
 	const handlePointerDown = (event: React.PointerEvent) => {
 		const shouldHandle = args.buttons.some(

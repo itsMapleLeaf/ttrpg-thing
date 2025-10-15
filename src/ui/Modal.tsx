@@ -1,12 +1,10 @@
-import {
-	type ComponentProps,
-	createContext,
-	createRef,
-	use,
-	useRef,
-} from "react"
+import { type ComponentProps, createContext, use, useRef } from "react"
 
-const DialogRefContext = createContext(createRef<HTMLDialogElement>())
+const DialogRefContext = createContext<{
+	readonly current: HTMLDialogElement | null
+}>({
+	current: null,
+})
 
 export function Modal(props: { children: React.ReactNode }) {
 	const dialogRef = useRef<HTMLDialogElement>(null)

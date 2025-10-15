@@ -28,7 +28,7 @@ export type SelectionHook<T> = ReturnType<typeof useSelection<T>>
  * selectAll();
  */
 export function useSelection<T>(library: T[]) {
-	const [items, setSelection] = useState<ReadonlySet<T>>(new Set())
+	const [items, setSelection] = useState<ReadonlySet<T>>(() => new Set())
 	const isSelected = (item: T) => items.has(item)
 
 	const clear = () => {

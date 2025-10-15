@@ -1,5 +1,5 @@
 import { useConvexAuth, useQuery } from "convex/react"
-import { createContext, useContext } from "react"
+import { createContext, use } from "react"
 import { api } from "../../convex/_generated/api.js"
 import type { ClientUser } from "../../convex/users.ts"
 import { Loading } from "../ui/Loading.tsx"
@@ -21,11 +21,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useOptionalUser() {
-	return useContext(UserContext)
+	return use(UserContext)
 }
 
 export function useUser() {
-	const user = useContext(UserContext)
+	const user = use(UserContext)
 	if (!user) {
 		throw new Error("Not logged in")
 	}

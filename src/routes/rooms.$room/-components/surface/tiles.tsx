@@ -41,9 +41,9 @@ export function TileSelectionProvider({
 	const tiles = useQuery(api.tiles.list, { roomId: room._id }) ?? []
 	const tileSelection = useSelection(tiles.map((a) => a._id))
 	return (
-		<TileSelectionContext.Provider value={tileSelection}>
+		<TileSelectionContext value={tileSelection}>
 			{children}
-		</TileSelectionContext.Provider>
+		</TileSelectionContext>
 	)
 }
 
