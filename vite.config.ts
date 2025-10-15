@@ -10,8 +10,12 @@ export default defineConfig({
 		tanstackStart({
 			router: { quoteStyle: "double" },
 		}),
+		react({
+			babel: {
+				plugins: ["babel-plugin-react-compiler"],
+			},
+		}),
 		netlify(),
-		react(),
 	],
 	server: {
 		watch: {
